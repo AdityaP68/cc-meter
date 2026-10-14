@@ -264,35 +264,55 @@ export interface Overview {
   lastStartedAt: string | null;
 }
 
+/** Message-level WHERE (same semantics as the rollups and the daily chart: a message counts in the window it happened in). */
+function messageWhere(f: Filters): { sql: string; params: Record<string, string> } {
+  const w: string[] = [];
+  const p: Record<string, string> = {};
+  if (f.since) (w.push('m.ts >= :since'), (p.since = f.since));
+  if (f.until) (w.push('m.ts < :until'), (p.until = f.until));
+  if (f.project) (w.push('s.project = :project'), (p.project = f.project));
+  if (f.source) (w.push('s.source = :source'), (p.source = f.source));
+  if (f.model) (w.push('m.model = :model'), (p.model = f.model));
+  return { sql: w.length ? 'WHERE ' + w.join(' AND ') : '', params: p };
+}
+
+/**
+ * Totals for a filter. Tokens and cost come from per-message rows, exactly like the rollups and the daily chart, so the
+ * headline equals the sum of the chart: a long session that started before the window still counts for what it spent
+ * inside it, and a model filter counts only that model. Sessions = sessions with at least one message in the window.
+ */
 export function overview(db: Db, f: Filters = {}): Overview {
-  const { sql, params } = sessionWhere(f);
+  const { sql, params } = messageWhere(f);
+  const from = `FROM messages m JOIN sessions s ON s.session_id = m.session_id ${sql}`;
   const r = db
     .prepare(
-      `SELECT COUNT(*) n, COALESCE(SUM(cost_usd),0) cost,
-              COALESCE(SUM(input_tokens+output_tokens+cache_write_tokens+cache_read_tokens),0) tok,
-              COALESCE(SUM(unpriced_tokens),0) unp, COALESCE(SUM(switches),0) sw, COALESCE(SUM(compactions),0) co,
-              MIN(started_at) first, MAX(started_at) last
-         FROM sessions s ${sql}`,
+      `SELECT COUNT(DISTINCT m.session_id) n, COALESCE(SUM(m.cost_usd),0) cost,
+              COALESCE(SUM(m.input+m.output+m.cache_write+m.cache_read),0) tok,
+              COALESCE(SUM(CASE WHEN m.priced = 0 THEN m.input+m.output+m.cache_write+m.cache_read ELSE 0 END),0) unp,
+              MIN(s.started_at) first, MAX(s.started_at) last
+         ${from}`,
     )
+    .get(params) as Raw;
+  const ids = `SELECT DISTINCT m.session_id ${from}`;
+  const ev = db
+    .prepare(`SELECT COALESCE(SUM(switches),0) sw, COALESCE(SUM(compactions),0) co FROM sessions WHERE session_id IN (${ids})`)
     .get(params) as Raw;
   const bySource = db
     .prepare(
-      `SELECT source, COUNT(*) n, COALESCE(SUM(cost_usd),0) cost,
-              COALESCE(SUM(input_tokens+output_tokens+cache_write_tokens+cache_read_tokens),0) tok
-         FROM sessions s ${sql} GROUP BY source ORDER BY cost DESC`,
+      `SELECT s.source source, COUNT(DISTINCT m.session_id) n, COALESCE(SUM(m.cost_usd),0) cost,
+              COALESCE(SUM(m.input+m.output+m.cache_write+m.cache_read),0) tok
+         ${from} GROUP BY s.source ORDER BY cost DESC`,
     )
     .all(params) as Raw[];
-  const um = new Set<string>();
-  for (const x of db.prepare(`SELECT unpriced_models u FROM sessions s ${sql ? sql + ' AND' : 'WHERE'} unpriced_tokens > 0`).all(params) as Raw[])
-    for (const m of JSON.parse(String(x.u)) as string[]) um.add(m);
+  const unpricedModels = (db.prepare(`SELECT DISTINCT m.model u ${from} ${sql ? 'AND' : 'WHERE'} m.priced = 0 ORDER BY m.model`).all(params) as Raw[]).map((x) => String(x.u));
   return {
     sessions: Number(r.n),
     costUsd: Number(r.cost),
     totalTokens: Number(r.tok),
     unpricedTokens: Number(r.unp),
-    unpricedModels: [...um].sort(),
-    switches: Number(r.sw),
-    compactions: Number(r.co),
+    unpricedModels,
+    switches: Number(ev.sw),
+    compactions: Number(ev.co),
     bySource: bySource.map((x) => ({ source: String(x.source), sessions: Number(x.n), costUsd: Number(x.cost), totalTokens: Number(x.tok) })),
     firstStartedAt: (r.first as string) ?? null,
     lastStartedAt: (r.last as string) ?? null,

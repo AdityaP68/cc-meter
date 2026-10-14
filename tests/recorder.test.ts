@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { getSession, listSessions, rollup } from '../core/aggregate.js';
+import { getSession, listSessions, overview, rollup } from '../core/aggregate.js';
 import { openDb, type Db } from '../core/db.js';
 import { loadPricing } from '../core/pricing.js';
 import { recordAll, recordTranscript, RECORDER_VERSION } from '../core/record.js';
@@ -34,6 +34,23 @@ const writeTranscript = (id: string, lines: string[]) => {
   fs.writeFileSync(f, lines.join('\n') + '\n');
   return f;
 };
+
+describe('overview', () => {
+  it('counts what a session spent inside the window, like the daily chart (not by session start)', () => {
+    writeTranscript('long', [
+      user('a', '2026-01-01T00:00:01.000Z'), asst({ id: 'l1', input: 1000, output: 1000, ts: '2026-01-01T00:00:02.000Z' }),
+      user('b', '2026-01-10T00:00:01.000Z'), asst({ id: 'l2', input: 3000, output: 3000, ts: '2026-01-10T00:00:02.000Z' }),
+    ]);
+    recordAll(db, table);
+    const f = { since: '2026-01-05T00:00:00.000Z' };
+    const o = overview(db, f);
+    const days = rollup(db, 'day', f);
+    expect(o.sessions).toBe(1);
+    expect(o.totalTokens).toBe(6000);
+    expect(o.costUsd).toBeCloseTo(days.reduce((n, d) => n + d.costUsd, 0), 10);
+    expect(o.costUsd).toBeGreaterThan(0);
+  });
+});
 
 describe('session label', () => {
   it('uses the Claude Code title when there is one, else a label from entry point, model and turns (never prompt text)', () => {

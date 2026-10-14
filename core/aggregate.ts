@@ -112,6 +112,8 @@ export interface TurnRow {
   tokens: number;
   messages: number;
   models: string[];
+  /** Model of the last main-thread (non-subagent) message in the turn; null if the turn only has subagent messages. */
+  mainModel: string | null;
 }
 
 export interface EventRow {
@@ -141,7 +143,8 @@ export function getSession(db: Db, sessionId: string): SessionDetail | null {
               SUM(CASE WHEN priced = 0 THEN input + output + cache_write + cache_read ELSE 0 END) AS unpriced,
               SUM(input + output + cache_write + cache_read) AS tokens,
               COUNT(*) AS messages,
-              GROUP_CONCAT(DISTINCT model) AS models
+              GROUP_CONCAT(DISTINCT model) AS models,
+              (SELECT m2.model FROM messages m2 WHERE m2.session_id = messages.session_id AND m2.turn = messages.turn AND m2.sidechain = 0 ORDER BY m2.seq DESC LIMIT 1) AS main_model
          FROM messages WHERE session_id = ? GROUP BY turn ORDER BY turn`,
     )
     .all(sessionId) as Raw[];
@@ -157,6 +160,7 @@ export function getSession(db: Db, sessionId: string): SessionDetail | null {
       tokens: Number(x.tokens),
       messages: Number(x.messages),
       models: String(x.models ?? '').split(',').filter(Boolean),
+      mainModel: (x.main_model as string) ?? null,
     })),
     events: e.map((x) => ({
       kind: x.kind as EventRow['kind'],
@@ -279,4 +283,37 @@ export function facets(db: Db): { projects: string[]; models: string[]; sources:
     models: col('SELECT DISTINCT model FROM messages ORDER BY model'),
     sources: col('SELECT DISTINCT source FROM sessions ORDER BY source'),
   };
+}
+
+export interface DayModelRow {
+  day: string;
+  model: string;
+  costUsd: number;
+  totalTokens: number;
+  unpricedTokens: number;
+}
+
+/** Cost per local day per model, for the stacked daily chart. */
+export function rollupDayModel(db: Db, f: Filters = {}): DayModelRow[] {
+  const w: string[] = [];
+  const p: Record<string, string> = {};
+  if (f.since) (w.push('m.ts >= :since'), (p.since = f.since));
+  if (f.until) (w.push('m.ts < :until'), (p.until = f.until));
+  if (f.project) (w.push('s.project = :project'), (p.project = f.project));
+  if (f.source) (w.push('s.source = :source'), (p.source = f.source));
+  if (f.model) (w.push('m.model = :model'), (p.model = f.model));
+  const where = w.length ? 'WHERE ' + w.join(' AND ') : '';
+  const rows = db
+    .prepare(
+      `SELECT date(m.ts, 'localtime') AS day, m.model AS model,
+              SUM(COALESCE(m.cost_usd, 0)) AS cost,
+              SUM(m.input + m.output + m.cache_write + m.cache_read) AS tok,
+              SUM(CASE WHEN m.priced = 0 THEN m.input + m.output + m.cache_write + m.cache_read ELSE 0 END) AS unpriced
+         FROM messages m JOIN sessions s ON s.session_id = m.session_id
+         ${where} GROUP BY day, m.model ORDER BY day`,
+    )
+    .all(p) as Raw[];
+  return rows
+    .filter((r) => r.day)
+    .map((r) => ({ day: String(r.day), model: String(r.model), costUsd: Number(r.cost), totalTokens: Number(r.tok), unpricedTokens: Number(r.unpriced) }));
 }

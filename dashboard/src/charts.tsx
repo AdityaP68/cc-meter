@@ -5,11 +5,23 @@ import { niceMax, shortModel, tok, usd, usdAxis, when } from './format';
 /* ---------- model colours: color follows the entity (stable per model name), never its rank ---------- */
 export const ModelColors = createContext<(model: string) => string>(() => 'var(--series-1)');
 
+/** Known models keep a fixed slot forever; unknown models fill the remaining slots in alphabetical order. */
+const KNOWN_SLOTS = ['claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-4-5', 'claude-opus-5', 'claude-sonnet-5', 'claude-fable-5-1', 'claude-haiku-5-5', 'claude-fable-5'];
+const undated = (m: string) => m.replace(/-\d{8}$/, '');
+
 export function makeModelColors(models: string[]): (model: string) => string {
-  const sorted = [...new Set(models)].sort();
+  const extra = [...new Set(models.map(undated))].filter((m) => !KNOWN_SLOTS.includes(m)).sort();
+  const slotOf = (m: string): number => {
+    const u = undated(m);
+    const k = KNOWN_SLOTS.indexOf(u);
+    if (k >= 0) return k;
+    const free = 8 - KNOWN_SLOTS.length; // 0 today: every slot is claimed, so unknown models share the neutral colour
+    const e = extra.indexOf(u);
+    return e >= 0 && e < free ? KNOWN_SLOTS.length + e : -1;
+  };
   return (m) => {
-    const i = sorted.indexOf(m);
-    return i >= 0 && i < 8 ? `var(--series-${i + 1})` : 'var(--series-other)';
+    const i = slotOf(m);
+    return i >= 0 ? `var(--series-${i + 1})` : 'var(--series-other)';
   };
 }
 

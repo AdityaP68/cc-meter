@@ -37,6 +37,8 @@ Costs are **estimates at list price** computed from the token usage Claude Code 
 When Claude Code ships a new release, `ccmeter doctor` either confirms the format is still recognized or tells you exactly what is new.
 
 ## Docs
+**Start here: [docs/USAGE.md](docs/USAGE.md)** (what it can do, step-by-step guide, command reference, troubleshooting).
+
 [SCOPE](docs/SCOPE.md) · [FORMATS](docs/FORMATS.md) (what was inspected and found) · [ARCHITECTURE](docs/ARCHITECTURE.md) (incl. the milestone-3 review design) · [ASSUMPTIONS](docs/ASSUMPTIONS.md) · [ACCEPTANCE](docs/ACCEPTANCE.md)
 
 ## Develop

@@ -14,3 +14,5 @@ description: Visually verify ccmeter's dashboard after a UI or API change — bu
    `document.documentElement.scrollWidth === clientWidth`). Read console errors.
 4. Stop the server: `CCMETER_HOME=$T node dist/cli/index.js serve --stop`. Reset the viewport to desktop.
 5. Report what you saw, including anything off. Fix, then repeat the affected checks.
+6. For a route sweep, the React pitfall scan, crash debugging or a code review, continue with skill `react-check`
+   (it reuses steps 1–2 above for serving).

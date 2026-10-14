@@ -38,7 +38,7 @@ plugin with `--settings '{"enabledPlugins":{"ccmeter@ccmeter":false}}'` or its h
   It never touches `dist/`; `npm run build` is the deliberate step that updates the live install.
 - `npm run verify -- --changed` — tests selected by import graph for the files you changed.
 - `npm run verify -- --full` — also dashboard build and `claude plugin validate .`.
-Run it before claiming anything works. A UI change also needs a look in the browser (`dashboard-check`).
+Run it before claiming anything works. A UI change also needs a look in the browser (`dashboard-check`, then `react-check`).
 
 ## Evidence and documentation
 - After material work: one dated line in `docs/status.md` pointing at the commit. Reasoning belongs in

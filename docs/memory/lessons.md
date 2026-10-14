@@ -51,7 +51,8 @@ A stale dev database (migration edited in place) made every record fail while th
 ## 2026-10-15 — An expression-bodied effect can unmount the whole React app
 `useEffect(() => window.scrollTo(0, 0))` returned a Promise in current Chromium. React called that Promise as the
 cleanup on the next route change, threw, and blanked the page until a reload. Always give effects block bodies;
-`tests/dashboard.test.ts` enforces this. To find such crashes, use an unminified build and log the bad `destroy`.
+`tests/dashboard.test.ts` enforces this and `tests/dashboard-dom.test.ts` catches it at runtime. To find such
+crashes, use an unminified build and log the bad `destroy` (skill `react-check`).
 
 ## 2026-10-15 — Headline totals and charts must share filter semantics
 Filtering the overview by session start while the chart filtered by message time made the 7-day headline a third

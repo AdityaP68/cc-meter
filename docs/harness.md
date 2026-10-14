@@ -27,7 +27,7 @@ guard and session continuity below target exactly that. **Re-measure** after a f
 | 3b | Session continuity | skills `resume`, `handoff` | description always, body on use | ≈ 125 | no |
 | 3c | Context guard | `scripts/harness/context-guard.mjs` via UserPromptSubmit + Stop | every prompt/stop | 0 unless it fires | **yes** (Stop exit 2 once ≥ 300k) |
 | 4 | Path-scoped rules | `.claude/rules/{parser,pricing,database,plugin,dashboard,docs}.md` | when a matching file is read | 0 until matched (≈ 150–350 each) | no |
-| 4b | Workflow skills | `format-drift`, `dashboard-check`, `milestone-close` | description always | ≈ 200 | no |
+| 4b | Workflow skills | `format-drift`, `dashboard-check`, `react-check`, `milestone-close` | description always | ≈ 200 | no |
 | 4c | Subagents | `transcript-surveyor` (aggregates only), `invariant-reviewer` (diff in, findings out) | description always | ≈ 180 | no |
 | 5 | Checks that must hold | `scripts/harness/check.mjs`, `.githooks/pre-commit`, `core/migrations.lock.json` | on commit and in verify | 0 | **yes** |
 | 6 | In-task verify loop | `npm run verify` (`scripts/harness/verify.mjs`) | when run | output capped at 2.5k chars | feedback |
@@ -63,7 +63,7 @@ live in the interactive build session at ~581k tokens (2026-10-15) and was answe
 | Before claiming done / committing | `npm run verify` (commits also run the pre-commit check) |
 | End of a task, or the guard asks | skill `handoff`, then a fresh session + `resume` |
 | Claude Code updated | skill `format-drift` |
-| UI changed | skill `dashboard-check` |
+| UI changed | skills `dashboard-check`, then `react-check` |
 | Milestone | skill `milestone-close` |
 | A lesson learned the hard way | `docs/memory/lessons.md`; a rule if it has a directory home; a check if it must never recur |
 

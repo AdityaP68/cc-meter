@@ -1,0 +1,28 @@
+{
+  "description": "Record session usage into ~/.ccmeter (out of process, silent, never blocks a session)",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/ccmeter.sh record",
+            "async": true,
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/ccmeter.sh record",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

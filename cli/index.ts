@@ -13,6 +13,7 @@ const HELP = `ccmeter — local-first usage and cost tracker for Claude Code
   ccmeter export [--format json|csv] [--messages] [--out file]
   ccmeter serve [--port n] [--open] [--ensure] [--stop]     local dashboard on 127.0.0.1
   ccmeter statusline                                         Claude Code statusLine command (reads JSON on stdin)
+  ccmeter setup [--no-backfill] [--statusline] [--uninstall]   register the plugin, create ~/.ccmeter, backfill history
   ccmeter review <session-id>                                (milestone 3, not implemented)
 
 Everything is local: reads ~/.claude, writes ~/.ccmeter. No network calls.`;
@@ -20,7 +21,7 @@ Everything is local: reads ~/.claude, writes ~/.ccmeter. No network calls.`;
 async function main(): Promise<number> {
   const argv = process.argv.slice(2);
   const cmd = argv[0];
-  const args = parseArgs(argv.slice(1), ['all', 'force', 'json', 'open', 'ensure', 'stop', 'messages', 'verify-pricing', 'quiet']);
+  const args = parseArgs(argv.slice(1), ['all', 'force', 'json', 'open', 'ensure', 'stop', 'messages', 'verify-pricing', 'quiet', 'uninstall', 'statusline', 'no-backfill']);
   switch (cmd) {
     case 'record':
       return (await import('./commands/record.js')).cmdRecord(args);
@@ -34,6 +35,8 @@ async function main(): Promise<number> {
       return (await import('./commands/serve.js')).cmdServe(args);
     case 'statusline':
       return (await import('./commands/statusline.js')).cmdStatusline(args);
+    case 'setup':
+      return (await import('./commands/setup.js')).cmdSetup(args);
     case 'review':
       console.error('ccmeter review is milestone 3 and is not implemented yet. See docs/ARCHITECTURE.md.');
       return 1;

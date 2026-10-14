@@ -37,7 +37,8 @@ guard and session continuity below target exactly that. **Re-measure** after a f
 
 Fixed overhead added by the harness: **≈ 2.3k tokens** per session (instructions + listings), plus ≈ 520 per
 start/compaction for orientation. Verified live (2026-10-15, headless): a session answered "branch, last tag,
-handoff item 1" from the injected orientation alone, without tool calls.
+handoff item 1" from the injected orientation alone, without tool calls. The context guard's Stop block fired
+live in the interactive build session at ~581k tokens (2026-10-15) and was answered with this hand-off.
 
 ## What is specific to ccmeter
 

@@ -7,7 +7,8 @@ History of earlier hand-offs: `git log -p -- docs/handoff.md`.
 ## Where things stand
 ccmeter M1+M2 are complete and installed on the user's machine from this checkout (live: `dist/` and
 `plugin/` here are what their Claude Code runs). The user is using it and doing a read-through; they
-said they will come back with questions and feedback. Nothing is in progress.
+said they will come back with questions and feedback. Nothing is in progress. The agent harness
+(`docs/harness.md`) is in place and its hooks were verified live, including the context guard.
 
 ## Next
 

@@ -47,3 +47,12 @@ A stale dev database (migration edited in place) made every record fail while th
 - Shell variables do not persist between agent tool calls; put isolation env vars on each command.
 - A React measuring hook with an effect bound once missed elements mounted later; use a callback ref.
 - Personal data (an email) reached a committed doc once; `scripts/harness/check.mjs` now blocks it.
+
+## 2026-10-15 — An expression-bodied effect can unmount the whole React app
+`useEffect(() => window.scrollTo(0, 0))` returned a Promise in current Chromium. React called that Promise as the
+cleanup on the next route change, threw, and blanked the page until a reload. Always give effects block bodies;
+`tests/dashboard.test.ts` enforces this. To find such crashes, use an unminified build and log the bad `destroy`.
+
+## 2026-10-15 — Headline totals and charts must share filter semantics
+Filtering the overview by session start while the chart filtered by message time made the 7-day headline a third
+of the chart's sum. Every total comes from per-message rows with the same WHERE clause.

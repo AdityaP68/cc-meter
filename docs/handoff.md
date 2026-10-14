@@ -5,25 +5,29 @@
 History of earlier hand-offs: `git log -p -- docs/handoff.md`.
 
 ## Where things stand
-ccmeter M1+M2 are complete and installed on the user's machine from this checkout (live: `dist/` and
-`plugin/` here are what their Claude Code runs). The user is using it and doing a read-through; they
-said they will come back with questions and feedback. Nothing is in progress. The agent harness
-(`docs/harness.md`) is in place and its hooks were verified live, including the context guard.
+2026-10-15: fixed the user's reports and reviewed the project. Committed: blank page after navigating (`82bf4ae`),
+fallback label for untitled sessions and an explicit empty Flags cell (`a71f679`), overview totals now match the
+chart (`d391dc6`), record hook always exits 0 (`038ff40`). Built (`dist/` is live) and `doctor` is clean.
+The review findings are not fixed yet. They are in the shared notes file `review-2026-10-15.md` (path in the chat
+report) and in the commit bodies. Uncommitted: nothing.
 
 ## Next
 
-1. **Wait for the user's feedback; do not start new feature work unprompted.** When it arrives, triage
-   each point into: bug (reproduce with a test first, then fix), wording/UX, or decision. Files likely
-   involved: `plugin/scripts/prompt-hook.sh`, `dashboard/src/*`, `cli/commands/*`. Stop after
-   reporting the triage and get approval for anything beyond bug fixes.
-2. **Ask the four open decisions if the user has not answered them** (one message, concise):
-   (a) what "the complaint parameter" means; (b) keep `node:sqlite` (Node ≥ 22.13) or switch to
-   `better-sqlite3`; (c) M3 judge via `claude -p` (default) or direct API (needs approval: network +
-   key handling); (d) keep `plugin/commands/ccmeter.md` (≈16 tokens/session) or rely on the hook alone.
-3. **Before any change to `core/`, `cli/`, `server/` or `plugin/`:** run `npm run verify`, then
-   `npm run build` only when it passes, because the user's live hooks run `dist/`. Confirm with
-   `ccmeter doctor` (real install) that nothing regressed. Stop and tell the user if `doctor` warns.
-4. **If `claude --version` is newer than the parser's verified range** (the hook says so), run the
-   `format-drift` skill before anything else. Zero spend; stop after reporting findings.
-5. **M3 only after the user approves the judge mechanism (2c).** Design: `docs/ARCHITECTURE.md` →
-   Milestone 3. Paid judge runs need an explicit cost ceiling from the user.
+1. **Get the user's go-ahead on the review fixes, then do them in this order** (each one: test first, then
+   `npm run verify`, commit, `npm run build`, real `ccmeter doctor`). Stop after each commit if `doctor` warns.
+   a. Unpriced models show `$0` in the reconciliation tables, the MixBar tooltip and `export`. Files:
+      `dashboard/src/pages.tsx`, `cli/commands/report.ts`, `dashboard/src/charts.tsx`, `cli/commands/export.ts`.
+   b. Validate the `~/.ccmeter/pricing.json` override (finite numbers, `Object.hasOwn`); NaN must become null.
+      File: `core/pricing.ts`.
+   c. `readCostState` must not throw on a malformed `modelUsage` entry. File: `core/parser/cc21.ts`.
+      If parsing changes, bump `RECORDER_VERSION`.
+   d. Make `migrate()` race-safe: `BEGIN IMMEDIATE`, then re-read `user_version`. File: `core/db.ts`.
+   e. Clamp the server's `limit`/`offset`. Make setup refuse to overwrite an unparsable `settings.json`.
+2. **Ask the four open decisions if they are still unanswered** (one message): (a) "the complaint parameter";
+   (b) `node:sqlite` or `better-sqlite3`; (c) M3 judge via `claude -p` or the direct API; (d) keep or drop
+   `plugin/commands/ccmeter.md`.
+3. **Roadmap (the user picks; nothing is approved yet):** M3 session review; per-project budgets and alerts;
+   context size over time with long-session warnings; cache-efficiency view; comparing periods; a filter for
+   interactive vs headless sessions. Ranking: the chat report of 2026-10-15.
+4. Before changing `core/`, `cli/`, `server/` or `plugin/`, run `npm run verify` and run `npm run build` only
+   when it passes. `dist/` is the user's live install.

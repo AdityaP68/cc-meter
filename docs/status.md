@@ -7,6 +7,7 @@ bodies (`git show <sha>`); do not duplicate it here.
 
 | Date | Change | Where |
 |---|---|---|
+| 2026-10-15 | User-reported fixes: nav blank page, untitled-session labels and Flags cell, overview totals = chart, hook exit 0; project review | `82bf4ae`, `a71f679`, `d391dc6`, `038ff40` |
 | 2026-10-15 | Context harness for agents working on this repo: AGENTS/CLAUDE, entry docs, orientation + context-guard hooks, rules, skills, subagents, pre-commit checks, `npm run verify` | `docs/harness.md` |
 | 2026-10-15 | `/ccmeter` prints only the URL (`continue:false` + `stopReason`) | `ba88527` |
 | 2026-10-14 | Usage guide; fixed colour per known model | `af427fd` |

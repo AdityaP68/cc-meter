@@ -101,6 +101,7 @@ function mergeStats(all: ParseStats[]): ParseStats {
     duplicatesCollapsed: 0,
     assistantWithoutUsage: 0,
     assistantWithoutId: 0,
+    classifierRequests: 0,
     unknownUsageKeys: {},
   };
   for (const s of all) {
@@ -111,6 +112,7 @@ function mergeStats(all: ParseStats[]): ParseStats {
     out.duplicatesCollapsed += s.duplicatesCollapsed;
     out.assistantWithoutUsage += s.assistantWithoutUsage;
     out.assistantWithoutId += s.assistantWithoutId;
+    out.classifierRequests += s.classifierRequests;
     for (const k of ['entriesByType', 'unknownTypes', 'unknownUsageKeys'] as const)
       for (const [name, n] of Object.entries(s[k])) out[k][name] = (out[k][name] ?? 0) + n;
   }

@@ -47,7 +47,7 @@ export async function cmdSetup(args: Parsed): Promise<number> {
     if (add.ok || /already/i.test(add.out)) console.log(`✔ marketplace "${MARKETPLACE}" registered (${root})`);
     else console.log(`⚠ could not register marketplace: ${add.out}`);
     const inst = claude(['plugin', 'install', PLUGIN]);
-    if (inst.ok || /already/i.test(inst.out)) console.log(`✔ plugin ${PLUGIN} installed (hooks: Stop, SessionEnd)`);
+    if (inst.ok || /already/i.test(inst.out)) console.log(`✔ plugin ${PLUGIN} installed (hooks: Stop, SessionEnd, UserPromptSubmit for /ccmeter)`);
     else console.log(`⚠ could not install plugin: ${inst.out}`);
   }
 

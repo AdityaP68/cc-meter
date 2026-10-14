@@ -168,7 +168,7 @@ export function runDoctor(db: Db, table: PriceTable, opts: DoctorOptions = {}): 
     }
   }
   if (pairs)
-    add('reconcile', matched === pairs ? 'ok' : 'info', `Token totals equal Claude Code's own cost-state for ${matched} of ${pairs} (session, model) pairs`, matched === pairs ? undefined : 'Differences are expected where Claude Code billed API calls that are not transcript messages; see docs/FORMATS.md and `ccmeter report --session <id>`.');
+    add('reconcile', matched === pairs ? 'ok' : 'info', `Token totals equal Claude Code's own cost-state for ${matched} of ${pairs} (session, model) pairs`, matched === pairs ? undefined : 'A difference means one side sees calls the other does not (extra Claude Code-billed calls, or sessions resumed across processes); see docs/FORMATS.md and `ccmeter report --session <id>`.');
   return checks;
 }
 

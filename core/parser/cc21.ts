@@ -91,6 +91,7 @@ function emptyStats(): ParseStats {
     duplicatesCollapsed: 0,
     assistantWithoutUsage: 0,
     assistantWithoutId: 0,
+    classifierRequests: 0,
     unknownUsageKeys: {},
   };
 }
@@ -203,6 +204,7 @@ function readAssistant(
 ): void {
   const msg = (o.message ?? {}) as Json;
   const model = str(msg.model);
+  if (str(o.serverClassifierRequest)) stats.classifierRequests++;
   if (model === '<synthetic>' || o.isApiErrorMessage) {
     stats.syntheticIgnored++;
     return;

@@ -208,7 +208,7 @@ export function SessionPage({ id, reload }: { id: string; reload: number }) {
       )}
 
       <section className="card"><h2>Check against Claude Code's own accounting</h2>
-        <p className="muted">Claude Code writes a <code>cost-state</code> entry into the transcript. Equal token counts mean ccmeter read the transcript correctly; a difference means Claude Code billed calls that are not transcript messages (see docs/FORMATS.md).</p>
+        <p className="muted">Claude Code writes a <code>cost-state</code> entry into the transcript. Equal token counts mean ccmeter read the transcript correctly. A difference means one side sees calls the other does not: Claude Code can bill calls that are never written as transcript messages, and its entry can cover less than the transcript in sessions resumed across several processes. Neither number is silently preferred (see docs/FORMATS.md).</p>
         <div className="scroll"><table className="tbl"><caption className="sr">ccmeter versus Claude Code</caption>
           <thead><tr><th>Model</th><th>Source</th><th className="r">Input</th><th className="r">Output</th><th className="r">Cache write</th><th className="r">Cache read</th><th className="r">Cost</th></tr></thead>
           <tbody>{reconciliation.flatMap((r) => [

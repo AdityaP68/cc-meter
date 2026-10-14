@@ -39,6 +39,8 @@ export async function cmdReport(args: Parsed): Promise<number> {
     console.log(`  Claude Code ${s.ccVersions.join(', ')}  parser ${s.parserStatus}`);
     console.log(`  tokens   in ${s.inputTokens}  out ${s.outputTokens}  cache-write ${s.cacheWriteTokens}  cache-read ${s.cacheReadTokens}  (total ${tok(s.totalTokens)})`);
     console.log(`  cost     ${costCell(s.costUsd, s.unpricedTokens)}${s.unpricedModels.length ? `  unpriced: ${s.unpricedModels.join(', ')}` : ''}`);
+    const clf = (JSON.parse(String((db.prepare('SELECT parse_stats p FROM sessions WHERE session_id = ?').get(s.sessionId) as { p: string }).p)).classifierRequests as number) || 0;
+    if (clf) console.log(`  note     ${clf} assistant messages carry a server-side classifier request: Claude Code may bill calls that are not transcript messages, so its total can exceed ccmeter's (the reverse happens in sessions spanning several processes)`);
     if (s.partialMessages) console.log(`  note     ${s.partialMessages} messages carry unfinalized usage (stop_reason null); their output tokens are a lower bound`);
     console.log(`  switches ${s.switches}, compactions ${s.compactions}`);
     for (const e of d.events) console.log(`    ${e.ts ?? ''} turn ${e.turn}: ${e.kind === 'model_switch' ? `${e.fromModel} -> ${e.toModel}` : `compaction ${JSON.stringify(e.detail)}`}`);

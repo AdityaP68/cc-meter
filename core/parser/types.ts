@@ -62,6 +62,12 @@ export interface ParseStats {
   /** Assistant entries with no usable usage object. */
   assistantWithoutUsage: number;
   assistantWithoutId: number;
+  /**
+   * Assistant entries carrying a serverClassifierRequest id: a server-side classifier call happened for that message.
+   * Such calls are not transcript messages; in the surveyed data, sessions with them are the ones where Claude Code's own
+   * cost-state exceeds the transcript (docs/FORMATS.md).
+   */
+  classifierRequests: number;
   /** usage.* keys the parser does not know about (possible new billable token class). */
   unknownUsageKeys: Record<string, number>;
 }

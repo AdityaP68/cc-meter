@@ -9,7 +9,7 @@ import type { PriceTable } from './pricing.js';
 import { buildSession, totalTokens, type SessionSummary } from './session.js';
 
 /** Bump when parsing/costing logic changes so existing rows are recomputed. */
-export const RECORDER_VERSION = 2;
+export const RECORDER_VERSION = 3;
 
 export const SOURCE_CLAUDE_CODE = 'claude-code';
 export const SOURCE_JUDGE = 'ccmeter-judge';

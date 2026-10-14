@@ -15,6 +15,9 @@ export interface SessionRow {
   project: string | null;
   cwd: string | null;
   title: string | null;
+  /** The title, or a content-free fallback when Claude Code wrote none (see sessionLabel). Never null. */
+  label: string;
+  entrypoint: string | null;
   startedAt: string | null;
   endedAt: string | null;
   durationMs: number | null;
@@ -40,21 +43,42 @@ export interface SessionRow {
 
 type Raw = Record<string, unknown>;
 
+const ENTRYPOINT_KIND: Record<string, string> = { 'sdk-cli': 'headless run', 'claude-desktop': 'desktop session', cli: 'terminal session' };
+
+/**
+ * Display label for a session. Claude Code writes `custom-title`/`ai-title` only for some sessions (none for
+ * `claude -p` runs since 2.1.264, rarely for short interactive ones; docs/FORMATS.md), so untitled sessions get a
+ * deterministic label built from the entrypoint, main model and turn count. Never from prompt or reply text.
+ */
+export function sessionLabel(s: { title: string | null; entrypoint: string | null; models: { model: string }[]; turns: number }): string {
+  if (s.title) return s.title;
+  const ep = s.entrypoint;
+  const kind = ep ? (ENTRYPOINT_KIND[ep] ?? (ep.startsWith('sdk-') ? 'SDK run' : `${ep} session`)) : 'session';
+  const model = s.models[0]?.model.replace(/^claude-/, '').replace(/-\d{8}$/, '');
+  return [kind, model, `${s.turns} ${s.turns === 1 ? 'turn' : 'turns'}`].filter(Boolean).join(' · ');
+}
+
 function mapSession(r: Raw): SessionRow {
   const input = Number(r.input_tokens);
   const output = Number(r.output_tokens);
   const cw = Number(r.cache_write_tokens);
   const cr = Number(r.cache_read_tokens);
+  const title = (r.title as string) ?? null;
+  const entrypoint = (r.entrypoint as string) ?? null;
+  const models = JSON.parse(String(r.models));
+  const turns = Number(r.turns);
   return {
     sessionId: String(r.session_id),
     source: String(r.source),
     project: (r.project as string) ?? null,
     cwd: (r.cwd as string) ?? null,
-    title: (r.title as string) ?? null,
+    title,
+    label: sessionLabel({ title, entrypoint, models, turns }),
+    entrypoint,
     startedAt: (r.started_at as string) ?? null,
     endedAt: (r.ended_at as string) ?? null,
     durationMs: r.duration_ms === null ? null : Number(r.duration_ms),
-    turns: Number(r.turns),
+    turns,
     messages: Number(r.messages),
     sidechainMessages: Number(r.sidechain_messages),
     partialMessages: Number(r.partial_messages),
@@ -66,7 +90,7 @@ function mapSession(r: Raw): SessionRow {
     costUsd: Number(r.cost_usd),
     unpricedTokens: Number(r.unpriced_tokens),
     unpricedModels: JSON.parse(String(r.unpriced_models)),
-    models: JSON.parse(String(r.models)),
+    models,
     switches: Number(r.switches),
     compactions: Number(r.compactions),
     parserStatus: (r.parser_status as string) ?? null,

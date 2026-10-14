@@ -2,7 +2,7 @@
 export interface ModelTotals { model: string; messages: number; input: number; output: number; cacheWrite: number; cacheRead: number; cost: number; unpriced: boolean }
 export interface CostState { totalCostUSD: number; modelUsage: Record<string, { costUSD: number }> }
 export interface Session {
-  sessionId: string; source: string; project: string | null; cwd: string | null; title: string | null;
+  sessionId: string; source: string; project: string | null; cwd: string | null; title: string | null; label: string; entrypoint: string | null;
   startedAt: string | null; endedAt: string | null; durationMs: number | null; turns: number; messages: number;
   sidechainMessages: number; partialMessages: number; inputTokens: number; outputTokens: number; cacheWriteTokens: number;
   cacheReadTokens: number; totalTokens: number; costUsd: number; unpricedTokens: number; unpricedModels: string[];

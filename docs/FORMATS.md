@@ -97,6 +97,21 @@ All 12 `usage` keys above are known to the parser; any other key is counted as `
 Observed shapes (counts): `tool_result` array 7,905 (not prompts) · string with `promptSource: sdk` 827 · `isMeta` entries ≈ 170 (local-command caveats, injected reminders) · `<task-notification>` / `promptSource: system` 102 · slash commands `<command-name>…` 30 · `isCompactSummary` 7 · `text`-block arrays 47 · typed prompts 2.
 ccmeter counts a **turn** as a non-sidechain `user` entry that is not `isMeta`, not `isCompactSummary`, not `promptSource: "system"`, and whose content is a non-empty string not starting with a harness tag (`<command-name>`, `<local-command`, `<task-notification`, `<system-reminder`, …) or an array containing a `text` block. Subagent messages are assigned to the turn their timestamp falls in.
 
+### Session titles (`custom-title`, `ai-title`)
+Surveyed 2026-10-15 over 613 top-level transcripts (2.1.236 … 2.1.295), aggregates only:
+| Entry | Entries | Sessions | Keys (all entries) |
+|---|---|---|---|
+| `custom-title` | 1,497 | 7 | `type`, `customTitle`, `sessionId` |
+| `ai-title` | 744 | 21 | `type`, `aiTitle`, `sessionId` |
+
+Both are re-emitted many times per session; the last one wins, and `customTitle` beats `aiTitle`. No title is carried under any
+other key, no `summary` entry exists, and `<session>/custom-title.json` only mirrors `custom-title` entries.
+**Most sessions have no title (586 of 613)**, and the parser is not at fault. 516 of them are `sdk-cli` (`claude -p`, 515 with a single turn):
+no `sdk-cli` session on 2.1.264 or later has an `ai-title` (0 of 514). Interactive sessions on ≥ 2.1.280 rarely get one (1 of 36);
+titled interactive sessions are the long or renamed ones. ccmeter therefore shows a content-free fallback label for untitled
+sessions: entry point + main model + turn count (`core/aggregate.ts` `sessionLabel`), never prompt text.
+Not verified: what triggers `ai-title` in current versions.
+
 ### Compaction
 `{"type":"system","subtype":"compact_boundary","timestamp":…,"compactMetadata":{"trigger":"manual"|"auto","preTokens":799627,"postTokens":16951,"durationMs":…,"preservedSegment":{…},…}}`, followed by a `user` entry with `isCompactSummary: true`. The compaction summarisation call itself is **not** an assistant entry (see discrepancies).
 

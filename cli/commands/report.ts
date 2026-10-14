@@ -33,7 +33,7 @@ export async function cmdReport(args: Parsed): Promise<number> {
     }
     const s = d.session;
     console.log(`Session ${s.sessionId}  [${s.source}]`);
-    console.log(`  title    ${s.title ?? '-'}`);
+    console.log(`  title    ${s.title ?? `- (no Claude Code title; ${s.label})`}`);
     console.log(`  project  ${s.cwd ?? '-'}`);
     console.log(`  span     ${s.startedAt} -> ${s.endedAt} (${dur(s.durationMs)}), ${s.turns} turns, ${s.messages} API messages (${s.sidechainMessages} from subagents)`);
     console.log(`  Claude Code ${s.ccVersions.join(', ')}  parser ${s.parserStatus}`);
@@ -88,7 +88,7 @@ export async function cmdReport(args: Parsed): Promise<number> {
         s.sessionId.slice(0, 8),
         (s.startedAt ?? '').slice(0, 16).replace('T', ' '),
         pad(s.project ?? '-', 22),
-        pad(s.title ?? '', 28),
+        pad(s.label, 28),
         String(s.turns),
         dur(s.durationMs),
         tok(s.totalTokens),

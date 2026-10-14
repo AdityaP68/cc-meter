@@ -35,6 +35,27 @@ const writeTranscript = (id: string, lines: string[]) => {
   return f;
 };
 
+describe('session label', () => {
+  it('uses the Claude Code title when there is one, else a label from entry point, model and turns (never prompt text)', () => {
+    const prompt = 'please refactor the billing module SECRET-PROMPT-TEXT';
+    const ep = { entrypoint: 'sdk-cli' };
+    writeTranscript('untitled', [user(prompt, '2026-01-01T00:00:01.000Z', ep), asst({ id: 'a1', input: 1, output: 2, ts: '2026-01-01T00:00:02.000Z' })]);
+    writeTranscript('titled', [
+      user(prompt, '2026-01-01T00:00:01.000Z', { entrypoint: 'claude-desktop' }),
+      asst({ id: 'b1', input: 1, output: 2, ts: '2026-01-01T00:00:02.000Z' }),
+      JSON.stringify({ type: 'ai-title', aiTitle: 'Refactor billing', sessionId: 's1' }),
+    ]);
+    recordAll(db, table);
+    const u = getSession(db, 'untitled')!.session;
+    expect(u.title).toBeNull();
+    expect(u.entrypoint).toBe('sdk-cli');
+    expect(u.label).toMatch(/^headless run · [a-z0-9-]+ · 1 turn$/);
+    expect(u.label).not.toContain('SECRET');
+    const t = listSessions(db).rows.find((r) => r.sessionId === 'titled')!;
+    expect(t.label).toBe('Refactor billing');
+  });
+});
+
 describe('recorder', () => {
   it('records a session and is idempotent: a second run is a no-op, force gives identical rows', () => {
     const f = installFixture('cc-2.1.287/sdk-complete.jsonl', claude);

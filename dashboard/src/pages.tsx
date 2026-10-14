@@ -94,7 +94,7 @@ export function SessionsPage({ f, reload }: { f: Filters; reload: number }) {
         <div className="scroll">
           <table className="tbl">
             <caption className="sr">Recorded Claude Code sessions</caption>
-            <thead><tr><th>Started</th><th>Project / title</th><th className="r">Turns</th><th className="r">Duration</th><th className="r">Tokens</th><th className="r">Cost</th><th>Models</th><th>Flags</th></tr></thead>
+            <thead><tr><th>Started</th><th>Project / title</th><th className="r">Turns</th><th className="r">Duration</th><th className="r">Tokens</th><th className="r">Cost</th><th>Models</th><th title="⇄ model switches · ◆ compactions · sub = subagent messages · ≥ lower bound · CC = Claude Code's own total differs by more than 5%">Flags</th></tr></thead>
             <tbody>
               {(list.data?.rows ?? []).map((s) => {
                 const cc = s.costState?.totalCostUSD;
@@ -102,13 +102,14 @@ export function SessionsPage({ f, reload }: { f: Filters; reload: number }) {
                 return (
                   <tr key={s.sessionId}>
                     <td className="nowrap">{when(s.startedAt)}</td>
-                    <td><a href={`#/session/${s.sessionId}`} className="title">{s.title || <span className="muted">(untitled)</span>}</a><div className="muted small">{s.project ?? '–'}{s.source !== 'claude-code' && <span className="badge">{s.source}</span>}</div></td>
+                    <td><a href={`#/session/${s.sessionId}`} className="title">{s.title || <span className="muted" title="Claude Code wrote no title for this session; label built from its entry point, model and turns">{s.label}</span>}</a><div className="muted small">{s.project ?? '–'}{s.source !== 'claude-code' && <span className="badge">{s.source}</span>}</div></td>
                     <td className="r num">{s.turns}</td>
                     <td className="r num">{dur(s.durationMs)}</td>
                     <td className="r num">{tok(s.totalTokens)}</td>
                     <td className="r"><Cost usd={s.costUsd} unpriced={s.unpricedTokens} /></td>
                     <td><MixBar models={s.models} /><div className="muted small">{s.models.map((m) => shortModel(m.model)).join(', ')}</div></td>
                     <td className="flags">
+                      {!(s.switches || s.compactions || s.sidechainMessages || s.partialMessages || differs) && <span className="muted" title="No model switch, compaction, subagent or partial usage in this session">–</span>}
                       {s.switches > 0 && <span className="badge" title={`${s.switches} model switch(es)`}>⇄ {s.switches}</span>}
                       {s.compactions > 0 && <span className="badge" title={`${s.compactions} compaction(s)`}>◆ {s.compactions}</span>}
                       {s.sidechainMessages > 0 && <span className="badge" title={`${s.sidechainMessages} API messages came from subagents`}>sub {s.sidechainMessages}</span>}
@@ -175,7 +176,7 @@ export function SessionPage({ id, reload }: { id: string; reload: number }) {
     <>
       <p><a href="#/">← All sessions</a></p>
       <section className="card">
-        <h1>{s.title || '(untitled session)'}</h1>
+        <h1>{s.title || <span className="muted">{s.label}</span>}</h1>
         <p className="muted">{s.cwd ?? s.project ?? '–'} · {when(s.startedAt)} → {when(s.endedAt)} ({dur(s.durationMs)}) · Claude Code {s.ccVersions.join(', ') || '–'} · parser <span className={`badge ${s.parserStatus === 'verified' ? '' : 'warn'}`}>{s.parserStatus}</span> · <span className="badge">{s.source}</span></p>
         <p className="mono small muted">{s.sessionId}</p>
         <div className="stats">

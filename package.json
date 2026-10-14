@@ -1,0 +1,41 @@
+{
+  "name": "ccmeter",
+  "version": "0.1.0",
+  "description": "Local-first usage, cost and quality tracker for Claude Code",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "ccmeter": "dist/cli/index.js"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "files": [
+    "dist",
+    "dashboard/dist",
+    "plugin",
+    ".claude-plugin",
+    "pricing.json",
+    "docs",
+    "install.sh"
+  ],
+  "scripts": {
+    "build:cli": "tsc -p tsconfig.json",
+    "build:dashboard": "vite build --config dashboard/vite.config.ts",
+    "build": "npm run build:cli && npm run build:dashboard",
+    "pretest": "npm run build:cli",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.4",
+    "vitest": "5.0.4"
+  }
+}

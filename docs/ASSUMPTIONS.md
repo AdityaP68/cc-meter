@@ -4,7 +4,7 @@ You asked me to take the best assumptions and build. These are the ones that cou
 
 ## About the request itself
 
-1. **"The complaint parameter" and "our custom harness approach" could not be found.** I searched this project's memory (empty), the other Claude Code sessions' transcripts on this machine, and `~/.claude/plans`. The only mention of either phrase is your last message in this conversation. I did **not** invent a meaning. What I did instead:
+1. **"The complaint parameter" and "our custom harness approach" could not be found at first.** *Update 2026-10-15:* the harness approach is the user's Context Harness method (`~/Documents/context-harness/docs/guides/`), now applied to this repository (`docs/harness.md`). "The complaint parameter" is still unresolved. I searched this project's memory (empty), the other Claude Code sessions' transcripts on this machine, and `~/.claude/plans`. The only mention of either phrase is your last message in this conversation. I did **not** invent a meaning. What I did instead:
    - Reused the working style visible in your earlier diagram-mcp plan (`~/.claude/plans/keen-launching-turing.md`): verified facts written down before code (`docs/FORMATS.md` plays the ADR-0001 role), exact-pinned dev dependencies, `ignore-scripts=true`, small commits, one tag per milestone, no push.
    - Reserved a slot for a "complaint" detector in the M3 heuristics design (`docs/ARCHITECTURE.md` §2). It is design text only; no code exists for it. **If you meant something specific, tell me what it is** (a CLI flag? a rubric dimension? a signal?) and I'll build to it.
 2. **I built M1 and M2 and designed M3**, as the brief describes, and stopped there. Nothing about M3 beyond the design doc and the `ccmeter review` stub exists.

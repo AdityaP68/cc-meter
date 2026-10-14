@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { ROOT, installFixture, tmpDir } from './helpers/util.js';
+import { CLI_JS, ROOT, installFixture, tmpDir } from './helpers/util.js';
 
 const PLUGIN = path.join(ROOT, 'plugin');
 const sh = (script: string, input: string, env: Record<string, string> = {}, args: string[] = []) =>
@@ -34,7 +34,7 @@ describe('hook launcher (plugin/scripts/ccmeter.sh)', () => {
     const home = tmpDir();
     const claude = tmpDir('claude-');
     const tp = installFixture('cc-2.1.287/sdk-complete.jsonl', claude);
-    fs.writeFileSync(path.join(home, 'cli-path'), path.join(ROOT, 'dist', 'cli', 'index.js') + '\n');
+    fs.writeFileSync(path.join(home, 'cli-path'), CLI_JS + '\n');
     const r = sh('ccmeter.sh', JSON.stringify({ transcript_path: tp, hook_event_name: 'SessionEnd', reason: 'other' }), {
       CCMETER_HOME: home,
       PATH: `${path.dirname(process.execPath)}:/usr/bin:/bin`,
@@ -55,7 +55,7 @@ describe('hook launcher (plugin/scripts/ccmeter.sh)', () => {
 describe('/ccmeter prompt hook (plugin/scripts/prompt-hook.sh)', () => {
   const home = tmpDir();
   const env = { CCMETER_HOME: home, PATH: `${path.dirname(process.execPath)}:/usr/bin:/bin` };
-  fs.writeFileSync(path.join(home, 'cli-path'), path.join(ROOT, 'dist', 'cli', 'index.js') + '\n');
+  fs.writeFileSync(path.join(home, 'cli-path'), CLI_JS + '\n');
 
   it('ignores ordinary prompts without starting anything', () => {
     for (const prompt of ['fix the bug', 'what does /ccmeter do?', '/ccmeter extra words', '/ccmeterx']) {
@@ -75,7 +75,7 @@ describe('/ccmeter prompt hook (plugin/scripts/prompt-hook.sh)', () => {
       expect(out.continue).toBe(false);
       expect(out.stopReason).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/$/);
     } finally {
-      spawnSync(process.execPath, [path.join(ROOT, 'dist', 'cli', 'index.js'), 'serve', '--stop'], { env: { ...process.env, CCMETER_HOME: home } });
+      spawnSync(process.execPath, [CLI_JS, 'serve', '--stop'], { env: { ...process.env, CCMETER_HOME: home } });
     }
   });
 });
@@ -86,7 +86,7 @@ describe('ccmeter statusline', () => {
     const claude = tmpDir('claude-');
     const tp = installFixture('cc-2.1.287/sdk-complete.jsonl', claude);
     const run = () =>
-      spawnSync(process.execPath, [path.join(ROOT, 'dist', 'cli', 'index.js'), 'statusline'], {
+      spawnSync(process.execPath, [CLI_JS, 'statusline'], {
         input: JSON.stringify({ model: { display_name: 'Sonnet 5.5' }, transcript_path: tp }),
         encoding: 'utf8',
         env: { ...process.env, CCMETER_HOME: home },
@@ -100,7 +100,7 @@ describe('ccmeter statusline', () => {
 
   it('never fails or writes to stderr on garbage input', () => {
     for (const input of ['', 'nope', '{}', JSON.stringify({ transcript_path: '/not/there.jsonl', cost: { total_cost_usd: 1.5 } })]) {
-      const r = spawnSync(process.execPath, [path.join(ROOT, 'dist', 'cli', 'index.js'), 'statusline'], { input, encoding: 'utf8', env: { ...process.env, CCMETER_HOME: tmpDir() } });
+      const r = spawnSync(process.execPath, [CLI_JS, 'statusline'], { input, encoding: 'utf8', env: { ...process.env, CCMETER_HOME: tmpDir() } });
       expect(r.status).toBe(0);
       expect(r.stderr).toBe('');
       expect(r.stdout.trim().split('\n')).toHaveLength(1);

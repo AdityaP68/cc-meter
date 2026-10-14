@@ -4,6 +4,8 @@ import path from 'node:path';
 
 export const ROOT = path.resolve(import.meta.dirname, '..', '..');
 export const FIXTURES = path.join(ROOT, 'fixtures');
+/** Built CLI used by tests: .test-dist/ (from `pretest`), never the live dist/ that the user's hooks run. */
+export const CLI_JS = path.join(ROOT, '.test-dist', 'cli', 'index.js');
 
 export function tmpDir(prefix = 'ccmeter-test-'): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));

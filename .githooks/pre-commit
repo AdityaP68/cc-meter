@@ -1,0 +1,6 @@
+#!/bin/sh
+# Block commits that break a rule which must hold: personal data or secrets in staged files, an edited shipped
+# migration, unbounded or undated entry docs, a loadable plugin skill. A prose rule nearly failed once (an email
+# reached a committed doc); this is the executable version. Enable once per clone:
+#     git config core.hooksPath .githooks
+exec node scripts/harness/check.mjs --staged

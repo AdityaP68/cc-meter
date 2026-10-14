@@ -23,9 +23,12 @@
     "build:cli": "tsc -p tsconfig.json",
     "build:dashboard": "vite build --config dashboard/vite.config.ts",
     "build": "npm run build:cli && npm run build:dashboard",
-    "pretest": "npm run build:cli",
+    "pretest": "tsc -p tsconfig.json --outDir .test-dist",
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p dashboard/tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p dashboard/tsconfig.json --noEmit",
+    "verify": "node scripts/harness/verify.mjs",
+    "check": "node scripts/harness/check.mjs --all",
+    "harness:metrics": "node scripts/harness/metrics.mjs"
   },
   "devDependencies": {
     "@types/node": "26.6.5",

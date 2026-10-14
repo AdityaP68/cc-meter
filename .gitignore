@@ -5,3 +5,4 @@ dashboard/dist/
 .DS_Store
 .env
 coverage/
+.test-dist/

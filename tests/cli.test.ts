@@ -2,9 +2,9 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { ROOT, installFixture, tmpDir } from './helpers/util.js';
+import { CLI_JS, installFixture, tmpDir } from './helpers/util.js';
 
-const CLI = path.join(ROOT, 'dist', 'cli', 'index.js');
+const CLI = CLI_JS;
 const run = (args: string[], env: Record<string, string>, input?: string) =>
   spawnSync(process.execPath, [CLI, ...args], { encoding: 'utf8', env: { ...process.env, ...env }, input, timeout: 30000 });
 

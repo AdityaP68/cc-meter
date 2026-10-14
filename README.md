@@ -43,10 +43,13 @@ When Claude Code ships a new release, `ccmeter doctor` either confirms the forma
 
 ## Develop
 ```bash
-npm ci && npm test        # builds, then vitest (unit, golden fixtures, server, CLI, plugin scripts)
+npm ci && npm run verify  # typecheck both projects, tests (against .test-dist/), repo checks; errors first
+npm test                  # tests only
 npm run typecheck         # CLI/core/server and dashboard
 npm run build             # dist/ (CLI) and dashboard/dist/
 ```
+Working on ccmeter with an AI agent: see [docs/harness.md](docs/harness.md) (instructions, hooks, rules, skills, checks). Enable the pre-commit checks once per clone with `git config core.hooksPath .githooks`.
+
 Fixtures in `fixtures/` are sanitized real transcripts (`scripts/make-fixture.mjs`); golden files come from `scripts/make-golden.mjs` and are cross-checked by tests against an independent oracle and Claude Code's own `cost-state`.
 
 Quality scores (milestone 3) are for improving prompts and workflows. ccmeter has no per-developer leaderboards and will not grow any.

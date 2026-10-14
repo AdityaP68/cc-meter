@@ -1,0 +1,43 @@
+{
+  "parserStatus": "verified",
+  "ccVersions": [
+    "2.1.236"
+  ],
+  "turns": 2,
+  "messages": 2,
+  "sidechainMessages": 0,
+  "partialMessages": 0,
+  "tokens": {
+    "input": 20,
+    "output": 186,
+    "cacheWrite": 71481,
+    "cacheRead": 0
+  },
+  "sidechainTokens": {
+    "input": 0,
+    "output": 0,
+    "cacheWrite": 0,
+    "cacheRead": 0
+  },
+  "costUsd": 0.143912,
+  "models": [
+    {
+      "model": "claude-haiku-4-5-20251001",
+      "messages": 2,
+      "input": 20,
+      "output": 186,
+      "cacheWrite": 71481,
+      "cacheRead": 0,
+      "cost": 0.143912
+    }
+  ],
+  "switches": [],
+  "compactions": [],
+  "unpricedModels": [],
+  "stats": {
+    "duplicatesCollapsed": 2,
+    "syntheticIgnored": 1,
+    "unparsable": 0,
+    "unknownTypes": {}
+  }
+}

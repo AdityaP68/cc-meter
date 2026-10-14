@@ -1,0 +1,80 @@
+{
+  "parserStatus": "verified",
+  "ccVersions": [
+    "2.1.286",
+    "2.1.288",
+    "2.1.293",
+    "2.1.295"
+  ],
+  "turns": 4,
+  "messages": 35,
+  "sidechainMessages": 13,
+  "partialMessages": 11,
+  "tokens": {
+    "input": 70,
+    "output": 75531,
+    "cacheWrite": 255841,
+    "cacheRead": 5851464
+  },
+  "sidechainTokens": {
+    "input": 26,
+    "output": 37711,
+    "cacheWrite": 177756,
+    "cacheRead": 615527
+  },
+  "costUsd": 2.909018,
+  "models": [
+    {
+      "model": "claude-sonnet-5-5",
+      "messages": 28,
+      "input": 56,
+      "output": 75478,
+      "cacheWrite": 165446,
+      "cacheRead": 5447105,
+      "cost": 2.375056
+    },
+    {
+      "model": "claude-opus-5-5",
+      "messages": 7,
+      "input": 14,
+      "output": 53,
+      "cacheWrite": 90395,
+      "cacheRead": 404359,
+      "cost": 0.533963
+    }
+  ],
+  "switches": [],
+  "compactions": [
+    {
+      "trigger": "manual",
+      "preTokens": 799627,
+      "postTokens": 16951,
+      "turn": 1
+    },
+    {
+      "trigger": "auto",
+      "preTokens": 979884,
+      "postTokens": 18105,
+      "turn": 4
+    },
+    {
+      "trigger": "auto",
+      "preTokens": 968854,
+      "postTokens": 21867,
+      "turn": 4
+    },
+    {
+      "trigger": "manual",
+      "preTokens": 717941,
+      "postTokens": 19987,
+      "turn": 4
+    }
+  ],
+  "unpricedModels": [],
+  "stats": {
+    "duplicatesCollapsed": 35,
+    "syntheticIgnored": 21,
+    "unparsable": 0,
+    "unknownTypes": {}
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "parserStatus": "verified",
+  "ccVersions": [
+    "2.1.287"
+  ],
+  "turns": 1,
+  "messages": 2,
+  "sidechainMessages": 0,
+  "partialMessages": 0,
+  "tokens": {
+    "input": 4,
+    "output": 470,
+    "cacheWrite": 6074,
+    "cacheRead": 25434
+  },
+  "sidechainTokens": {
+    "input": 0,
+    "output": 0,
+    "cacheWrite": 0,
+    "cacheRead": 0
+  },
+  "costUsd": 0.034091,
+  "models": [
+    {
+      "model": "claude-sonnet-5-5",
+      "messages": 2,
+      "input": 4,
+      "output": 470,
+      "cacheWrite": 6074,
+      "cacheRead": 25434,
+      "cost": 0.034091
+    }
+  ],
+  "switches": [],
+  "compactions": [],
+  "unpricedModels": [],
+  "stats": {
+    "duplicatesCollapsed": 1,
+    "syntheticIgnored": 0,
+    "unparsable": 0,
+    "unknownTypes": {}
+  }
+}

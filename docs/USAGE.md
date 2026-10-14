@@ -126,7 +126,7 @@ Files: `ccmeter.db` (data), `record.log` (hook activity: ids and timings only), 
 | A recent session is missing | It is recorded when the session ends; run `ccmeter record --all` (or open the dashboard, it rescans every 30 s) |
 | "Unpriced" warning | Add the model to `~/.ccmeter/pricing.json` (§6) |
 | Numbers differ from Claude Code's | Expected in some sessions: see the session page's comparison and [FORMATS.md](FORMATS.md) |
-| `/ccmeter` shows "blocked by hook: ccmeter dashboard: http://…" | That is the working message; Claude Code adds the framing text. Open the URL |
+| `/ccmeter` shows "Operation stopped by hook: http://…" | That is the working message (Claude Code adds the prefix). Open the URL. If it still shows the older "blocked by hook … Original prompt" form, run `/reload-plugins` or restart Claude Code |
 | Port busy | Set `port` in config.json, or `ccmeter serve --port 7400` |
 | Claude Code updated and `doctor` warns | New format version: recording continues; check which entry types or fields are unrecognized. Details in [ARCHITECTURE.md](ARCHITECTURE.md) |
 | Start over | `ccmeter serve --stop; rm ~/.ccmeter/ccmeter.db; ccmeter record --all` |

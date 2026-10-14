@@ -26,7 +26,7 @@ Nothing ccmeter does runs inside the model's context. Measured with `claude plug
 | M3 skill stub | shipped as `SKILL.md.stub`, not loaded | 0 (a loaded skill costs ≈ 39) |
 | MCP server | **none, by design** | – |
 
-`/ccmeter` is intercepted by a hook that returns `{"decision":"block","reason":"ccmeter dashboard: <url>"}`. Claude Code frames the reason (`UserPromptSubmit operation blocked by hook: …`), which ccmeter cannot change; its own text is one line. A plain slash command would instead trigger a model turn that re-reads the whole conversation (priced by the session's context size), so the command file exists only as a discoverable fallback. Drop `plugin/commands/ccmeter.md` to reach exactly 0 tokens.
+`/ccmeter` is intercepted by a `UserPromptSubmit` hook that returns `{"continue":false,"stopReason":"<url>"}`, which stops the turn before any model call. Claude Code prefixes the reason (`Operation stopped by hook: <url>`), which ccmeter cannot change; its own text is just the URL. (`"decision":"block"` also works but adds an `Original prompt:` echo, so it is not used.) A plain slash command would instead trigger a model turn that re-reads the whole conversation (priced by the session's context size), so the command file exists only as a discoverable fallback. Drop `plugin/commands/ccmeter.md` to reach exactly 0 tokens.
 
 ## Modules
 

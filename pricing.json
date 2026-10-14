@@ -1,0 +1,21 @@
+{
+  "version": "2026-10-14",
+  "currency": "USD",
+  "unit": "per million tokens",
+  "notes": "Estimates at list price. Claude Code computes its own cost the same way; `ccmeter doctor --verify-pricing` compares the two. basis=verified means the rates reproduce Claude Code's own costUSD on real transcripts; basis=list means taken from published list prices only. Add or override models in ~/.ccmeter/pricing.json (same shape).",
+  "webSearchPerRequest": 0.01,
+  "models": {
+    "claude-fable-5-1":  { "input": 10, "output": 50, "cacheRead": 0.25, "cacheWrite5m": 12.5, "cacheWrite1h": 20, "basis": "list" },
+    "claude-fable-5":    { "input": 10, "output": 50, "cacheRead": 0.25, "cacheWrite5m": 12.5, "cacheWrite1h": 20, "basis": "list" },
+    "claude-opus-5-5":   { "input": 4, "output": 20, "cacheRead": 0.2, "cacheWrite5m": 5, "cacheWrite1h": 8, "fastMultiplier": 2, "basis": "verified" },
+    "claude-opus-5":     { "input": 5, "output": 25, "cacheRead": 0.5, "cacheWrite5m": 6.25, "cacheWrite1h": 10, "fastMultiplier": 2, "basis": "list" },
+    "claude-opus-4-8":   { "input": 5, "output": 25, "cacheRead": 0.5, "cacheWrite5m": 6.25, "cacheWrite1h": 10, "fastMultiplier": 2, "basis": "list" },
+    "claude-opus-4-7":   { "input": 5, "output": 25, "cacheRead": 0.5, "cacheWrite5m": 6.25, "cacheWrite1h": 10, "basis": "list" },
+    "claude-opus-4-6":   { "input": 5, "output": 25, "cacheRead": 0.5, "cacheWrite5m": 6.25, "cacheWrite1h": 10, "basis": "list" },
+    "claude-sonnet-5-5": { "input": 2, "output": 10, "cacheRead": 0.2, "cacheWrite5m": 2.5, "cacheWrite1h": 4, "basis": "verified" },
+    "claude-sonnet-5":   { "input": 2, "output": 10, "cacheRead": 0.2, "cacheWrite5m": 2.5, "cacheWrite1h": 4, "basis": "list" },
+    "claude-sonnet-4-6": { "input": 3, "output": 15, "cacheRead": 0.3, "cacheWrite5m": 3.75, "cacheWrite1h": 6, "basis": "list" },
+    "claude-haiku-5-5":  { "input": 0.1, "output": 0.5, "cacheRead": 0.01, "cacheWrite5m": 0.125, "cacheWrite1h": 0.2, "longContext": { "aboveTokens": 100000, "input": 0.5, "output": 2.5 }, "basis": "list" },
+    "claude-haiku-4-5":  { "input": 1, "output": 5, "cacheRead": 0.1, "cacheWrite5m": 1.25, "cacheWrite1h": 2, "basis": "verified" }
+  }
+}

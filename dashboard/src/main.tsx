@@ -42,8 +42,10 @@ function App() {
   const facets = useApi<Facets>('/api/facets', [reload]);
   const doctor = useApi<{ checks: Check[] }>('/api/doctor', [reload]);
 
-  useEffect(() => window.scrollTo(0, 0), [hash]);
-  useEffect(() => save('ccmeter.filters', filters), [filters]);
+  // Effects use block bodies: an effect's return value is its cleanup, and window.scrollTo returns a Promise in
+  // current Chromium, so `() => window.scrollTo(0, 0)` made React call a Promise on the next route and unmount the app.
+  useEffect(() => { window.scrollTo(0, 0); }, [hash]);
+  useEffect(() => { save('ccmeter.filters', filters); }, [filters]);
   useEffect(() => {
     if (theme) document.documentElement.dataset.theme = theme;
     else delete document.documentElement.dataset.theme;

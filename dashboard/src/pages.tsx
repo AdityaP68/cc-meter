@@ -58,7 +58,7 @@ export function FilterBar({ f, set, facets }: { f: Filters; set: (f: Filters) =>
 export function SessionsPage({ f, reload }: { f: Filters; reload: number }) {
   const [sort, setSort] = useState<'recent' | 'cost' | 'tokens'>('recent');
   const [limit, setLimit] = useState(50);
-  useEffect(() => setLimit(50), [f, sort]);
+  useEffect(() => { setLimit(50); }, [f, sort]);
   const ov = useApi<Overview>(`/api/overview${qs(f)}`, [reload]);
   const days = useApi<DayModel[]>(`/api/rollups${qs({ ...f, by: 'daymodel' })}`, [reload]);
   const list = useApi<{ total: number; rows: Session[] }>(`/api/sessions${qs({ ...f, sort, limit })}`, [reload]);

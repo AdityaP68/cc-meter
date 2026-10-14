@@ -3,8 +3,8 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ROOT } from './helpers/util.js';
 
-// The SPA has no DOM test environment, so this guards the one failure mode that blanked the app: an effect with an
-// expression body returns that expression as its cleanup. `useEffect(() => window.scrollTo(0, 0))` returned a Promise
+// Static guard for the failure mode that blanked the app (tests/dashboard-dom.test.ts covers it at runtime): an effect
+// with an expression body returns that expression as its cleanup. `useEffect(() => window.scrollTo(0, 0))` returned a Promise
 // in current Chromium; React called it on the next hash change, threw, and unmounted the page until a reload.
 describe('dashboard effects', () => {
   it('every useEffect / useLayoutEffect callback has a block body', () => {

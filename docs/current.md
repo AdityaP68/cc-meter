@@ -9,7 +9,7 @@ whose numbers can be trusted, and which costs zero tokens in the sessions it mea
 
 ## What is done and verified
 - **M1 (core + recorder)** and **M2 (dashboard + status line)** are built; tags `m1`, `m2`.
-  124 tests pass on 2026-10-15 (unit, golden fixtures from 5 Claude Code versions, server, CLI, plugin
+  139 tests pass on 2026-10-15 (unit, golden fixtures from 5 Claude Code versions, server, CLI, plugin
   scripts, a happy-dom smoke test that route changes keep the dashboard mounted).
 - **Installed on the user's machine** (2026-10-14) from this checkout; live hook recording and `/ccmeter`
   verified headlessly. Interactive behaviour not yet reported back by the user.
@@ -24,7 +24,8 @@ whose numbers can be trusted, and which costs zero tokens in the sessions it mea
 ## Open
 - The user is trying ccmeter and will report; their read-through questions are pending.
 - Decided 2026-10-15 (`docs/decisions/0007-*`): compliance parameters (local-only, accurate, MIT), `node:sqlite`,
-  M3 judge via `claude -p`. Command file `/ccmeter:ccmeter` kept (≈16 tokens per session; owner, 2026-10-15).
+  M3 judge via `claude -p`; unpriced models handled per `0008-*` (prompt, Claude Code's figure, derived price).
+  Command file `/ccmeter:ccmeter` kept (≈16 tokens per session; owner, 2026-10-15).
 - Unverified: interactive `/ccmeter` rendering, async Stop hook in interactive sessions, live statusLine
   payload, `advisorModel` billing, fast mode, web-search billing.
 - M3 (digest, heuristics, judge, review overhead) is designed only: `docs/ARCHITECTURE.md`.

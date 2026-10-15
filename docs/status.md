@@ -7,6 +7,7 @@ bodies (`git show <sha>`); do not duplicate it here.
 
 | Date | Change | Where |
 |---|---|---|
+| 2026-10-15 | Unpriced-model support (ADR 0008): upfront prompt (dashboard banner, status line, report), Claude Code's figure as stopgap, `doctor` derived-price suggestion | `7b830d5`, `33dab76`, `e8fbb3d` |
 | 2026-10-15 | Flags column aligned; Health/doctor accuracy: synthetic-only transcripts not "unrecorded", price evidence per model (incl. models with nothing to compare), largest Claude Code cost gap named | `59acbe4`, `dee1894` |
 | 2026-10-15 | Review fixes: unpriced never `$0` in reconciliation/MixBar/export; `pricing.json` override validated (doctor `pricing-override`); `readCostState` tolerates malformed `modelUsage`; race-safe `migrate()`; server `limit`/`offset` clamped; `setup --statusline` refuses an unparsable `settings.json` | `ad35679`, `ff2f6f4`, `3928220`, `d340407`, `1a098df`, `1d9019f` |
 | 2026-10-15 | Owner decisions: compliance parameters, `node:sqlite`, M3 judge via `claude -p` | `docs/decisions/0007-compliance-parameters-and-m3-judge.md` |

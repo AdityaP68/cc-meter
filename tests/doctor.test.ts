@@ -46,6 +46,13 @@ describe('doctor', () => {
     expect(u.title).toContain('claude-mystery-9');
   });
 
+  it('warns when the pricing.json override has entries that were ignored', () => {
+    const bad = { ...table, rejected: ['claude-typo-1'] };
+    const w = byId(runDoctor(db, bad, opts), 'pricing-override');
+    expect(w.level).toBe('warn');
+    expect(w.title).toContain('claude-typo-1');
+  });
+
   it('warns when the installed Claude Code is newer than any verified version, or has no parser', () => {
     expect(byId(runDoctor(db, table, { ...opts, claudeVersion: '2.1.900' }), 'cc-version').level).toBe('warn');
     expect(byId(runDoctor(db, table, { ...opts, claudeVersion: '3.0.0' }), 'cc-version').title).toContain('no matching parser');

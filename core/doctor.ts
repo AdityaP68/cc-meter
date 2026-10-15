@@ -117,6 +117,7 @@ export function runDoctor(db: Db, table: PriceTable, opts: DoctorOptions = {}): 
     .map((r) => r.model)
     .filter((m) => lookupPrice(table, m)?.price.basis === 'list');
   if (listOnly.length) add('price-basis', 'info', `Prices for ${listOnly.join(', ')} come from list prices and have not been verified against Claude Code's own cost figures`, 'Run `ccmeter doctor --verify-pricing` to compare where Claude Code recorded a cost.');
+  if (table.rejected.length) add('pricing-override', 'warn', `Ignored entries in ~/.ccmeter/pricing.json: ${table.rejected.join(', ')}`, 'Each model needs finite, non-negative numbers for input, output, cacheRead, cacheWrite5m and cacheWrite1h. Those models stay unpriced (never $0) until fixed.');
   add('pricing', 'ok', `Pricing table ${table.version} (${table.hash}) from ${table.sources.join(' + ')}`);
 
   // 6. hook installation

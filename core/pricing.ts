@@ -23,6 +23,8 @@ export interface PriceTable {
   hash: string;
   /** Files that contributed (package table first, then user override). */
   sources: string[];
+  /** Override entries that were ignored because they are not valid prices (surfaced by `doctor`). */
+  rejected: string[];
 }
 
 export interface Priceable {
@@ -50,6 +52,23 @@ function readTable(file: string): RawTable | null {
   }
 }
 
+const rate = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && v >= 0;
+
+/** A price entry is usable only if every rate is a finite, non-negative number. */
+function validPrice(p: unknown): p is ModelPrice {
+  if (typeof p !== 'object' || p === null) return false;
+  const m = p as Record<string, unknown>;
+  if (!rate(m.input) || !rate(m.output) || !rate(m.cacheRead) || !rate(m.cacheWrite5m) || !rate(m.cacheWrite1h)) return false;
+  if (m.fastMultiplier !== undefined && !(rate(m.fastMultiplier) && m.fastMultiplier > 0)) return false;
+  if (m.basis !== undefined && m.basis !== 'verified' && m.basis !== 'list') return false;
+  if (m.longContext !== undefined) {
+    const l = m.longContext as Record<string, unknown> | null;
+    if (typeof l !== 'object' || l === null || !rate(l.aboveTokens) || !rate(l.input) || !rate(l.output)) return false;
+    if (!(m.input as number > 0)) return false; // messageCost scales the other rates by longContext.input / input
+  }
+  return true;
+}
+
 export function loadPricing(opts: { overridePath?: string | null } = {}): PriceTable {
   const base = path.join(packageRoot(), 'pricing.json');
   const sources = [base];
@@ -58,29 +77,34 @@ export function loadPricing(opts: { overridePath?: string | null } = {}): PriceT
   const models: Record<string, ModelPrice> = { ...t.models };
   const overridePath = opts.overridePath === undefined ? path.join(ccmeterHome(), 'pricing.json') : opts.overridePath;
   let webSearchPerRequest = t.webSearchPerRequest ?? 0.01;
+  const rejected: string[] = [];
   if (overridePath && fs.existsSync(overridePath)) {
     const o = readTable(overridePath);
-    if (o?.models) {
-      Object.assign(models, o.models);
-      sources.push(overridePath);
+    if (!o || typeof o !== 'object') rejected.push('pricing.json is not valid JSON');
+    else {
+      const entries = o.models && typeof o.models === 'object' ? Object.entries(o.models) : [];
+      for (const [id, price] of entries) {
+        if (id === '__proto__' || !validPrice(price)) rejected.push(id);
+        else models[id] = price;
+      }
+      if (entries.length) sources.push(overridePath);
+      if (rate(o.webSearchPerRequest)) webSearchPerRequest = o.webSearchPerRequest;
+      else if (o.webSearchPerRequest !== undefined) rejected.push('webSearchPerRequest');
     }
-    if (typeof o?.webSearchPerRequest === 'number') webSearchPerRequest = o.webSearchPerRequest;
   }
   const hash = crypto
     .createHash('sha1')
     .update(JSON.stringify({ models, webSearchPerRequest }))
     .digest('hex')
     .slice(0, 12);
-  return { version: t.version ?? 'unknown', webSearchPerRequest, models, hash, sources };
+  return { version: t.version ?? 'unknown', webSearchPerRequest, models, hash, sources, rejected };
 }
 
 /** Resolve a transcript model id to a price: exact id, then without a trailing -YYYYMMDD date. */
 export function lookupPrice(table: PriceTable, model: string): { id: string; price: ModelPrice } | null {
-  const exact = table.models[model];
-  if (exact) return { id: model, price: exact };
+  if (Object.hasOwn(table.models, model)) return { id: model, price: table.models[model]! };
   const undated = model.replace(/-\d{8}$/, '');
-  const hit = table.models[undated];
-  if (hit) return { id: undated, price: hit };
+  if (Object.hasOwn(table.models, undated)) return { id: undated, price: table.models[undated]! };
   return null;
 }
 
@@ -107,5 +131,5 @@ export function messageCost(table: PriceTable, m: Priceable): number | null {
     (m.input * inRate + m.output * outRate + m.cacheRead * readRate + write5m * w5 + m.cacheWrite1h * w1) / 1e6;
   if (m.speed === 'fast' && p.fastMultiplier) usd *= p.fastMultiplier;
   usd += m.webSearch * table.webSearchPerRequest;
-  return usd;
+  return Number.isFinite(usd) ? usd : null;
 }

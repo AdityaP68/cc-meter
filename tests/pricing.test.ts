@@ -66,4 +66,56 @@ describe('price table overrides', () => {
     expect(t.hash).not.toBe(table.hash);
     expect(t.sources).toHaveLength(2);
   });
+
+  const overrideTable = (o: unknown) => {
+    const file = path.join(tmpDir(), 'pricing.json');
+    fs.writeFileSync(file, typeof o === 'string' ? o : JSON.stringify(o));
+    return loadPricing({ overridePath: file });
+  };
+  const good = { input: 1, output: 2, cacheRead: 0.1, cacheWrite5m: 1.25, cacheWrite1h: 2 };
+
+  it('rejects malformed override entries instead of pricing with NaN, and reports them', () => {
+    const t = overrideTable({
+      models: {
+        'claude-ok-1': good,
+        'claude-missing-field': { input: 1, output: 2 },
+        'claude-string-rate': { ...good, output: '2' },
+        'claude-negative': { ...good, input: -1 },
+        'claude-null': null,
+        'claude-bad-long': { ...good, longContext: { aboveTokens: 'x', input: 1, output: 2 } },
+      },
+    });
+    expect(messageCost(t, { ...base, model: 'claude-ok-1', output: 1_000_000 })).toBeCloseTo(2, 9);
+    for (const m of ['claude-missing-field', 'claude-string-rate', 'claude-negative', 'claude-null', 'claude-bad-long']) {
+      expect(messageCost(t, { ...base, model: m, input: 10, output: 10 })).toBeNull();
+    }
+    expect(t.rejected.sort()).toEqual(['claude-bad-long', 'claude-missing-field', 'claude-negative', 'claude-null', 'claude-string-rate']);
+  });
+
+  it('a bad override entry does not shadow a shipped price', () => {
+    const t = overrideTable({ models: { 'claude-sonnet-5-5': { ...good, input: 'free' } } });
+    expect(messageCost(t, { ...base, model: 'claude-sonnet-5-5', input: 1_000_000 })).toBeCloseTo(messageCost(table, { ...base, model: 'claude-sonnet-5-5', input: 1_000_000 })!, 9);
+    expect(t.rejected).toEqual(['claude-sonnet-5-5']);
+  });
+
+  it('ignores a non-numeric webSearchPerRequest and unparsable files (reported, not thrown)', () => {
+    expect(overrideTable({ webSearchPerRequest: 'cheap' }).webSearchPerRequest).toBe(table.webSearchPerRequest);
+    const broken = overrideTable('{ not json');
+    expect(broken.hash).toBe(table.hash);
+    expect(broken.rejected).toEqual(['pricing.json is not valid JSON']);
+  });
+
+  it('inherited object keys are not models', () => {
+    for (const m of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) {
+      expect(lookupPrice(table, m)).toBeNull();
+      expect(messageCost(table, { ...base, model: m, input: 5 })).toBeNull();
+    }
+    const t = overrideTable('{"models":{"__proto__":{"input":1,"output":2,"cacheRead":0.1,"cacheWrite5m":1,"cacheWrite1h":2}}}');
+    expect(Object.getPrototypeOf(t.models)).toBe(Object.prototype);
+    expect(({} as Record<string, unknown>).input).toBeUndefined();
+  });
+
+  it('a non-finite result is unpriced, never NaN', () => {
+    expect(messageCost(table, { ...base, model: 'claude-sonnet-5-5', input: NaN })).toBeNull();
+  });
 });

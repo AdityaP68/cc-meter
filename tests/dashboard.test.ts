@@ -18,3 +18,16 @@ describe('dashboard effects', () => {
     expect(bad).toEqual([]);
   });
 });
+
+// A table cell styled with display:flex leaves the table layout: it shrinks to its content, and its border no longer
+// lines up with the rest of the row (the skewed Flags column). Put flex on an inner element instead.
+describe('dashboard table cells', () => {
+  it('no class used on a <td> or <th> sets display', () => {
+    const src = fs.readdirSync(path.join(ROOT, 'dashboard', 'src')).filter((n) => n.endsWith('.tsx')).map((n) => fs.readFileSync(path.join(ROOT, 'dashboard', 'src', n), 'utf8')).join('\n');
+    const css = fs.readFileSync(path.join(ROOT, 'dashboard', 'src', 'styles.css'), 'utf8');
+    const classes = new Set([...src.matchAll(/<t[dh][^>]*className="([^"]+)"/g)].flatMap((m) => m[1]!.split(/\s+/)));
+    const bad = [...classes].filter((c) => new RegExp(`(^|[\\s,}])(t[dh])?\\.${c}\\s*\\{[^}]*\\bdisplay\\s*:`, 'm').test(css));
+    expect(bad).toEqual([]);
+  });
+});
+

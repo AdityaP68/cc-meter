@@ -108,13 +108,15 @@ export function SessionsPage({ f, reload }: { f: Filters; reload: number }) {
                     <td className="r num">{tok(s.totalTokens)}</td>
                     <td className="r"><Cost usd={s.costUsd} unpriced={s.unpricedTokens} /></td>
                     <td><MixBar models={s.models} /><div className="muted small">{s.models.map((m) => shortModel(m.model)).join(', ')}</div></td>
-                    <td className="flags">
-                      {!(s.switches || s.compactions || s.sidechainMessages || s.partialMessages || differs) && <span className="muted" title="No model switch, compaction, subagent or partial usage in this session">–</span>}
-                      {s.switches > 0 && <span className="badge" title={`${s.switches} model switch(es)`}>⇄ {s.switches}</span>}
-                      {s.compactions > 0 && <span className="badge" title={`${s.compactions} compaction(s)`}>◆ {s.compactions}</span>}
-                      {s.sidechainMessages > 0 && <span className="badge" title={`${s.sidechainMessages} API messages came from subagents`}>sub {s.sidechainMessages}</span>}
-                      {s.partialMessages > 0 && <span className="badge info" title="Some messages carry unfinalized usage in the transcript; output tokens (and cost) are a lower bound">≥ lower bound</span>}
-                      {differs && <span className="badge info" title={`Claude Code's own total for this session is ${usd(cc!)}`}>CC {usd(cc!)}</span>}
+                    <td>
+                      <div className="flags">
+                        {!(s.switches || s.compactions || s.sidechainMessages || s.partialMessages || differs) && <span className="muted" title="No model switch, compaction, subagent or partial usage in this session">–</span>}
+                        {s.switches > 0 && <span className="badge" title={`${s.switches} model switch(es)`}>⇄ {s.switches}</span>}
+                        {s.compactions > 0 && <span className="badge" title={`${s.compactions} compaction(s)`}>◆ {s.compactions}</span>}
+                        {s.sidechainMessages > 0 && <span className="badge" title={`${s.sidechainMessages} API messages came from subagents`}>sub {s.sidechainMessages}</span>}
+                        {s.partialMessages > 0 && <span className="badge info" title="Some messages carry unfinalized usage in the transcript; output tokens (and cost) are a lower bound">≥ lower bound</span>}
+                        {differs && <span className="badge info" title={`Claude Code's own total for this session is ${usd(cc!)}`}>CC {usd(cc!)}</span>}
+                      </div>
                     </td>
                   </tr>
                 );

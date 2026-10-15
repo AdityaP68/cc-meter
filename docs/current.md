@@ -26,9 +26,8 @@ whose numbers can be trusted, and which costs zero tokens in the sessions it mea
 
 ## Open
 - The user is trying ccmeter and will report; their read-through questions are pending.
-- Decisions waiting on the user (also in `docs/handoff.md`): meaning of "the complaint parameter";
-  `node:sqlite` vs `better-sqlite3`; M3 judge via `claude -p` or direct API; keep or drop the
-  `/ccmeter:ccmeter` command file (≈16 tokens per session).
+- Decided 2026-10-15 (`docs/decisions/0007-*`): compliance parameters (local-only, accurate, MIT), `node:sqlite`,
+  M3 judge via `claude -p`. Still open: keep or drop `/ccmeter:ccmeter` command file (≈16 tokens per session).
 - Unverified: interactive `/ccmeter` rendering, async Stop hook in interactive sessions, live statusLine
   payload, `advisorModel` billing, fast mode, web-search billing.
 - M3 (digest, heuristics, judge, review overhead) is designed only: `docs/ARCHITECTURE.md`.

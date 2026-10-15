@@ -7,6 +7,7 @@ bodies (`git show <sha>`); do not duplicate it here.
 
 | Date | Change | Where |
 |---|---|---|
+| 2026-10-15 | Owner decisions: compliance parameters, `node:sqlite`, M3 judge via `claude -p` | `docs/decisions/0007-compliance-parameters-and-m3-judge.md` |
 | 2026-10-15 | Skill `react-check` (route sweep, React pitfall scan, crash debugging, review) and a happy-dom DOM smoke test for the dashboard | `.claude/skills/react-check/`, `tests/dashboard-dom.test.ts` |
 | 2026-10-15 | User-reported fixes: nav blank page, untitled-session labels and Flags cell, overview totals = chart, hook exit 0; project review | `82bf4ae`, `a71f679`, `d391dc6`, `038ff40` |
 | 2026-10-15 | Context harness for agents working on this repo: AGENTS/CLAUDE, entry docs, orientation + context-guard hooks, rules, skills, subagents, pre-commit checks, `npm run verify` | `docs/harness.md` |

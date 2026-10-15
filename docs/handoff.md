@@ -27,9 +27,8 @@ Uncommitted: nothing (before this refresh).
       If parsing changes, bump `RECORDER_VERSION`.
    d. Make `migrate()` race-safe: `BEGIN IMMEDIATE`, then re-read `user_version`. File: `core/db.ts`.
    e. Clamp the server's `limit`/`offset`. Make setup refuse to overwrite an unparsable `settings.json`.
-2. **Ask the four open decisions if they are still unanswered** (one message): (a) "the complaint parameter";
-   (b) `node:sqlite` or `better-sqlite3`; (c) M3 judge via `claude -p` or the direct API; (d) keep or drop
-   `plugin/commands/ccmeter.md`.
+2. **Decisions:** (a)-(c) answered, recorded in `docs/decisions/0007-*`. Open: (d) keep or drop
+   `plugin/commands/ccmeter.md`; the agent recommended keep (comparison given in chat 2026-10-15).
 3. **Roadmap (the user picks; nothing is approved yet):** M3 session review; per-project budgets and alerts;
    context size over time with long-session warnings; cache-efficiency view; comparing periods; a filter for
    interactive vs headless sessions. Ranking: the chat report of 2026-10-15.

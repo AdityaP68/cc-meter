@@ -103,7 +103,7 @@ Input: the digest + rubric. Output (JSON schema enforced): `summary {goal, outco
 
 Cached in `reviews`, unique on `(session_id, digest_hash, rubric_version, model)`, so re-running an unchanged session with the same rubric and model is free. Each row stores the judge's own input/output tokens and cost.
 
-### Open decision: how to call the judge
+### Decision: how to call the judge (A chosen 2026-10-15, ADR 0007)
 | | A. `claude -p` subprocess | B. direct Messages API |
 |---|---|---|
 | Auth | reuses the user's Claude Code login; no API key handled by ccmeter | needs an API key stored/read by ccmeter |

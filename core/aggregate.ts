@@ -99,14 +99,20 @@ function mapSession(r: Raw): SessionRow {
   };
 }
 
+/**
+ * Sessions matching a filter: the same set `overview` counts (at least one message in the window, of the model when
+ * one is given), so the table and the headline agree. Rows still carry whole-session totals.
+ */
 function sessionWhere(f: Filters, alias = 's'): { sql: string; params: Record<string, string> } {
   const w: string[] = [];
+  const m: string[] = [];
   const p: Record<string, string> = {};
-  if (f.since) (w.push(`${alias}.started_at >= :since`), (p.since = f.since));
-  if (f.until) (w.push(`${alias}.started_at < :until`), (p.until = f.until));
+  if (f.since) (m.push('m.ts >= :since'), (p.since = f.since));
+  if (f.until) (m.push('m.ts < :until'), (p.until = f.until));
+  if (f.model) (m.push('m.model = :model'), (p.model = f.model));
   if (f.project) (w.push(`${alias}.project = :project`), (p.project = f.project));
   if (f.source) (w.push(`${alias}.source = :source`), (p.source = f.source));
-  if (f.model) (w.push(`EXISTS (SELECT 1 FROM messages m WHERE m.session_id = ${alias}.session_id AND m.model = :model)`), (p.model = f.model));
+  if (m.length) w.push(`EXISTS (SELECT 1 FROM messages m WHERE m.session_id = ${alias}.session_id AND ${m.join(' AND ')})`);
   return { sql: w.length ? 'WHERE ' + w.join(' AND ') : '', params: p };
 }
 

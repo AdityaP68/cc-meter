@@ -50,6 +50,25 @@ describe('overview', () => {
     expect(o.costUsd).toBeCloseTo(days.reduce((n, d) => n + d.costUsd, 0), 10);
     expect(o.costUsd).toBeGreaterThan(0);
   });
+
+  it('lists the same sessions the overview counts: active in the window, and using the model when filtered', () => {
+    writeTranscript('long', [
+      user('a', '2026-01-01T00:00:01.000Z'), asst({ id: 'l1', input: 1000, output: 1000, ts: '2026-01-01T00:00:02.000Z' }),
+      user('b', '2026-01-10T00:00:01.000Z'), asst({ id: 'l2', model: 'claude-haiku-4-5', input: 3000, output: 3000, ts: '2026-01-10T00:00:02.000Z' }),
+    ]);
+    writeTranscript('old', [user('a', '2026-01-02T00:00:01.000Z'), asst({ id: 'o1', input: 10, output: 10, ts: '2026-01-02T00:00:02.000Z' })]);
+    recordAll(db, table);
+    const ids = (f: Parameters<typeof listSessions>[1]) => listSessions(db, f).rows.map((r) => r.sessionId).sort();
+    const since = '2026-01-05T00:00:00.000Z';
+    // started before the window, active inside it
+    expect(ids({ since })).toEqual(['long']);
+    expect(listSessions(db, { since }).total).toBe(overview(db, { since }).sessions);
+    // the model used inside the window, not merely somewhere in the session
+    expect(ids({ since, model: 'claude-haiku-4-5' })).toEqual(['long']);
+    expect(ids({ since, model: 'claude-sonnet-5-5' })).toEqual([]);
+    expect(overview(db, { since, model: 'claude-sonnet-5-5' }).sessions).toBe(0);
+    expect(ids({ until: since })).toEqual(['long', 'old']);
+  });
 });
 
 describe('session label', () => {

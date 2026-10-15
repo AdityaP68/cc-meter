@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { DayModel, EventRow, Turn } from './api';
-import { niceMax, shortModel, tok, usd, usdAxis, when } from './format';
+import { mixTitle, niceMax, shortModel, tok, usd, usdAxis, when } from './format';
 
 /* ---------- model colours: color follows the entity (stable per model name), never its rank ---------- */
 export const ModelColors = createContext<(model: string) => string>(() => 'var(--series-1)');
@@ -261,12 +261,12 @@ export function Timeline({ turns, events }: { turns: Turn[]; events: EventRow[] 
 }
 
 /* ---------- small stacked bar for a session's model mix (cost share, message share when free) ---------- */
-export function MixBar({ models }: { models: { model: string; cost: number; messages: number }[] }) {
+export function MixBar({ models }: { models: { model: string; cost: number; messages: number; unpriced: boolean }[] }) {
   const color = useContext(ModelColors);
   const byCost = models.reduce((s, x) => s + x.cost, 0) > 0;
   const total = models.reduce((s, x) => s + (byCost ? x.cost : x.messages), 0) || 1;
   return (
-    <span className="mix" title={models.map((x) => `${shortModel(x.model)} ${usd(x.cost)}`).join(' · ')}>
+    <span className="mix" title={mixTitle(models)}>
       {models.map((x) => (
         <i key={x.model} style={{ width: `${Math.max(2, ((byCost ? x.cost : x.messages) / total) * 100)}%`, background: color(x.model) }} />
       ))}

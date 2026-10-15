@@ -3,7 +3,7 @@ import { openDb } from '../../core/db.js';
 import { loadPricing } from '../../core/pricing.js';
 import { reconcile } from '../../core/reconcile.js';
 import { flagNum, flagStr, type Parsed } from '../args.js';
-import { costCell, dur, pad, table, tok, usd } from '../format.js';
+import { costCell, dur, pad, table, tok, usd, usdOrUnpriced } from '../format.js';
 
 function sinceFlag(args: Parsed): string | undefined {
   const s = flagStr(args, 'since');
@@ -48,7 +48,7 @@ export async function cmdReport(args: Parsed): Promise<number> {
     console.log(
       table(
         recon.flatMap((r) => [
-          [r.model, 'ccmeter', String(r.ccmeter.input), String(r.ccmeter.output), String(r.ccmeter.cacheWrite), String(r.ccmeter.cacheRead), usd(r.ccmeter.cost)],
+          [r.model, 'ccmeter', String(r.ccmeter.input), String(r.ccmeter.output), String(r.ccmeter.cacheWrite), String(r.ccmeter.cacheRead), usdOrUnpriced(r.ccmeter.cost)],
           ...(r.claudeCode
             ? [['', 'claude-code', String(r.claudeCode.input), String(r.claudeCode.output), String(r.claudeCode.cacheWrite), String(r.claudeCode.cacheRead), usd(r.claudeCode.cost)], ['', r.tokensMatch ? 'MATCH' : 'delta', ...(r.delta ? [String(r.delta.input), String(r.delta.output), String(r.delta.cacheWrite), String(r.delta.cacheRead)] : []), '']]
             : [['', 'claude-code', '(no cost-state entry for this model)', '', '', '', '']]),

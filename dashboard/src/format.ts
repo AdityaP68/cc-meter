@@ -25,6 +25,10 @@ export const when = (iso: string | null): string => {
 /** claude-sonnet-5-5 -> sonnet-5-5 */
 export const shortModel = (m: string): string => m.replace(/^claude-/, '').replace(/-\d{8}$/, '');
 
+/** Tooltip for a model-mix bar. An unpriced model is labelled, never shown as $0. */
+export const mixTitle = (models: { model: string; cost: number; unpriced: boolean }[]): string =>
+  models.map((x) => `${shortModel(x.model)} ${x.unpriced ? 'unpriced' : usd(x.cost)}`).join(' · ');
+
 /** Axis maximum whose quarters are round numbers (1, 2, 4, 8 x 10^k). */
 export function niceMax(v: number): number {
   if (v <= 0) return 1;

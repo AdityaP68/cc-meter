@@ -20,6 +20,9 @@ export function pad(s: string, n: number, right = false): string {
   return right ? t.padStart(n) : t.padEnd(n);
 }
 
+/** A price, or "unpriced" for null: an unpriced model is never shown as free. */
+export const usdOrUnpriced = (n: number | null): string => (n === null ? 'unpriced' : usd(n));
+
 /** "$12.30" or "$12.30 + unpriced" — an unpriced model is never shown as free. */
 export function costCell(costUsd: number, unpricedTokens: number): string {
   return unpricedTokens > 0 ? `${usd(costUsd)}+unpriced` : usd(costUsd);

@@ -3,7 +3,8 @@ import { messageCost, type PriceTable } from './pricing.js';
 
 export interface ReconRow {
   model: string;
-  ccmeter: { input: number; output: number; cacheWrite: number; cacheRead: number; cost: number };
+  /** `cost` is null for an unpriced model: unpriced is never $0. */
+  ccmeter: { input: number; output: number; cacheWrite: number; cacheRead: number; cost: number | null };
   claudeCode: { input: number; output: number; cacheWrite: number; cacheRead: number; cost: number } | null;
   /** ccmeter minus Claude Code (tokens). */
   delta: { input: number; output: number; cacheWrite: number; cacheRead: number } | null;
@@ -31,7 +32,7 @@ export function reconcile(s: Pick<SessionRow, 'models' | 'costState'>, table: Pr
       output: ours?.output ?? 0,
       cacheWrite: ours?.cacheWrite ?? 0,
       cacheRead: ours?.cacheRead ?? 0,
-      cost: ours?.cost ?? 0,
+      cost: ours?.unpriced ? null : ours?.cost ?? 0,
     };
     if (!cc) return { model, ccmeter: o, claudeCode: null, delta: null, tokensMatch: false, priceRange: null };
     const c = {

@@ -205,7 +205,7 @@ export function verifyPricing(db: Db, table: PriceTable): PricingVerifyRow[] {
       const outside = Math.max(r.priceRange.low - r.claudeCode.cost, r.claudeCode.cost - r.priceRange.high, 0);
       if (outside <= 0.005) cur.consistent++;
       cur.maxOutsideUsd = Math.max(cur.maxOutsideUsd, outside);
-      if (r.tokensMatch) {
+      if (r.tokensMatch && r.ccmeter.cost !== null) {
         cur.exactTokenPairs++;
         cur.exactMaxAbsErrUsd = Math.max(cur.exactMaxAbsErrUsd, Math.abs(r.ccmeter.cost - r.claudeCode.cost));
       }

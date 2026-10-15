@@ -97,3 +97,13 @@ export function user(text: string | unknown[], ts = '2026-01-01T00:00:00.000Z', 
     ...extra,
   });
 }
+
+type Usage = { input: number; output: number; cacheWrite: number; cacheRead: number; costUSD: number };
+/** A `cost-state` line (Claude Code's own accounting) with the given per-model usage. */
+export function costStateLine(models: Record<string, Usage>): string {
+  const modelUsage = Object.fromEntries(Object.entries(models).map(([m, u]) => [m, {
+    inputTokens: u.input, outputTokens: u.output, cacheReadInputTokens: u.cacheRead, cacheCreationInputTokens: u.cacheWrite, costUSD: u.costUSD, webSearchRequests: 0,
+  }]));
+  const totalCostUSD = Object.values(models).reduce((n, u) => n + u.costUSD, 0);
+  return JSON.stringify({ type: 'cost-state', sessionId: 's1', totalCostUSD, modelUsage, hasUnknownModelCost: false });
+}

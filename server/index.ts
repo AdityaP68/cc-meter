@@ -7,7 +7,7 @@ import { runDoctor, verifyPricing, type Check } from '../core/doctor.js';
 import { packageRoot } from '../core/paths.js';
 import { loadPricing, type PriceTable } from '../core/pricing.js';
 import { recordAll } from '../core/record.js';
-import { reconcile } from '../core/reconcile.js';
+import { hiddenCallsEstimate, reconcile } from '../core/reconcile.js';
 
 export const APP_ID = 'ccmeter';
 export const HOST = '127.0.0.1';
@@ -132,7 +132,7 @@ export function startServer(opts: ServerOptions): Promise<RunningServer> {
               ...pageParams(q),
               sort: (q.get('sort') as SessionSort) || 'recent',
             });
-            return send(res, 200, r);
+            return send(res, 200, { ...r, rows: r.rows.map((s) => ({ ...s, hiddenCalls: hiddenCallsEstimate(s, table) })) });
           }
           case '/api/rollups': {
             const by = q.get('by');
@@ -147,7 +147,7 @@ export function startServer(opts: ServerOptions): Promise<RunningServer> {
             if (m) {
               const d = getSession(db, m[1]!);
               if (!d) return send(res, 404, { error: 'unknown session' });
-              return send(res, 200, { ...d, reconciliation: reconcile(d.session, table) });
+              return send(res, 200, { ...d, session: { ...d.session, hiddenCalls: hiddenCallsEstimate(d.session, table) }, reconciliation: reconcile(d.session, table) });
             }
             return send(res, 404, { error: 'not found' });
           }

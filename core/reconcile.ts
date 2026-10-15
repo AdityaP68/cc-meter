@@ -62,6 +62,51 @@ export function reconcile(s: Pick<SessionRow, 'models' | 'costState'>, table: Pr
   });
 }
 
+export interface HiddenCallsEstimate {
+  /** Claude Code's cost minus ccmeter's (USD): calls Claude Code billed but never wrote to the transcript. An estimate. */
+  usd: number;
+  /** Claude Code's own total for the session (sum of its per-model costUSD). */
+  claudeCodeUsd: number;
+  /** Output tokens Claude Code counts beyond the transcript, left out because replies were saved mid-stream. */
+  outputTokensExcluded: number;
+}
+
+/** Below this the difference would print as $0.000; it is not shown. */
+const MIN_ESTIMATE_USD = 0.0005;
+
+/**
+ * Estimate the cost of API calls Claude Code billed but never wrote to the transcript (docs/FORMATS.md, Known
+ * discrepancies 2). Valid only where Claude Code's `cost-state` covers the whole session: every model ccmeter saw is
+ * in it, with at least as many tokens in every class. If it counted less anywhere, it covers only part of a session
+ * resumed across processes (item 3), ccmeter's total is the complete one, and there is nothing to estimate (null).
+ * With replies saved mid-stream (item 1) the output difference is theirs, so it is left out. A model with a
+ * difference that ccmeter cannot price gives null: unpriced is never $0.
+ */
+export function hiddenCallsEstimate(s: Pick<SessionRow, 'models' | 'costState' | 'partialMessages'>, table: PriceTable): HiddenCallsEstimate | null {
+  if (!s.costState) return null;
+  let usd = 0;
+  let claudeCodeUsd = 0;
+  let outputTokensExcluded = 0;
+  for (const r of reconcile(s, table)) {
+    if (!r.claudeCode || !r.delta) return null;
+    const d = r.delta;
+    if (d.input > 0 || d.output > 0 || d.cacheWrite > 0 || d.cacheRead > 0) return null;
+    claudeCodeUsd += r.claudeCode.cost;
+    if (r.tokensMatch) continue;
+    if (r.ccmeter.cost === null) return null;
+    let gap = r.claudeCode.cost - r.ccmeter.cost;
+    const inTranscript = s.models.some((m) => m.model === r.model);
+    if (s.partialMessages > 0 && inTranscript && d.output < 0) {
+      const out = messageCost(table, { model: r.model, input: 0, output: -d.output, cacheWrite: 0, cacheWrite1h: 0, cacheRead: 0, webSearch: 0, speed: null });
+      if (out === null) return null;
+      gap -= out;
+      outputTokensExcluded += -d.output;
+    }
+    usd += gap;
+  }
+  return usd < MIN_ESTIMATE_USD ? null : { usd, claudeCodeUsd, outputTokensExcluded };
+}
+
 export interface ClaudeCodeFigure {
   model: string;
   /** Sessions that used the model. */

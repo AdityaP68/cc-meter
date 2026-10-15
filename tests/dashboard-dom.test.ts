@@ -148,12 +148,25 @@ describe('dashboard in a DOM', () => {
     const row = root().querySelector('a[href="#/session/cc-partial"]')!.closest('tr')!;
     expect(row.querySelector('.flags')!.textContent).not.toMatch(/CC/);
     expect(root().querySelector('.flag-legend')?.textContent).toContain('whole session');
+    expect(root().querySelector('.rows-note')?.textContent).toContain('Each row shows the whole session');
     await go('#/session/cc-partial', 'cc-partial');
     const banner = [...root().querySelectorAll('.banner')].find((b) => b.textContent!.includes('partial'));
     expect(banner?.textContent).toContain("Claude Code's record is partial");
     expect(banner?.textContent).toContain('no entry for');
     expect(banner?.textContent).toMatch(/ccmeter's total, \$[\d.,]+, is the complete one/);
     expect(root().textContent, 'per-model comparison kept').toContain("Check against Claude Code's own accounting");
+    await go('#/', 'Sessions');
+    await settle(() => root().querySelectorAll('a[href^="#/session/"]').length >= 4);
+  });
+
+  it("never shows one session's numbers under another session's address while the next one loads", async () => {
+    await go('#/session/hidden-calls', 'hidden-calls');
+    // Wait for the router to see the new address (hashchange is async), not for the new session's fetch.
+    await act(() => new Promise<void>((r) => { addEventListener('hashchange', () => setTimeout(r, 0), { once: true }); location.hash = '#/session/cc-partial'; }));
+    expect(root().querySelector('.mono'), 'session id line').toBeNull();
+    expect(root().textContent, 'previous session still on screen').not.toContain('hidden-calls');
+    await settle(() => root().textContent!.includes('cc-partial'));
+    expect(root().textContent).toContain('cc-partial');
     await go('#/', 'Sessions');
     await settle(() => root().querySelectorAll('a[href^="#/session/"]').length >= 4);
   });

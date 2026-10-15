@@ -111,6 +111,7 @@ export function SessionsPage({ f, reload }: { f: Filters; reload: number }) {
             {(['recent', 'cost', 'tokens'] as const).map((s) => <button key={s} className={sort === s ? 'on' : ''} onClick={() => setSort(s)} aria-pressed={sort === s}>{s === 'recent' ? 'Most recent' : s === 'cost' ? 'Highest cost' : 'Most tokens'}</button>)}
           </div>
         </header>
+        <p className="muted small rows-note">Sessions with activity in the selected range{f.model ? ' that used the selected model' : ''}. Each row shows the whole session, so a session that began before the range, or also used other models, costs more here than it adds to the totals above.</p>
         <p className="flag-legend muted small"><b>Flags:</b> ⇄ model switches · ◆ compactions · sub = subagent calls · ≥ lower bound = cost slightly understated · ≈ $x not in transcript = estimated cost of calls Claude Code billed but never wrote to the transcript · CC = Claude Code's own total differs by more than 5% (shown only where its record covers the whole session) · + unpriced = a model with no price, left out of the cost. Hover, focus or tap a chip for details.</p>
         <div className="scroll">
           <table className="tbl">
@@ -195,7 +196,8 @@ export function SessionPage({ id, reload }: { id: string; reload: number }) {
   const { data, error } = useApi<SessionDetail>(`/api/sessions/${encodeURIComponent(id)}`, [reload]);
   const color = useContext(ModelColors);
   if (error) return <div className="banner error">Could not load this session: {error}. <a href="#/">Back</a></div>;
-  if (!data) return <div className="empty">Loading…</div>;
+  // Session to session reuses this component; until the new one arrives, data still holds the previous session.
+  if (!data || data.session.sessionId !== id) return <div className="empty">Loading…</div>;
   const { session: s, turns, events, reconciliation } = data;
   const cc = s.costState?.totalCostUSD;
   return (

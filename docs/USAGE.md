@@ -105,7 +105,7 @@ Everything lives under `~/.ccmeter` (override with `CCMETER_HOME`; Claude Code's
 
 `~/.ccmeter/config.json`
 ```json
-{ "port": 7337, "openBrowser": false, "idleMinutes": 240 }
+{ "port": 7337, "openBrowser": false, "idleMinutes": 30 }
 ```
 `port` is the preferred dashboard port (the next free one is used if taken). `openBrowser` opens a tab on `/ccmeter`. `idleMinutes` stops the background server after that long without requests (0 disables).
 

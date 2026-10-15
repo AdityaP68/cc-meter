@@ -16,12 +16,21 @@ interface ServerInfo {
 }
 const infoFile = () => path.join(ccmeterHome(), 'server.json');
 
-function readConfig(): { port: number; openBrowser: boolean; idleMinutes: number } {
+/** The background server stops after this long without a request (an open dashboard tab does not poll). */
+export const DEFAULT_IDLE_MINUTES = 30;
+
+export function readConfig(): { port: number; openBrowser: boolean; idleMinutes: number } {
   try {
     const c = JSON.parse(fs.readFileSync(path.join(ccmeterHome(), 'config.json'), 'utf8'));
-    return { port: Number(c.port) || 7337, openBrowser: !!c.openBrowser, idleMinutes: c.idleMinutes === undefined ? 240 : Number(c.idleMinutes) };
+    const idle = Number(c.idleMinutes);
+    return {
+      port: Number(c.port) || 7337,
+      openBrowser: !!c.openBrowser,
+      // 0 disables the stop; a missing, negative or non-numeric value gets the default.
+      idleMinutes: c.idleMinutes !== undefined && Number.isFinite(idle) && idle >= 0 ? idle : DEFAULT_IDLE_MINUTES,
+    };
   } catch {
-    return { port: 7337, openBrowser: false, idleMinutes: 240 };
+    return { port: 7337, openBrowser: false, idleMinutes: DEFAULT_IDLE_MINUTES };
   }
 }
 

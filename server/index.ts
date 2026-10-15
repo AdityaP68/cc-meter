@@ -185,7 +185,7 @@ export function startServer(opts: ServerOptions): Promise<RunningServer> {
           timers.push(
             setInterval(() => {
               if (Date.now() - lastRequest > opts.idleMs!) opts.onIdle?.();
-            }, 60_000).unref(),
+            }, Math.min(60_000, opts.idleMs)).unref(),
           );
         resolve({
           server,

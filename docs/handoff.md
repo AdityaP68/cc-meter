@@ -17,10 +17,9 @@ Not pushed: commits after `3f231b5`.
 
 1. **Ask the user to push** (`git push origin main`; agent push is denied). Check `git log --oneline origin/main..main`
    and `git status` first; other sessions share this checkout.
-2. **Finish task 3 (read-only): why subagent replies are saved mid-stream.** `doctor`: 2 sessions, 1,199 messages
-   with final `stop_reason: null`. Use the `transcript-surveyor` subagent (aggregates only): Claude Code versions,
-   entry points, which subagent files, timing of last entries, abort/interrupt markers, newer versions still?
-   Conclude observed vs hypothesis and whether the user can prevent it; record in `docs/FORMATS.md` item 1.
+2. *(done 2026-10-15)* Why subagent replies are saved mid-stream: recorded in `docs/FORMATS.md` Known discrepancies item 1
+   (observed vs hypothesis; not preventable by the user as far as observed). Open: whether `cli`/`sdk-cli` subagents
+   behave the same needs a paid experiment (ask first); OTel `api_request` events (item 3) are the exact-source candidate.
 3. **Task 2 (hidden calls), report to the user before building.** Measured (FORMATS.md item 2, 2026-10-15): in 7
    sessions Claude Code's tokens are >= ccmeter's in every class, gap $32.28; an estimate is feasible there only.
    OTel `api_request` events (docs only, FORMATS.md "OpenTelemetry export") could count every call via a

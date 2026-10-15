@@ -1,7 +1,7 @@
 # Active task handoff
 
 **Updated:** 2026-10-15
-**Branch:** `main`. Milestones `m1`, `m2` tagged (local only); `main` was pushed at `e6ee5d2`, later commits are not.
+**Branch:** `main`. Milestones `m1`, `m2` tagged and pushed.
 History of earlier hand-offs: `git log -p -- docs/handoff.md`.
 
 ## Where things stand
@@ -13,13 +13,12 @@ race-safe `migrate()`; server `limit`/`offset` clamped; `setup --statusline` ref
 `settings.json`. `npm run verify` passes (124 tests); `dist/` rebuilt after each commit; real `doctor` 0 warnings.
 Owner decisions are in `docs/decisions/0007-*`: compliance parameters, `node:sqlite`, M3 judge via `claude -p`.
 Not done: the unpriced display change was not looked at in the browser (fixtures have no unpriced model).
-Nothing pushed.
+`main` and tags `m1`, `m2` pushed by the user on 2026-10-15 (origin/main at `461aa55`).
 
 ## Next
 
-1. **Push:** the user approved pushing `main` and tags `m1`, `m2` on 2026-10-15, but the session's permissions
-   blocked `git push`; check `git status -sb` and, if still ahead of `origin/main`, ask the user to run
-   `git push origin main m1 m2`. The command file `plugin/commands/ccmeter.md` is kept (decided).
+1. **Nothing is blocking.** Pushed; the command file `plugin/commands/ccmeter.md` is kept (decided). Pushing from an
+   agent session needs a `git push` permission rule; the user ran the push themselves.
 2. **Optional follow-ups:** look at the unpriced rows in the browser (`dashboard-check` with a transcript using an
    unknown model, isolated `CCMETER_HOME`); check that the dashboard bundle ships React's MIT notice before any
    public release.

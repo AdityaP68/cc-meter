@@ -14,14 +14,17 @@ race-safe `migrate()`; server `limit`/`offset` clamped; `setup --statusline` ref
 Owner decisions are in `docs/decisions/0007-*`: compliance parameters, `node:sqlite`, M3 judge via `claude -p`.
 Not done: the unpriced display change was not looked at in the browser (fixtures have no unpriced model).
 `main` and tags `m1`, `m2` pushed by the user on 2026-10-15 (origin/main at `461aa55`). Later the same day: Flags
-column alignment (`59acbe4`) and Health/doctor accuracy (`dee1894`), built and live; not pushed.
+column alignment (`59acbe4`) and Health/doctor accuracy (`dee1894`), built and live. The user is pushing these (agent `git push` is denied by permissions);
+check `git status -sb`.
 
 ## Next
 
 1. **Nothing is blocking.** Pushed; the command file `plugin/commands/ccmeter.md` is kept (decided). Pushing from an
    agent session needs a `git push` permission rule; the user ran the push themselves.
-2. **Open question from the user: keeping prices current as models are released.** Options were given in chat
-   (2026-10-15); nothing chosen. Current mechanism: unknown model = unpriced + `doctor` warning; fix by editing
+2. **Open question from the user: keeping prices current as models are released.** Options given in chat 2026-10-15:
+   (1) manual as now; (2, agent's recommendation) while a model is unpriced, show Claude Code's own `cost-state` cost
+   for it in Health, and let `doctor` suggest rates derived from cost-state, labelled `derived`; (3) online price
+   fetch, rejected (no-network rule). Ask the user to choose; nothing is built. Current mechanism: unknown model = unpriced + `doctor` warning; fix by editing
    `pricing.json` (repo) or `~/.ccmeter/pricing.json`; `format-drift` skill after a Claude Code release.
 3. **Optional follow-ups:** look at the unpriced rows in the browser (`dashboard-check` with a transcript using an
    unknown model, isolated `CCMETER_HOME`); check that the dashboard bundle ships React's MIT notice before any

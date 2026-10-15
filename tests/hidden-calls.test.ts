@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { openDb } from '../core/db.js';
 import { loadPricing, messageCost } from '../core/pricing.js';
 import { recordTranscript } from '../core/record.js';
-import { hiddenCallsEstimate } from '../core/reconcile.js';
+import { claudeCodePartial, hiddenCallsEstimate } from '../core/reconcile.js';
 import { startServer, type RunningServer } from '../server/index.js';
 import { asst, costStateLine, installFixture, tmpDir } from './helpers/util.js';
 
@@ -63,6 +63,30 @@ describe('hiddenCallsEstimate', () => {
   });
 });
 
+describe('claudeCodePartial', () => {
+  it("names the models Claude Code's record lacks and the classes where it counted fewer tokens", () => {
+    // 2026-10-15 case: a session whose cost-state had no Sonnet entry and about half the Opus output and cache tokens.
+    const O = 'claude-opus-5';
+    const opus: T = { input: 400, output: 20_000, cacheWrite: 50_000, cacheRead: 900_000 };
+    const half: T = { input: 400, output: 10_000, cacheWrite: 25_000, cacheRead: 450_000 };
+    const p = claudeCodePartial({ models: [ours(S, seen), ours(O, opus)], costState: cs({ [O]: theirs(O, half) }) }, table);
+    expect(p).toEqual({ missingModels: [S], fewerTokens: [{ model: O, classes: ['output', 'cacheWrite', 'cacheRead'] }] });
+    expect(hiddenCallsEstimate({ models: [ours(S, seen), ours(O, opus)], costState: cs({ [O]: theirs(O, half) }), partialMessages: 0 }, table)).toBeNull();
+  });
+
+  it('is null without a cost-state entry, when tokens match, and when Claude Code counted at least as much everywhere', () => {
+    expect(claudeCodePartial({ models: [ours(S, seen)], costState: null }, table)).toBeNull();
+    expect(claudeCodePartial({ models: [ours(S, seen)], costState: cs({ [S]: theirs(S, seen) }) }, table)).toBeNull();
+    // more tokens, and a model only Claude Code saw: hidden calls, not a partial record
+    expect(claudeCodePartial({ models: [ours(S, seen)], costState: cs({ [S]: theirs(S, billed), [H]: theirs(H, haikuOnly) }) }, table)).toBeNull();
+  });
+
+  it('flags a single class short by one token', () => {
+    const p = claudeCodePartial({ models: [ours(S, seen)], costState: cs({ [S]: theirs(S, { ...billed, cacheRead: seen.cacheRead - 1 }) }) }, table);
+    expect(p).toEqual({ missingModels: [], fewerTokens: [{ model: S, classes: ['cacheRead'] }] });
+  });
+});
+
 it('the dashboard shows the estimate to the cent, never finer', async () => {
   const { approxUsd } = await import('../dashboard/src/format.ts');
   expect([0.004, 0.108, 6.951, 1234.5].map(approxUsd)).toEqual(['< $0.01', '≈ $0.11', '≈ $6.95', '≈ $1,235']);
@@ -111,6 +135,8 @@ describe('server: calls not in the transcript', () => {
     expect(rows).toHaveLength(3);
     expect(by('hidden-calls').hiddenCalls.usd).toBeCloseTo(price(S, billed) - price(S, seen) + price(H, haikuOnly), 9);
     expect(by('resumed').hiddenCalls).toBeNull();
+    expect(by('resumed').claudeCodePartial).toEqual({ missingModels: [], fewerTokens: [{ model: S, classes: ['input', 'output', 'cacheWrite', 'cacheRead'] }] });
+    expect(by('hidden-calls').claudeCodePartial).toBeNull();
     for (const r of rows.filter((x: any) => !['hidden-calls', 'resumed'].includes(x.sessionId))) expect(r.hiddenCalls).toBeNull();
   });
 
@@ -125,6 +151,9 @@ describe('server: calls not in the transcript', () => {
     const d = await json('/api/sessions/hidden-calls');
     expect(d.session.hiddenCalls).toMatchObject({ outputTokensExcluded: 0 });
     expect(d.session.hiddenCalls.claudeCodeUsd).toBeCloseTo(price(S, billed) + price(H, haikuOnly), 9);
-    expect((await json('/api/sessions/resumed')).session.hiddenCalls).toBeNull();
+    const resumed = (await json('/api/sessions/resumed')).session;
+    expect(resumed.hiddenCalls).toBeNull();
+    expect(resumed.claudeCodePartial.fewerTokens).toHaveLength(1);
+    expect(d.session.claudeCodePartial).toBeNull();
   });
 });

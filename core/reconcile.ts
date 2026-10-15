@@ -62,6 +62,37 @@ export function reconcile(s: Pick<SessionRow, 'models' | 'costState'>, table: Pr
   });
 }
 
+export type TokenClass = 'input' | 'output' | 'cacheWrite' | 'cacheRead';
+
+export interface PartialRecord {
+  /** Models in the transcript that Claude Code's cost-state has no entry for. */
+  missingModels: string[];
+  /** Models for which Claude Code counted fewer tokens than the transcript, with the classes where it did. */
+  fewerTokens: { model: string; classes: TokenClass[] }[];
+}
+
+/**
+ * Whether Claude Code's `cost-state` provably covers only part of the session (docs/FORMATS.md, Known discrepancies
+ * 3): a model ccmeter saw is missing from it, or it counted fewer tokens than the transcript in some class for some
+ * model. Then its total is not the session's cost and ccmeter's is the complete one. null when there is no
+ * cost-state entry or nothing shows it to be partial. Exactly the sessions for which `hiddenCallsEstimate` declines
+ * because coverage fails.
+ */
+export function claudeCodePartial(s: Pick<SessionRow, 'models' | 'costState'>, table: PriceTable): PartialRecord | null {
+  if (!s.costState) return null;
+  const missingModels: string[] = [];
+  const fewerTokens: PartialRecord['fewerTokens'] = [];
+  for (const r of reconcile(s, table)) {
+    if (!r.delta) {
+      missingModels.push(r.model);
+      continue;
+    }
+    const classes = (['input', 'output', 'cacheWrite', 'cacheRead'] as const).filter((k) => r.delta![k] > 0);
+    if (classes.length) fewerTokens.push({ model: r.model, classes });
+  }
+  return missingModels.length || fewerTokens.length ? { missingModels, fewerTokens } : null;
+}
+
 export interface HiddenCallsEstimate {
   /** Claude Code's cost minus ccmeter's (USD): calls Claude Code billed but never wrote to the transcript. An estimate. */
   usd: number;

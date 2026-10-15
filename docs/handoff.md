@@ -25,10 +25,8 @@ Not pushed: commits after `3f231b5`.
    OTel `api_request` events (docs only, FORMATS.md "OpenTelemetry export") could count every call via a
    127.0.0.1 receiver. Verifying needs a **paid** `claude -p` run in an isolated `CLAUDE_CONFIG_DIR` with the
    plugin disabled: **ask the user first**. Never edit the user's `~/.claude/settings.json`.
-4. **Bug found, not fixed (offer it):** hook mode can drop a payload under load: `readStdinJson`
-   (`cli/commands/record.ts`) read nothing once (`tests/cli.test.ts` failed 1 of ~15 runs; that run's
-   record.log says `hook ? without transcript_path`). Likely an EAGAIN read of a pipe on fd 0; the next
-   Stop hook re-records, so impact is a delay. Reproduce, then read stdin robustly (retry on EAGAIN).
+4. *(done 2026-10-15, `d5ea40c`)* Hook mode dropped a late stdin payload: touching `process.stdin` made fd 0
+   non-blocking, so `readFileSync(0)` threw EAGAIN. Fixed with `cli/stdin.ts`; guarded by `tests/stdin.test.ts`.
 5. The user's running dashboard server still has the old 240-minute idle stop until it restarts
    (`ccmeter serve --stop`; `/ccmeter` starts it again).
 6. Older follow-ups (offer): `/api/refresh` should reload `pricing.json`; React's MIT notice before a public release.

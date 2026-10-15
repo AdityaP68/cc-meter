@@ -9,7 +9,7 @@ whose numbers can be trusted, and which costs zero tokens in the sessions it mea
 
 ## What is done and verified
 - **M1 (core + recorder)** and **M2 (dashboard + status line)** are built; tags `m1`, `m2`.
-  106 tests pass on 2026-10-15 (unit, golden fixtures from 5 Claude Code versions, server, CLI, plugin
+  124 tests pass on 2026-10-15 (unit, golden fixtures from 5 Claude Code versions, server, CLI, plugin
   scripts, a happy-dom smoke test that route changes keep the dashboard mounted).
 - **Installed on the user's machine** (2026-10-14) from this checkout; live hook recording and `/ccmeter`
   verified headlessly. Interactive behaviour not yet reported back by the user.
@@ -19,10 +19,7 @@ whose numbers can be trusted, and which costs zero tokens in the sessions it mea
 - **Context harness** for working on this repo (this document, handoff, hooks, rules, skills, checks,
   verify loop, skills incl. `react-check`): `docs/harness.md`. `main` is pushed (e6ee5d2); tags `m1`, `m2`
   are local only.
-- **Known defects, not yet fixed** (review of 2026-10-15; list in `docs/handoff.md` item 1): unpriced models
-  show `$0` in some views and `export`; unvalidated `pricing.json` override; `readCostState` can throw;
-  `migrate()` is not race-safe; server `limit`/`offset` unclamped; setup can overwrite an unparsable
-  `settings.json`.
+- **Review fixes of 2026-10-15 are done** (six commits, `docs/status.md`); built and live, `doctor` 0 warnings.
 
 ## Open
 - The user is trying ccmeter and will report; their read-through questions are pending.

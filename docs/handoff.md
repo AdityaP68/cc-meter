@@ -1,36 +1,30 @@
 # Active task handoff
 
 **Updated:** 2026-10-15
-**Branch:** `main`. Milestones `m1`, `m2` tagged; the context harness was added after `m2`.
+**Branch:** `main`. Milestones `m1`, `m2` tagged (local only); `main` was pushed at `e6ee5d2`, later commits are not.
 History of earlier hand-offs: `git log -p -- docs/handoff.md`.
 
 ## Where things stand
-2026-10-15: fixed the user's reports and reviewed the project. Committed: blank page after navigating (`82bf4ae`),
-fallback label for untitled sessions and an explicit empty Flags cell (`a71f679`), overview totals now match the
-chart (`d391dc6`), record hook always exits 0 (`038ff40`). Built (`dist/` is live) and `doctor` is clean.
-The review findings are not fixed yet. They are in the shared notes file `review-2026-10-15.md` (path in the chat
-report) and in the commit bodies. Since then: happy-dom DOM smoke test (`7509466`) and skill `react-check`
-(`e6ee5d2`), both docs/tests/tooling only. Re-checked 2026-10-15: no `core/`, `cli/`, `server/`, `plugin/` or
-`dashboard/src/` file changed after this hand-off, so the findings below still apply; `npm run verify` passes
-(106 tests); real `doctor` 0 warnings, 0 errors. `main` is pushed (e6ee5d2); tags `m1`, `m2` are not.
-Uncommitted: nothing (before this refresh).
+2026-10-15: the six review fixes are done, each its own commit with the test written first (hashes in
+`docs/status.md`): unpriced never `$0` (reconciliation tables, MixBar tooltip, export `costUsd` + `costComplete`);
+`pricing.json` override validated (bad entries ignored, `doctor` check `pricing-override`); `readCostState`
+tolerates malformed `modelUsage` (no `RECORDER_VERSION` bump: output is unchanged for input that parsed before);
+race-safe `migrate()`; server `limit`/`offset` clamped; `setup --statusline` refuses an unparsable
+`settings.json`. `npm run verify` passes (124 tests); `dist/` rebuilt after each commit; real `doctor` 0 warnings.
+Owner decisions are in `docs/decisions/0007-*`: compliance parameters, `node:sqlite`, M3 judge via `claude -p`.
+Not done: the unpriced display change was not looked at in the browser (fixtures have no unpriced model).
+Nothing pushed.
 
 ## Next
 
-1. **Get the user's go-ahead on the review fixes, then do them in this order** (each one: test first, then
-   `npm run verify`, commit, `npm run build`, real `ccmeter doctor`). Stop after each commit if `doctor` warns.
-   a. Unpriced models show `$0` in the reconciliation tables, the MixBar tooltip and `export`. Files:
-      `dashboard/src/pages.tsx`, `cli/commands/report.ts`, `dashboard/src/charts.tsx`, `cli/commands/export.ts`.
-   b. Validate the `~/.ccmeter/pricing.json` override (finite numbers, `Object.hasOwn`); NaN must become null.
-      File: `core/pricing.ts`.
-   c. `readCostState` must not throw on a malformed `modelUsage` entry. File: `core/parser/cc21.ts`.
-      If parsing changes, bump `RECORDER_VERSION`.
-   d. Make `migrate()` race-safe: `BEGIN IMMEDIATE`, then re-read `user_version`. File: `core/db.ts`.
-   e. Clamp the server's `limit`/`offset`. Make setup refuse to overwrite an unparsable `settings.json`.
-2. **Decisions:** (a)-(c) answered, recorded in `docs/decisions/0007-*`. Open: (d) keep or drop
-   `plugin/commands/ccmeter.md`; the agent recommended keep (comparison given in chat 2026-10-15).
-3. **Roadmap (the user picks; nothing is approved yet):** M3 session review; per-project budgets and alerts;
-   context size over time with long-session warnings; cache-efficiency view; comparing periods; a filter for
-   interactive vs headless sessions. Ranking: the chat report of 2026-10-15.
+1. **Ask the user** (one message): push `main` and tags `m1`, `m2` (needs explicit approval); keep or drop
+   `plugin/commands/ccmeter.md` (agent recommends keep: about 16 tokens per session, it is the only discoverable
+   entry point).
+2. **Optional follow-ups:** look at the unpriced rows in the browser (`dashboard-check` with a transcript using an
+   unknown model, isolated `CCMETER_HOME`); check that the dashboard bundle ships React's MIT notice before any
+   public release.
+3. **Roadmap (the user picks; nothing is approved yet):** M3 session review (design: `docs/ARCHITECTURE.md` §3, judge
+   via `claude -p`); per-project budgets and alerts; context size over time with long-session warnings;
+   cache-efficiency view; comparing periods; a filter for interactive vs headless sessions.
 4. Before changing `core/`, `cli/`, `server/` or `plugin/`, run `npm run verify` and run `npm run build` only
    when it passes. `dist/` is the user's live install.

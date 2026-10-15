@@ -17,8 +17,8 @@ whose numbers can be trusted, and which costs zero tokens in the sessions it mea
   token-for-token; prices for Sonnet 5.5, Haiku 4.5 and Opus 5.5 reproduce Claude Code's own costs.
   The four mismatches and their causes: `docs/FORMATS.md` → Known discrepancies.
 - **Context harness** for working on this repo (this document, handoff, hooks, rules, skills, checks,
-  verify loop, skills incl. `react-check`): `docs/harness.md`. `main` is pushed (e6ee5d2); tags `m1`, `m2`
-  are local only.
+  verify loop, skills incl. `react-check`): `docs/harness.md`. Tags `m1`, `m2` and `main` are on GitHub
+  (pushed by the user; see `git status -sb` for unpushed commits).
 - **Review fixes of 2026-10-15 are done** (six commits, `docs/status.md`); built and live, `doctor` 0 warnings.
 
 ## Open

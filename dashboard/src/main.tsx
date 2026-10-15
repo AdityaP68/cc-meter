@@ -64,6 +64,9 @@ function App() {
   }, []);
 
   const issues = (doctor.data?.checks ?? []).filter((c) => c.level === 'warn' || c.level === 'error');
+  const unpriced = facets.data?.unpriced ?? [];
+  // The unpriced banner below says it more usefully, so the generic health banner skips that check.
+  const otherIssues = issues.filter((c) => !(c.id === 'unpriced' && unpriced.length));
   const [, route = '', arg = ''] = hash.split('/');
   const page = route === 'session' ? 'session' : route === 'rollups' ? 'rollups' : route === 'health' ? 'health' : 'sessions';
 
@@ -85,9 +88,15 @@ function App() {
       </header>
       <main>
         {page !== 'session' && page !== 'health' && <FilterBar f={filters} set={setFilters} facets={facets.data} />}
-        {issues.length > 0 && page !== 'health' && (
-          <div className={`banner ${issues.some((i) => i.level === 'error') ? 'error' : 'warn'}`}>
-            <b>⚠ {issues.length} health {issues.length === 1 ? 'warning' : 'warnings'}:</b> {issues.map((i) => i.title).join(' · ')} <a href="#/health">Details</a>
+        {unpriced.length > 0 && (
+          <div className="banner warn" role="status">
+            <b>⚠ No price for {unpriced.join(', ')}.</b> Costs for {unpriced.length === 1 ? 'this model are' : 'these models are'} left out of every total (never counted as $0).
+            {' '}Add a price to <code>~/.ccmeter/pricing.json</code> (same shape as <code>pricing.json</code>), or run <code>ccmeter doctor</code> for details and a suggested price. {page !== 'health' && <a href="#/health">Details</a>}
+          </div>
+        )}
+        {otherIssues.length > 0 && page !== 'health' && (
+          <div className={`banner ${otherIssues.some((i) => i.level === 'error') ? 'error' : 'warn'}`}>
+            <b>⚠ {otherIssues.length} health {otherIssues.length === 1 ? 'warning' : 'warnings'}:</b> {otherIssues.map((i) => i.title).join(' · ')} <a href="#/health">Details</a>
           </div>
         )}
         {page === 'sessions' && <SessionsPage f={filters} reload={reload} />}

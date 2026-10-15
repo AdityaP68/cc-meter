@@ -13,10 +13,13 @@ interface Cached {
   cost: number;
   tokens: number;
   unpriced: boolean;
+  /** Models in this session without a price (absent in caches written before 2026-10-15: recompute). */
+  unpricedModels?: string[];
 }
 
 /**
- * Claude Code statusLine command: `model | session cost | tokens`.
+ * Claude Code statusLine command: `model | session cost | tokens`, plus `⚠ unpriced: <model>` when this session used a
+ * model with no price.
  * stdin JSON has the model name and Claude Code's own cost estimate, but only the *current-context* token counts;
  * cumulative tokens and ccmeter's cost come from the transcript, cached by file size+mtime so repeated refreshes are free.
  * Never throws and never prints to stderr: a broken status line must not disturb the session.
@@ -32,6 +35,7 @@ export async function cmdStatusline(_args: Parsed): Promise<number> {
   let cost: number | null = null;
   let tokens: number | null = null;
   let unpriced = false;
+  let unpricedModels: string[] = [];
   try {
     const tp: string | undefined = input?.transcript_path;
     if (tp && fs.existsSync(tp)) {
@@ -45,21 +49,22 @@ export async function cmdStatusline(_args: Parsed): Promise<number> {
       } catch {
         /* miss */
       }
-      if (!c || c.sig !== sig || c.pricing !== table.hash) {
+      if (!c || c.sig !== sig || c.pricing !== table.hash || !Array.isArray(c.unpricedModels)) {
         const s = parseSession(tp, table);
         if (s) {
-          c = { sig, pricing: table.hash, cost: s.costUsd, tokens: totalTokens(s.tokens), unpriced: s.unpricedTokens > 0 };
+          c = { sig, pricing: table.hash, cost: s.costUsd, tokens: totalTokens(s.tokens), unpriced: s.unpricedTokens > 0, unpricedModels: s.unpricedModels };
           fs.mkdirSync(cacheDir, { recursive: true });
           fs.writeFileSync(cacheFile, JSON.stringify(c));
         }
       }
-      if (c) ({ cost, tokens, unpriced } = c);
+      if (c) ({ cost, tokens, unpriced } = c), (unpricedModels = c.unpricedModels ?? []);
     }
   } catch {
     /* fall through to stdin values */
   }
   if (cost === null && typeof input?.cost?.total_cost_usd === 'number') cost = input.cost.total_cost_usd;
   const parts = [model, cost === null ? '$–' : `${usd(cost)}${unpriced ? '+?' : ''}`, tokens === null ? '– tok' : `${tok(tokens)} tok`];
+  if (unpricedModels.length) parts.push(`⚠ unpriced: ${unpricedModels.join(',')}`); // fix: ~/.ccmeter/pricing.json or `ccmeter doctor`
   process.stdout.write(parts.join(' | ') + '\n');
   return 0;
 }

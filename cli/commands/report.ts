@@ -1,9 +1,9 @@
-import { getSession, listSessions, overview, rollup, type SessionSort } from '../../core/aggregate.js';
+import { facets, getSession, listSessions, overview, rollup, type SessionSort } from '../../core/aggregate.js';
 import { openDb } from '../../core/db.js';
 import { loadPricing } from '../../core/pricing.js';
 import { reconcile } from '../../core/reconcile.js';
 import { flagNum, flagStr, type Parsed } from '../args.js';
-import { costCell, dur, pad, table, tok, usd, usdOrUnpriced } from '../format.js';
+import { costCell, dur, pad, table, tok, unpricedNotice, usd, usdOrUnpriced } from '../format.js';
 
 function sinceFlag(args: Parsed): string | undefined {
   const s = flagStr(args, 'since');
@@ -17,6 +17,8 @@ export async function cmdReport(args: Parsed): Promise<number> {
   const tableP = loadPricing();
   const json = !!args.flags.json;
   const f = { since: sinceFlag(args), project: flagStr(args, 'project'), model: flagStr(args, 'model'), source: flagStr(args, 'source') };
+  const unpriced = facets(db).unpriced;
+  if (!json && unpriced.length) console.log(unpricedNotice(unpriced));
 
   const sid = flagStr(args, 'session');
   if (sid) {

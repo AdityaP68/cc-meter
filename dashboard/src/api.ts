@@ -24,7 +24,7 @@ export interface Overview {
 }
 export interface Rollup { key: string; sessions: number; messages: number; totalTokens: number; costUsd: number; unpricedTokens: number }
 export interface DayModel { day: string; model: string; costUsd: number; totalTokens: number; unpricedTokens: number }
-export interface Facets { projects: string[]; models: string[]; sources: string[] }
+export interface Facets { projects: string[]; models: string[]; sources: string[]; unpriced: string[] }
 export interface Check { id: string; level: 'ok' | 'info' | 'warn' | 'error'; title: string; detail?: string }
 export interface PricingRow { model: string; basis: string; pairs: number; consistent: number; maxOutsideUsd: number; exactTokenPairs: number; exactMaxAbsErrUsd: number }
 

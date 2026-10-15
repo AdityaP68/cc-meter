@@ -320,12 +320,14 @@ export function overview(db: Db, f: Filters = {}): Overview {
 }
 
 /** Distinct values for UI filter dropdowns. */
-export function facets(db: Db): { projects: string[]; models: string[]; sources: string[] } {
+export function facets(db: Db): { projects: string[]; models: string[]; sources: string[]; unpriced: string[] } {
   const col = (sql: string) => (db.prepare(sql).all() as Raw[]).map((r) => String(Object.values(r)[0]));
   return {
     projects: col("SELECT DISTINCT project FROM sessions WHERE project IS NOT NULL ORDER BY project"),
     models: col('SELECT DISTINCT model FROM messages ORDER BY model'),
     sources: col('SELECT DISTINCT source FROM sessions ORDER BY source'),
+    /** Models with at least one message that has no price, across all data (drives the upfront prompt). */
+    unpriced: col('SELECT DISTINCT model FROM messages WHERE priced = 0 ORDER BY model'),
   };
 }
 

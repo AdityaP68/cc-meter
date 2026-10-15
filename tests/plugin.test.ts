@@ -66,14 +66,14 @@ describe('/ccmeter prompt hook (plugin/scripts/prompt-hook.sh)', () => {
     expect(fs.existsSync(path.join(home, 'server.json'))).toBe(false);
   });
 
-  it('stops "/ccmeter" with the dashboard URL as the only text, then the server can be stopped', () => {
+  it('stops "/ccmeter" with one labelled line, the dashboard URL, then the server can be stopped', () => {
     const claude = tmpDir('claude-');
     const r = sh('prompt-hook.sh', JSON.stringify({ hook_event_name: 'UserPromptSubmit', prompt: '/ccmeter' }), { ...env, CLAUDE_CONFIG_DIR: claude });
     try {
       expect(r.status).toBe(0);
       const out = JSON.parse(r.stdout);
       expect(out.continue).toBe(false);
-      expect(out.stopReason).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/$/);
+      expect(out.stopReason).toMatch(/^ccmeter dashboard: http:\/\/127\.0\.0\.1:\d+\/$/);
     } finally {
       spawnSync(process.execPath, [CLI_JS, 'serve', '--stop'], { env: { ...process.env, CCMETER_HOME: home } });
     }

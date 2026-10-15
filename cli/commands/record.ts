@@ -6,6 +6,7 @@ import { loadPricing } from '../../core/pricing.js';
 import { listTranscripts, recordAll, recordTranscript } from '../../core/record.js';
 import { flagStr, type Parsed } from '../args.js';
 import { usd } from '../format.js';
+import { readStdinText } from '../stdin.js';
 
 function logLine(msg: string): void {
   try {
@@ -24,9 +25,8 @@ function logLine(msg: string): void {
 }
 
 function readStdinJson(): Record<string, unknown> | null {
-  if (process.stdin.isTTY) return null;
   try {
-    const text = fs.readFileSync(0, 'utf8');
+    const text = readStdinText();
     return text.trim() ? (JSON.parse(text) as Record<string, unknown>) : null;
   } catch {
     return null;

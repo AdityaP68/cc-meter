@@ -65,3 +65,8 @@ column looks skewed. Put the flex container inside the cell. Guarded by `tests/d
 ## 2026-10-15 — A label is not evidence
 `pricing.json`'s `basis: list` made `doctor` say "not verified" while the evidence (Claude Code's own cost) matched.
 Report what the data shows per model, and say explicitly when there is nothing to compare.
+
+## 2026-10-15 — `process.stdin` makes fd 0 non-blocking
+Touching `process.stdin` (even `.isTTY`) on a pipe opens fd 0 as a non-blocking stream; a later
+`fs.readFileSync(0)` throws EAGAIN if the writer has not written yet, so hook mode silently read no payload under
+load. Use `tty.isatty(0)` and `readStdinText` (`cli/stdin.ts`), which retries EAGAIN. Guarded by `tests/stdin.test.ts`.

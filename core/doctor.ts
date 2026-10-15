@@ -6,7 +6,7 @@ import { LATEST_SCHEMA, schemaVersion, type Db } from './db.js';
 import { ccmeterHome, claudeHome, dbPath } from './paths.js';
 import { PARSERS, cmpVersion } from './parser/index.js';
 import { lookupPrice, type PriceTable } from './pricing.js';
-import { listTranscripts, transcriptSignature } from './record.js';
+import { listTranscripts, parseSession, transcriptSignature } from './record.js';
 import { reconcile } from './reconcile.js';
 import type { ParseStats } from './parser/types.js';
 
@@ -113,10 +113,30 @@ export function runDoctor(db: Db, table: PriceTable, opts: DoctorOptions = {}): 
   if (unpriced.length)
     add('unpriced', 'warn', `Unpriced models (shown as "unpriced", never as $0): ${unpriced.map((u) => u.model).join(', ')}`, `${unpriced.map((u) => `${u.model}: ${u.n} messages / ${u.tok} tokens`).join('; ')}. Add them to ~/.ccmeter/pricing.json (same shape as pricing.json).`);
   else add('unpriced', 'ok', 'Every recorded model has a price');
-  const listOnly = (db.prepare('SELECT DISTINCT model FROM messages WHERE priced = 1').all() as { model: string }[])
+  const listOnly = (db.prepare('SELECT DISTINCT model FROM messages WHERE priced = 1 ORDER BY model').all() as { model: string }[])
     .map((r) => r.model)
     .filter((m) => lookupPrice(table, m)?.price.basis === 'list');
-  if (listOnly.length) add('price-basis', 'info', `Prices for ${listOnly.join(', ')} come from list prices and have not been verified against Claude Code's own cost figures`, 'Run `ccmeter doctor --verify-pricing` to compare where Claude Code recorded a cost.');
+  if (listOnly.length) {
+    // The basis is a label in pricing.json; the evidence is whether Claude Code's own costs agree with the table.
+    const evidence = new Map(verifyPricing(db, table).map((r) => [r.model, r]));
+    const lines = listOnly.map((m) => {
+      const e = evidence.get(m);
+      if (!e || e.pairs === 0) return `${m}: list price, no Claude Code cost recorded to compare`;
+      return `${m}: list price, matches Claude Code in ${e.consistent} of ${e.pairs} session(s)${e.consistent < e.pairs ? ` (largest miss $${e.maxOutsideUsd.toFixed(4)})` : ''}`;
+    });
+    const unchecked = listOnly.filter((m) => !evidence.get(m)?.pairs);
+    const off = listOnly.filter((m) => { const e = evidence.get(m); return !!e && e.consistent < e.pairs; });
+    add(
+      'price-basis',
+      off.length ? 'warn' : 'info',
+      off.length
+        ? `Claude Code's own cost disagrees with the list price for ${off.join(', ')}`
+        : unchecked.length
+          ? `No Claude Code cost to check the list price of ${unchecked.join(', ')}`
+          : `List prices for ${listOnly.join(', ')} match Claude Code's own costs`,
+      `${lines.join('; ')}. Only sessions where Claude Code wrote a cost-state entry can be compared. Details: \`ccmeter doctor --verify-pricing\`.`,
+    );
+  }
   if (table.rejected.length) add('pricing-override', 'warn', `Ignored entries in ~/.ccmeter/pricing.json: ${table.rejected.join(', ')}`, 'Each model needs finite, non-negative numbers for input, output, cacheRead, cacheWrite5m and cacheWrite1h. Those models stay unpriced (never $0) until fixed.');
   add('pricing', 'ok', `Pricing table ${table.version} (${table.hash}) from ${table.sources.join(' + ')}`);
 
@@ -144,14 +164,23 @@ export function runDoctor(db: Db, table: PriceTable, opts: DoctorOptions = {}): 
     const known = new Map((db.prepare('SELECT session_id id, transcript_sig sig FROM sessions').all() as { id: string; sig: string }[]).map((r) => [r.id, r.sig]));
     let missing = 0;
     let stale = 0;
+    let noCalls = 0;
     for (const f of listTranscripts()) {
       const id = path.basename(f, '.jsonl');
       const sig = known.get(id);
-      if (sig === undefined) missing++;
-      else if (sig !== transcriptSignature(f)) stale++;
+      if (sig === undefined) {
+        // The recorder skips transcripts without a real API call (only synthetic replies, aborted starts).
+        if ((parseSession(f, table)?.messageCount ?? 0) === 0) noCalls++;
+        else missing++;
+      } else if (sig !== transcriptSignature(f)) stale++;
     }
-    if (missing || stale) add('coverage', 'info', `${missing} transcripts are not recorded and ${stale} are out of date`, 'Run `ccmeter record --all` to backfill (sessions with no assistant messages are skipped).');
-    else add('coverage', 'ok', 'All transcripts on disk are recorded');
+    const parts = [
+      missing ? `${missing} transcript${missing === 1 ? ' is' : 's are'} not recorded` : '',
+      stale ? `${stale} transcript${stale === 1 ? ' is' : 's are'} out of date` : '',
+    ].filter(Boolean);
+    const skipped = noCalls ? `${noCalls} transcript${noCalls === 1 ? ' has' : 's have'} no API calls (nothing to record)` : '';
+    if (parts.length) add('coverage', 'info', [parts.join(' and '), skipped].filter(Boolean).join('; '), 'Run `ccmeter record --all` to backfill.');
+    else add('coverage', 'ok', `All transcripts with API calls are recorded${skipped ? `; ${skipped}` : ''}`);
   } catch {
     /* no projects dir */
   }
@@ -160,18 +189,32 @@ export function runDoctor(db: Db, table: PriceTable, opts: DoctorOptions = {}): 
   const { rows } = listSessions(db, { limit: 100000 });
   let pairs = 0;
   let matched = 0;
+  let worst: { id: string; ours: number; theirs: number; gap: number } | null = null;
   for (const s of rows) {
     if (!s.costState) continue;
     for (const r of reconcile(s, table)) {
       if (!r.claudeCode) continue;
       pairs++;
       if (r.tokensMatch) matched++;
+      else if (r.ccmeter.cost !== null) {
+        const gap = Math.abs(r.ccmeter.cost - r.claudeCode.cost);
+        if (!worst || gap > worst.gap) worst = { id: s.sessionId, ours: r.ccmeter.cost, theirs: r.claudeCode.cost, gap };
+      }
     }
   }
-  if (pairs)
-    add('reconcile', matched === pairs ? 'ok' : 'info', `Token totals equal Claude Code's own cost-state for ${matched} of ${pairs} (session, model) pairs`, matched === pairs ? undefined : 'A difference means one side sees calls the other does not (extra Claude Code-billed calls, or sessions resumed across processes); see docs/FORMATS.md and `ccmeter report --session <id>`.');
+  if (pairs) {
+    const largest = worst ? ` Largest difference: session ${worst.id} (${r2(worst.ours, worst.theirs)}); see \`ccmeter report --session ${worst.id}\`.` : '';
+    add(
+      'reconcile',
+      matched === pairs ? 'ok' : 'info',
+      `Token totals equal Claude Code's own cost-state for ${matched} of ${pairs} (session, model) pairs`,
+      matched === pairs ? undefined : `A difference means one side sees calls the other does not: Claude Code can bill calls it never writes as messages, and its cost entry covers only the last process of a session resumed several times (then ccmeter's total, from the whole transcript, is the larger and complete one). See docs/FORMATS.md.${largest}`,
+    );
+  }
   return checks;
 }
+
+const r2 = (ours: number, theirs: number): string => `ccmeter $${ours.toFixed(2)}, Claude Code $${theirs.toFixed(2)}`;
 
 export interface PricingVerifyRow {
   model: string;
@@ -195,13 +238,14 @@ export interface PricingVerifyRow {
  */
 export function verifyPricing(db: Db, table: PriceTable): PricingVerifyRow[] {
   const acc = new Map<string, PricingVerifyRow>();
+  const blank = (model: string): PricingVerifyRow => ({ model, basis: lookupPrice(table, model)?.price.basis ?? 'list', pairs: 0, consistent: 0, maxOutsideUsd: 0, exactTokenPairs: 0, exactMaxAbsErrUsd: 0 });
+  // Every priced model that was used, so a model without any Claude Code cost to compare shows up as such.
+  for (const { model } of db.prepare('SELECT DISTINCT model FROM messages WHERE priced = 1').all() as { model: string }[]) acc.set(model, blank(model));
   const { rows } = listSessions(db, { limit: 100000 });
   for (const s of rows) {
     for (const r of reconcile(s, table)) {
       if (!r.claudeCode || !r.priceRange || r.claudeCode.cost <= 0) continue;
-      const cur =
-        acc.get(r.model) ??
-        { model: r.model, basis: lookupPrice(table, r.model)?.price.basis ?? 'list', pairs: 0, consistent: 0, maxOutsideUsd: 0, exactTokenPairs: 0, exactMaxAbsErrUsd: 0 };
+      const cur = acc.get(r.model) ?? blank(r.model);
       cur.pairs++;
       const outside = Math.max(r.priceRange.low - r.claudeCode.cost, r.claudeCode.cost - r.priceRange.high, 0);
       if (outside <= 0.005) cur.consistent++;

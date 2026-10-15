@@ -3,7 +3,7 @@ import path from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { openDb, type Db } from '../core/db.js';
 import { runDoctor, verifyPricing } from '../core/doctor.js';
-import { loadPricing } from '../core/pricing.js';
+import { loadPricing, messageCost } from '../core/pricing.js';
 import { recordTranscript } from '../core/record.js';
 import { asst, installFixture, tmpDir } from './helpers/util.js';
 
@@ -81,7 +81,7 @@ describe('doctor', () => {
 
   it('reports transcripts on disk that are not recorded yet', () => {
     write('unrecorded', [asst({ id: 'a', input: 1 })]);
-    expect(byId(runDoctor(db, table, opts), 'coverage').title).toContain('1 transcripts are not recorded');
+    expect(byId(runDoctor(db, table, opts), 'coverage').title).toContain('1 transcript is not recorded');
   });
 
   it("verifies the price table against Claude Code's own costUSD", () => {
@@ -92,5 +92,46 @@ describe('doctor', () => {
       expect(r.consistent).toBe(r.pairs);
       expect(r.exactMaxAbsErrUsd).toBeLessThan(1e-6);
     }
+  });
+
+  const costState = (model: string, t: { input: number; output: number }, costUSD: number) =>
+    JSON.stringify({ type: 'cost-state', totalCostUSD: costUSD, modelUsage: { [model]: { inputTokens: t.input, outputTokens: t.output, cacheReadInputTokens: 0, cacheCreationInputTokens: 0, costUSD, webSearchRequests: 0 } } });
+  const price = (model: string, t: { input: number; output: number }) =>
+    messageCost(table, { model, ...t, cacheWrite: 0, cacheWrite1h: 0, cacheRead: 0, webSearch: 0, speed: null })!;
+
+  it('does not count transcripts without API calls as unrecorded', () => {
+    write('synthetic-only', [asst({ id: 'x', model: '<synthetic>' })]);
+    const c = byId(runDoctor(db, table, opts), 'coverage');
+    expect(c.level).toBe('ok');
+    expect(c.title).toContain('1 transcript has no API calls');
+    write('real', [asst({ id: 'a', input: 1 })]);
+    expect(byId(runDoctor(db, table, opts), 'coverage').title).toBe('1 transcript is not recorded; 1 transcript has no API calls (nothing to record)');
+    const f = write('later', [asst({ id: 'b', input: 1 })]);
+    recordTranscript(db, table, f);
+    fs.appendFileSync(f, '\n' + asst({ id: 'c', input: 1 }));
+    expect(byId(runDoctor(db, table, opts), 'coverage').title).toBe('1 transcript is not recorded and 1 transcript is out of date; 1 transcript has no API calls (nothing to record)');
+  });
+
+  it("price basis: a list price that reproduces Claude Code's cost is reported as consistent, not unverified", () => {
+    const t = { input: 1000, output: 100 };
+    recordTranscript(db, table, write('opus5', [asst({ id: 'a', model: 'claude-opus-5', ...t }), costState('claude-opus-5', t, price('claude-opus-5', t))]));
+    recordTranscript(db, table, write('sonnet5', [asst({ id: 'b', model: 'claude-sonnet-5', ...t })]));
+    const b = byId(runDoctor(db, table, opts), 'price-basis');
+    expect(b.title).not.toContain('have not been verified');
+    expect(b.detail).toContain('claude-opus-5: list price, matches Claude Code in 1 of 1');
+    expect(b.detail).toContain('claude-sonnet-5: list price, no Claude Code cost recorded to compare');
+    const rows = verifyPricing(db, table);
+    expect(rows.find((r) => r.model === 'claude-sonnet-5')).toMatchObject({ pairs: 0, consistent: 0 });
+  });
+
+  it('names the largest cost difference against Claude Code, with both amounts', () => {
+    const ours = { input: 2_000_000, output: 100 };
+    const theirs = { input: 1000, output: 100 };
+    recordTranscript(db, table, write('resumed-session', [asst({ id: 'a', model: 'claude-sonnet-5-5', ...ours }), costState('claude-sonnet-5-5', theirs, price('claude-sonnet-5-5', theirs))]));
+    const r = byId(runDoctor(db, table, opts), 'reconcile');
+    expect(r.title).toContain('0 of 1');
+    expect(r.detail).toContain('Largest difference: session resumed');
+    expect(r.detail).toContain(`ccmeter $${price('claude-sonnet-5-5', ours).toFixed(2)}`);
+    expect(r.detail).toContain('Claude Code $0.00');
   });
 });

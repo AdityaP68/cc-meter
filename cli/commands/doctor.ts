@@ -23,11 +23,11 @@ export async function cmdDoctor(args: Parsed): Promise<number> {
       console.log(
         rows.length
           ? table(
-              rows.map((r) => [r.model, r.basis, `${r.consistent}/${r.pairs}`, `$${r.maxOutsideUsd.toFixed(4)}`, String(r.exactTokenPairs), r.exactTokenPairs ? `$${r.exactMaxAbsErrUsd.toFixed(5)}` : '-']),
+              rows.map((r) => (r.pairs ? [r.model, r.basis, `${r.consistent}/${r.pairs}`, `$${r.maxOutsideUsd.toFixed(4)}`, String(r.exactTokenPairs), r.exactTokenPairs ? `$${r.exactMaxAbsErrUsd.toFixed(5)}` : '-'] : [r.model, r.basis, 'no Claude Code cost recorded', '', '', ''])),
               ['model', 'basis', 'in-range', 'max outside', 'exact-token pairs', 'max abs err (exact)'],
               [2, 3, 4, 5],
             )
-          : '(no recorded sessions carry a cost-state entry)',
+          : '(no priced model recorded yet)',
       );
     }
     const n = (l: string) => checks.filter((c) => c.level === l).length;

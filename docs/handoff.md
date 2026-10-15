@@ -15,15 +15,23 @@ Not pushed: commits after `3f231b5`.
 
 ## Next
 
-1. **Ask the user to push** (`git push origin main`; agent `git push` is denied by permissions). Other sessions
-   share this checkout and branch (e.g. `a33c6e4`, an uncommitted `tests/dashboard-dom.test.ts`): run
-   `git log --oneline origin/main..main` and `git status` first; never commit files another session is editing.
-2. **Follow-ups found while building (not approved; offer them):** the server loads `pricing.json` once at start, so a
-   pasted price shows in the dashboard only after `ccmeter serve --stop` and a restart (make `/api/refresh` reload
-   it); `index.html` can be served from browser cache after a rebuild, showing old UI until a hard reload (send
-   `Cache-Control: no-store` for it); React's MIT notice in the dashboard bundle before any public release.
-3. **Roadmap (the user picks; nothing is approved yet):** M3 session review (design: `docs/ARCHITECTURE.md` §3, judge
-   via `claude -p`); per-project budgets and alerts; context size over time with long-session warnings;
-   cache-efficiency view; comparing periods; a filter for interactive vs headless sessions.
-4. Before changing `core/`, `cli/`, `server/` or `plugin/`, run `npm run verify` and run `npm run build` only
-   when it passes. `dist/` is the user's live install.
+1. **Ask the user to push** (`git push origin main`; agent push is denied). Check `git log --oneline origin/main..main`
+   and `git status` first; other sessions share this checkout.
+2. **Finish task 3 (read-only): why subagent replies are saved mid-stream.** `doctor`: 2 sessions, 1,199 messages
+   with final `stop_reason: null`. Use the `transcript-surveyor` subagent (aggregates only): Claude Code versions,
+   entry points, which subagent files, timing of last entries, abort/interrupt markers, newer versions still?
+   Conclude observed vs hypothesis and whether the user can prevent it; record in `docs/FORMATS.md` item 1.
+3. **Task 2 (hidden calls), report to the user before building.** Measured (FORMATS.md item 2, 2026-10-15): in 7
+   sessions Claude Code's tokens are >= ccmeter's in every class, gap $32.28; an estimate is feasible there only.
+   OTel `api_request` events (docs only, FORMATS.md "OpenTelemetry export") could count every call via a
+   127.0.0.1 receiver. Verifying needs a **paid** `claude -p` run in an isolated `CLAUDE_CONFIG_DIR` with the
+   plugin disabled: **ask the user first**. Never edit the user's `~/.claude/settings.json`.
+4. **Bug found, not fixed (offer it):** hook mode can drop a payload under load: `readStdinJson`
+   (`cli/commands/record.ts`) read nothing once (`tests/cli.test.ts` failed 1 of ~15 runs; that run's
+   record.log says `hook ? without transcript_path`). Likely an EAGAIN read of a pipe on fd 0; the next
+   Stop hook re-records, so impact is a delay. Reproduce, then read stdin robustly (retry on EAGAIN).
+5. The user's running dashboard server still has the old 240-minute idle stop until it restarts
+   (`ccmeter serve --stop`; `/ccmeter` starts it again).
+6. Older follow-ups (offer): `/api/refresh` should reload `pricing.json`; React's MIT notice before a public release.
+   Roadmap (user picks): M3 review, budgets, context-size view, cache view, period compare, interactive filter.
+7. Before changing `core/`, `cli/`, `server/` or `plugin/`: `npm run verify`, then `npm run build` (live install).

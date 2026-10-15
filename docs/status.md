@@ -7,6 +7,7 @@ bodies (`git show <sha>`); do not duplicate it here.
 
 | Date | Change | Where |
 |---|---|---|
+| 2026-10-15 | Flag chips explain themselves (hover, focus, tap); server idle stop 30 min, memory checked (no leak found); hidden-calls gap measured, OTel export read (docs only) | `7635635`, `38a70ab`, `docs/FORMATS.md` |
 | 2026-10-15 | `/ccmeter` labels its line: `ccmeter dashboard: <url>` | see `git log -- plugin/scripts/prompt-hook.sh` |
 | 2026-10-15 | Unpriced-model support (ADR 0008): upfront prompt (dashboard banner, status line, report), Claude Code's figure as stopgap, `doctor` derived-price suggestion | `7b830d5`, `33dab76`, `e8fbb3d` |
 | 2026-10-15 | Flags column aligned; Health/doctor accuracy: synthetic-only transcripts not "unrecorded", price evidence per model (incl. models with nothing to compare), largest Claude Code cost gap named | `59acbe4`, `dee1894` |

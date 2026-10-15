@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { openDb } from '../core/db.js';
 import { loadPricing } from '../core/pricing.js';
 import { recordTranscript } from '../core/record.js';
-import { startServer, type RunningServer } from '../server/index.js';
+import { pageParams, startServer, type RunningServer } from '../server/index.js';
 import { installFixture, tmpDir } from './helpers/util.js';
 
 let srv: RunningServer;
@@ -60,6 +60,16 @@ describe('dashboard server', () => {
     expect((await req('POST', '/api/refresh')).status).toBe(403);
     expect((await req('POST', '/api/refresh', { 'x-ccmeter': '1' })).status).toBe(200);
     expect((await req('DELETE', '/api/sessions/x')).status).toBe(405);
+  });
+
+  it('clamps limit and offset from the query string', async () => {
+    expect((await json('/api/sessions?limit=-1')).rows).toHaveLength(1); // SQLite reads a negative LIMIT as "no limit"
+    expect((await json('/api/sessions?limit=1.9')).rows).toHaveLength(1);
+    expect((await json('/api/sessions?limit=abc')).rows).toHaveLength(2);
+    expect((await json('/api/sessions?limit=1&offset=-4')).rows).toHaveLength(1);
+    expect((await json('/api/sessions?limit=5&offset=1')).rows).toHaveLength(1);
+    expect(pageParams(new URLSearchParams('limit=99999999&offset=9e99'))).toEqual({ limit: 1000, offset: 1_000_000_000 });
+    expect(pageParams(new URLSearchParams(''))).toEqual({ limit: 100, offset: 0 });
   });
 
   it('sends no CORS headers and a restrictive CSP', async () => {

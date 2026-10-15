@@ -58,6 +58,15 @@ function send(res: http.ServerResponse, status: number, body: unknown, type = 'a
   res.end(data);
 }
 
+/** Whole numbers only: SQLite reads a negative LIMIT as "no limit", and a huge OFFSET is just wasted work. */
+export function pageParams(q: URLSearchParams): { limit: number; offset: number } {
+  const whole = (name: string, fallback: number, min: number, max: number): number => {
+    const n = Math.trunc(Number(q.get(name)));
+    return Number.isFinite(n) && q.get(name) !== null && q.get(name) !== '' ? Math.min(Math.max(n, min), max) : fallback;
+  };
+  return { limit: whole('limit', 100, 1, 1000), offset: whole('offset', 0, 0, 1_000_000_000) };
+}
+
 function filtersFrom(q: URLSearchParams): Filters {
   const f: Filters = {};
   const since = q.get('since');
@@ -120,8 +129,7 @@ export function startServer(opts: ServerOptions): Promise<RunningServer> {
           case '/api/sessions': {
             const r = listSessions(db, {
               ...filtersFrom(q),
-              limit: Math.min(Number(q.get('limit') ?? 100) || 100, 1000),
-              offset: Number(q.get('offset') ?? 0) || 0,
+              ...pageParams(q),
               sort: (q.get('sort') as SessionSort) || 'recent',
             });
             return send(res, 200, r);

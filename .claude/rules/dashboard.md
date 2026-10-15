@@ -12,4 +12,5 @@ paths:
   for every chart, a hover tooltip, a legend for ≥ 2 series. Unpriced and doctor warnings stay visible.
 - Typecheck both projects (`npm run verify`; it includes the DOM smoke test `tests/dashboard-dom.test.ts`), then
   look at it: skill `dashboard-check` (dark, light, 375 px), then `react-check` (route sweep, React pitfalls, review).
+- Never set `display` on a `<td>`/`<th>` class (it breaks row alignment); flex goes on an inner element.
 - Never point a dev server at the user's real `~/.ccmeter`; copy the DB into a temporary `CCMETER_HOME`.

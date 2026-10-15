@@ -57,3 +57,11 @@ crashes, use an unminified build and log the bad `destroy` (skill `react-check`)
 ## 2026-10-15 — Headline totals and charts must share filter semantics
 Filtering the overview by session start while the chart filtered by message time made the 7-day headline a third
 of the chart's sum. Every total comes from per-message rows with the same WHERE clause.
+
+## 2026-10-15 — Never put display:flex on a table cell
+A `<td>` with `display:flex` leaves the table layout: it shrinks to its content and its border stops mid-row, so the
+column looks skewed. Put the flex container inside the cell. Guarded by `tests/dashboard.test.ts`.
+
+## 2026-10-15 — A label is not evidence
+`pricing.json`'s `basis: list` made `doctor` say "not verified" while the evidence (Claude Code's own cost) matched.
+Report what the data shows per model, and say explicitly when there is nothing to compare.

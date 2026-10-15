@@ -7,6 +7,7 @@ bodies (`git show <sha>`); do not duplicate it here.
 
 | Date | Change | Where |
 |---|---|---|
+| 2026-10-15 | Flags column aligned; Health/doctor accuracy: synthetic-only transcripts not "unrecorded", price evidence per model (incl. models with nothing to compare), largest Claude Code cost gap named | `59acbe4`, `dee1894` |
 | 2026-10-15 | Review fixes: unpriced never `$0` in reconciliation/MixBar/export; `pricing.json` override validated (doctor `pricing-override`); `readCostState` tolerates malformed `modelUsage`; race-safe `migrate()`; server `limit`/`offset` clamped; `setup --statusline` refuses an unparsable `settings.json` | `ad35679`, `ff2f6f4`, `3928220`, `d340407`, `1a098df`, `1d9019f` |
 | 2026-10-15 | Owner decisions: compliance parameters, `node:sqlite`, M3 judge via `claude -p` | `docs/decisions/0007-compliance-parameters-and-m3-judge.md` |
 | 2026-10-15 | Skill `react-check` (route sweep, React pitfall scan, crash debugging, review) and a happy-dom DOM smoke test for the dashboard | `.claude/skills/react-check/`, `tests/dashboard-dom.test.ts` |

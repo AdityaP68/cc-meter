@@ -15,7 +15,9 @@ Not pushed: commits after `3f231b5`.
 
 ## Next
 
-1. **Ask the user to push** (`git push origin main`; agent `git push` is denied by permissions).
+1. **Ask the user to push** (`git push origin main`; agent `git push` is denied by permissions). Other sessions
+   share this checkout and branch (e.g. `a33c6e4`, an uncommitted `tests/dashboard-dom.test.ts`): run
+   `git log --oneline origin/main..main` and `git status` first; never commit files another session is editing.
 2. **Follow-ups found while building (not approved; offer them):** the server loads `pricing.json` once at start, so a
    pasted price shows in the dashboard only after `ccmeter serve --stop` and a restart (make `/api/refresh` reload
    it); `index.html` can be served from browser cache after a rebuild, showing old UI until a hard reload (send

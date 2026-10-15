@@ -62,25 +62,38 @@ export async function cmdSetup(args: Parsed): Promise<number> {
 Optional: show live cost in Claude Code's status line by adding this to ~/.claude/settings.json
   "statusLine": { "type": "command", "command": "ccmeter statusline" }
 (or run \`ccmeter setup --statusline\` and I'll add it if you have none).`);
-  if (args.flags.statusline) installStatusline();
-  console.log('\nDone. Run `ccmeter doctor` to verify, and `/ccmeter` in Claude Code (or `ccmeter serve --open`) for the dashboard.');
-  return 0;
+  const statuslineOk = args.flags.statusline ? installStatusline() : true;
+  console.log(`\n${statuslineOk ? 'Done.' : 'Done, except the status line (see above).'} Run \`ccmeter doctor\` to verify, and \`/ccmeter\` in Claude Code (or \`ccmeter serve --open\`) for the dashboard.`);
+  return statuslineOk ? 0 : 1;
 }
 
-function installStatusline(): void {
+/**
+ * Add ccmeter's statusLine to ~/.claude/settings.json. Returns false (and writes nothing) when the file exists but
+ * is not a JSON object: we would otherwise replace the user's settings with just the statusLine.
+ */
+export function installStatusline(): boolean {
   const file = path.join(claudeHome(), 'settings.json');
   let json: Record<string, unknown> = {};
-  try {
-    json = JSON.parse(fs.readFileSync(file, 'utf8'));
-  } catch {
-    /* no settings yet */
+  if (fs.existsSync(file)) {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+    } catch {
+      parsed = undefined;
+    }
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      console.log(`✘ ${file} is not valid JSON (or not an object), so ccmeter left it untouched. Fix it, or add the statusLine yourself (see above).`);
+      return false;
+    }
+    json = parsed as Record<string, unknown>;
   }
   if (json.statusLine) {
     console.log('ℹ a statusLine is already configured; left unchanged.');
-    return;
+    return true;
   }
   if (fs.existsSync(file)) fs.copyFileSync(file, `${file}.ccmeter-backup`);
   json.statusLine = { type: 'command', command: 'ccmeter statusline' };
   fs.writeFileSync(file, JSON.stringify(json, null, 2) + '\n');
   console.log(`✔ statusLine added to ${file} (backup: ${file}.ccmeter-backup)`);
+  return true;
 }

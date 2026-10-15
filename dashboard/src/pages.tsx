@@ -251,12 +251,12 @@ export function HealthPage({ reload }: { reload: number }) {
         ))}</ul>
       </section>
       <section className="card"><h2>Price table versus Claude Code's own costs</h2>
-        <p className="muted">For each model you used: Claude Code's own token counts, priced with <code>pricing.json</code>, should land on the cost Claude Code itself recorded. <b>Basis</b> is the label in <code>pricing.json</code> (<i>verified</i> = checked when the table was written, <i>list</i> = published price); <b>Matches</b> is the evidence from your sessions. Only sessions where Claude Code wrote a cost entry can be compared.</p>
+        <p className="muted">For each model you used: Claude Code's own token counts, priced with <code>pricing.json</code>, should land on the cost Claude Code itself recorded. <b>Basis</b> is the label in <code>pricing.json</code> (<i>verified</i> = checked when the table was written, <i>list</i> = published price, <i>derived</i> = fitted from Claude Code's own figures by <code>ccmeter doctor</code>); <b>Matches</b> is the evidence from your sessions. Only sessions where Claude Code wrote a cost entry can be compared.</p>
         {data.pricing.length === 0 ? <div className="empty">No priced model recorded yet.</div> : (
           <div className="scroll"><table className="tbl"><caption className="sr">Price verification</caption>
             <thead><tr><th>Model</th><th>Basis</th><th className="r" title="Sessions where Claude Code's cost lies in the range the table predicts from Claude Code's tokens">Matches</th><th className="r">Largest miss</th><th className="r" title="Sessions whose token counts equal ccmeter's exactly">Exact-token sessions</th><th className="r">Max error (exact)</th></tr></thead>
             <tbody>{data.pricing.map((p) => (
-              <tr key={p.model}><td>{shortModel(p.model)}</td><td><span className={`badge ${p.basis === 'verified' ? 'ok' : 'info'}`}>{p.basis}</span></td>
+              <tr key={p.model}><td>{shortModel(p.model)}</td><td><span className={`badge ${p.basis === 'verified' ? 'ok' : p.basis === 'derived' ? 'warn' : 'info'}`}>{p.basis}</span></td>
                 {p.pairs === 0 ? <td colSpan={4} className="muted">no Claude Code cost recorded to compare</td> : (
                   <><td className="r num">{p.consistent} of {p.pairs}</td><td className="r num">${p.maxOutsideUsd.toFixed(4)}</td><td className="r num">{p.exactTokenPairs}</td><td className="r num">{p.exactTokenPairs ? `$${p.exactMaxAbsErrUsd.toFixed(5)}` : '–'}</td></>
                 )}

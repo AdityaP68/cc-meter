@@ -12,7 +12,8 @@ export interface ModelPrice {
   fastMultiplier?: number;
   /** Rates that apply when a single request's prompt exceeds aboveTokens. */
   longContext?: { aboveTokens: number; input: number; output: number };
-  basis?: 'verified' | 'list';
+  /** verified: reproduces Claude Code's costUSD; list: published price; derived: fitted from cost-state (ADR 0008). */
+  basis?: 'verified' | 'list' | 'derived';
 }
 
 export interface PriceTable {
@@ -60,7 +61,7 @@ function validPrice(p: unknown): p is ModelPrice {
   const m = p as Record<string, unknown>;
   if (!rate(m.input) || !rate(m.output) || !rate(m.cacheRead) || !rate(m.cacheWrite5m) || !rate(m.cacheWrite1h)) return false;
   if (m.fastMultiplier !== undefined && !(rate(m.fastMultiplier) && m.fastMultiplier > 0)) return false;
-  if (m.basis !== undefined && m.basis !== 'verified' && m.basis !== 'list') return false;
+  if (m.basis !== undefined && m.basis !== 'verified' && m.basis !== 'list' && m.basis !== 'derived') return false;
   if (m.longContext !== undefined) {
     const l = m.longContext as Record<string, unknown> | null;
     if (typeof l !== 'object' || l === null || !rate(l.aboveTokens) || !rate(l.input) || !rate(l.output)) return false;

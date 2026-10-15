@@ -8,6 +8,7 @@ import { PARSERS, cmpVersion } from './parser/index.js';
 import { lookupPrice, type PriceTable } from './pricing.js';
 import { listTranscripts, parseSession, transcriptSignature } from './record.js';
 import { claudeCodeFigures, reconcile } from './reconcile.js';
+import { deriveRates } from './derive.js';
 import type { ParseStats } from './parser/types.js';
 
 export type Level = 'ok' | 'info' | 'warn' | 'error';
@@ -117,18 +118,20 @@ export function runDoctor(db: Db, table: PriceTable, opts: DoctorOptions = {}): 
         : `Claude Code recorded no cost for ${f.model} in its ${f.sessions} session(s)`,
     );
     add('unpriced', 'warn', `Unpriced models (shown as "unpriced", never as $0): ${unpriced.map((u) => u.model).join(', ')}`, `${unpriced.map((u) => `${u.model}: ${u.n} messages / ${u.tok} tokens`).join('; ')}. ${figures.join('. ')}. Add a price to ~/.ccmeter/pricing.json (same shape as pricing.json).`);
+    for (const u of unpriced) suggestPrice(db, table, u.model, add);
   }
   else add('unpriced', 'ok', 'Every recorded model has a price');
   const listOnly = (db.prepare('SELECT DISTINCT model FROM messages WHERE priced = 1 ORDER BY model').all() as { model: string }[])
     .map((r) => r.model)
-    .filter((m) => lookupPrice(table, m)?.price.basis === 'list');
+    .filter((m) => (lookupPrice(table, m)?.price.basis ?? 'list') !== 'verified');
   if (listOnly.length) {
     // The basis is a label in pricing.json; the evidence is whether Claude Code's own costs agree with the table.
     const evidence = new Map(verifyPricing(db, table).map((r) => [r.model, r]));
     const lines = listOnly.map((m) => {
       const e = evidence.get(m);
-      if (!e || e.pairs === 0) return `${m}: list price, no Claude Code cost recorded to compare`;
-      return `${m}: list price, matches Claude Code in ${e.consistent} of ${e.pairs} session(s)${e.consistent < e.pairs ? ` (largest miss $${e.maxOutsideUsd.toFixed(4)})` : ''}`;
+      const basis = lookupPrice(table, m)?.price.basis ?? 'list';
+      if (!e || e.pairs === 0) return `${m}: ${basis} price, no Claude Code cost recorded to compare`;
+      return `${m}: ${basis} price, matches Claude Code in ${e.consistent} of ${e.pairs} session(s)${e.consistent < e.pairs ? ` (largest miss $${e.maxOutsideUsd.toFixed(4)})` : ''}`;
     });
     const unchecked = listOnly.filter((m) => !evidence.get(m)?.pairs);
     const off = listOnly.filter((m) => { const e = evidence.get(m); return !!e && e.consistent < e.pairs; });
@@ -136,10 +139,10 @@ export function runDoctor(db: Db, table: PriceTable, opts: DoctorOptions = {}): 
       'price-basis',
       off.length ? 'warn' : 'info',
       off.length
-        ? `Claude Code's own cost disagrees with the list price for ${off.join(', ')}`
+        ? `Claude Code's own cost disagrees with the price table for ${off.join(', ')}`
         : unchecked.length
-          ? `No Claude Code cost to check the list price of ${unchecked.join(', ')}`
-          : `List prices for ${listOnly.join(', ')} match Claude Code's own costs`,
+          ? `No Claude Code cost to check the price of ${unchecked.join(', ')}`
+          : `Unverified prices for ${listOnly.join(', ')} match Claude Code's own costs`,
       `${lines.join('; ')}. Only sessions where Claude Code wrote a cost-state entry can be compared. Details: \`ccmeter doctor --verify-pricing\`.`,
     );
   }
@@ -265,3 +268,27 @@ export function verifyPricing(db: Db, table: PriceTable): PricingVerifyRow[] {
   }
   return [...acc.values()].sort((a, b) => b.pairs - a.pairs);
 }
+
+const sig4 = (n: number): number => Number(n.toPrecision(4));
+
+/** Suggest a price for an unpriced model from Claude Code's own cost-state figures (ADR 0008). Printed, never written. */
+function suggestPrice(db: Db, table: PriceTable, model: string, add: (id: string, level: Level, title: string, detail?: string) => void): void {
+  const samples = listSessions(db, { limit: 1_000_000 })
+    .rows.map((s) => s.costState?.modelUsage[model])
+    .filter((u) => !!u && u.costUSD > 0)
+    .map((u) => ({ input: u!.inputTokens, output: u!.outputTokens, cacheRead: u!.cacheReadInputTokens, cacheWrite: u!.cacheCreationInputTokens, webSearch: u!.webSearchRequests, costUsd: u!.costUSD }));
+  const r = deriveRates(samples, table.webSearchPerRequest);
+  if (!r.ok) {
+    add(`derived-price:${model}`, 'info', `No price can be derived for ${model} yet`, `${r.reason}. Add its published price to ~/.ccmeter/pricing.json instead.`);
+    return;
+  }
+  const w = sig4(r.rates.cacheWrite);
+  const snippet = { [model]: { input: sig4(r.rates.input), output: sig4(r.rates.output), cacheRead: sig4(r.rates.cacheRead), cacheWrite5m: w, cacheWrite1h: w, basis: 'derived' } };
+  add(
+    `derived-price:${model}`,
+    'info',
+    `Suggested price for ${model}, derived from Claude Code's own figures`,
+    `Fitted on ${r.samples} sessions; largest error $${r.maxAbsErrUsd.toFixed(4)} (${(r.maxRelErr * 100).toFixed(2)}%). Claude Code does not split cache writes by TTL, so both write rates get one blended value; prefer the published price when it exists. To use it, add this under "models" in ~/.ccmeter/pricing.json: ${JSON.stringify(snippet)}`,
+  );
+}
+

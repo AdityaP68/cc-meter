@@ -15,3 +15,6 @@ on are listed too.
 | `dataviz` skill reference palette | bundled design reference | 2026-10-14 | dashboard colours, mark specs, table view per chart |
 | User's Context Harness guides: `context-and-loop-engineering.md`, `implementation-kit.md` (~/Documents/context-harness/docs/guides, 2026-09-28) | internal method, measured on another repository | 2026-10-15 | this repository's agent harness (`docs/harness.md`) |
 | Live captures: hook payloads, `claude plugin details`, `-p` debug logs (Claude Code 2.1.287) | first-hand observation | 2026-10-14/15 | `docs/FORMATS.md`, decisions 0003 and 0006 |
+| github.com/ryoppippi/ccusage (via web search summaries; repo not read) | third-party tool, MIT | 2026-10-15 | comparison with alternatives in chat; not verified against the repo |
+| github.com/phuryn/claude-usage, sadhakbj/clauditor, ccboard, nateherkai/token-dashboard (search summaries only) | third-party tools | 2026-10-15 | same; not verified against the repos |
+| docs.anthropic.com/en/docs/claude-code/monitoring-usage; platform.claude.com Claude Code Analytics API | vendor docs (search summaries) | 2026-10-15 | OpenTelemetry and org-level analytics as the non-local alternatives |

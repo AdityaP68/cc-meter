@@ -82,6 +82,34 @@ describe('dashboard in a DOM', () => {
     expect(root().querySelectorAll('a[href^="#/session/"]').length).toBeGreaterThanOrEqual(2);
   });
 
+  it('explains every flag chip on hover, keyboard focus and tap', async () => {
+    const chips = [...root().querySelectorAll<HTMLButtonElement>('.flags button.chip')];
+    expect(chips.length, 'fixture sessions show flag chips').toBeGreaterThan(0);
+    for (const c of chips) {
+      const tip = document.getElementById(c.getAttribute('aria-describedby') ?? '');
+      expect(tip, `tooltip for ${c.textContent}`).not.toBeNull();
+      expect(tip!.getAttribute('role')).toBe('tooltip');
+      expect(tip!.textContent!.length, `explanation for ${c.textContent}`).toBeGreaterThan(40);
+      expect(tip!.hidden).toBe(true);
+    }
+    const c = chips[0]!;
+    const tip = () => document.getElementById(c.getAttribute('aria-describedby')!)!;
+    await act(() => { c.click(); }); // a tap pins it open
+    expect(tip().hidden).toBe(false);
+    expect(c.getAttribute('aria-expanded')).toBe('true');
+    await act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
+    expect(tip().hidden).toBe(true);
+    await act(() => { c.click(); });
+    await act(() => { document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); }); // tap elsewhere
+    expect(tip().hidden).toBe(true);
+    await act(() => { c.focus(); });
+    expect(tip().hidden, 'opens on keyboard focus').toBe(false);
+    await act(() => { c.blur(); });
+    expect(tip().hidden).toBe(true);
+    expect(root().querySelector('.flag-legend')?.textContent).toContain('lower bound');
+    expect(errors).toEqual([]);
+  });
+
   it('survives navigating every route, session to session, and back', async () => {
     const sessions = [...new Set([...root().querySelectorAll<HTMLAnchorElement>('a[href^="#/session/"]')].map((a) => a.getAttribute('href')!))];
     await go('#/rollups', 'Rollups');

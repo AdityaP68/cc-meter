@@ -1,6 +1,7 @@
 import { useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { get, post, qs, type Check, type DayModel, type Facets, type Filters, type Overview, type PricingRow, type Rollup, type Session, type SessionDetail } from './api';
 import { ChartCard, DayChart, HBars, Legend, MixBar, ModelColors, Timeline } from './charts';
+import { Chip } from './chip';
 import { dur, shortModel, tok, usd, when } from './format';
 
 /* ---------- plumbing ---------- */
@@ -21,8 +22,18 @@ export function useApi<T>(path: string | null, deps: unknown[] = []): { data: T 
 }
 
 export const Cost = ({ usd: v, unpriced }: { usd: number; unpriced: number }) => (
-  <span className="num">{usd(v)}{unpriced > 0 && <span className="badge warn" title={`${tok(unpriced)} tokens belong to a model with no price. They are NOT counted as $0 here; add the model to ~/.ccmeter/pricing.json.`}>+ unpriced</span>}</span>
+  <span className="num">{usd(v)}{unpriced > 0 && <Chip tone="warn" label="+ unpriced" help={<><b>Unpriced model.</b> {unpriced > 1 ? `${tok(unpriced)} tokens belong` : 'Some tokens belong'} to a model that has no price in ccmeter's table. They are left out of this cost, never counted as $0, so the real cost is higher. Add the model to <code>~/.ccmeter/pricing.json</code>; <code>ccmeter doctor</code> suggests a price from Claude Code's own figures.</>} />}</span>
 );
+
+/** What each Flags chip in the sessions table means, and why it matters. */
+const n = (k: number, one: string, many: string) => `${k.toLocaleString()} ${k === 1 ? one : many}`;
+const FLAG_HELP = {
+  switches: (k: number) => <><b>Model switches.</b> The main conversation changed model {n(k, 'time', 'times')} (for example with <code>/model</code>); subagents are not counted. Each model is priced at its own rate, and prompt caches are per model, so the first reply after a switch writes the context to the cache again.</>,
+  compactions: (k: number) => <><b>Compactions.</b> The conversation was summarised {n(k, 'time', 'times')} to free context, automatically near the limit or with <code>/compact</code>. The summary is itself a model call, and later replies start from a much smaller context. The session page lists each one with the context size before and after.</>,
+  sub: (k: number) => <><b>Subagent calls.</b> {n(k, 'API call', 'API calls')} in this session came from subagents (the Task or Agent tool). Their cost is included in the total; the session page shows it as hatched bars per turn.</>,
+  partial: (k: number) => <><b>Lower bound.</b> {n(k, 'reply', 'replies')} (mostly from subagents) {k === 1 ? 'was' : 'were'} saved to the transcript mid-stream, before the final token count was written. Their output tokens, and so the cost, are slightly understated; ccmeter never fills the gap with a guess.</>,
+  cc: (cc: number, own: number) => <><b>Claude Code's own total</b> for this session is {usd(cc)}, ccmeter's is {usd(own)}: they differ by more than 5%. {cc > own ? 'Most likely Claude Code billed calls that it never writes to the transcript, which ccmeter cannot see.' : "Claude Code's record usually covers only the last run of a session that was resumed, so it is the smaller one."} The session page compares them per model.</>,
+};
 
 const Stat = ({ label, value, sub }: { label: string; value: ReactNode; sub?: ReactNode }) => (
   <div className="stat"><div className="stat-l">{label}</div><div className="stat-v">{value}</div>{sub && <div className="stat-s">{sub}</div>}</div>
@@ -91,10 +102,11 @@ export function SessionsPage({ f, reload }: { f: Filters; reload: number }) {
             {(['recent', 'cost', 'tokens'] as const).map((s) => <button key={s} className={sort === s ? 'on' : ''} onClick={() => setSort(s)} aria-pressed={sort === s}>{s === 'recent' ? 'Most recent' : s === 'cost' ? 'Highest cost' : 'Most tokens'}</button>)}
           </div>
         </header>
+        <p className="flag-legend muted small"><b>Flags:</b> ⇄ model switches · ◆ compactions · sub = subagent calls · ≥ lower bound = cost slightly understated · CC = Claude Code's own total differs by more than 5% · + unpriced = a model with no price, left out of the cost. Hover, focus or tap a chip for details.</p>
         <div className="scroll">
           <table className="tbl">
             <caption className="sr">Recorded Claude Code sessions</caption>
-            <thead><tr><th>Started</th><th>Project / title</th><th className="r">Turns</th><th className="r">Duration</th><th className="r">Tokens</th><th className="r">Cost</th><th>Models</th><th title="⇄ model switches · ◆ compactions · sub = subagent messages · ≥ lower bound · CC = Claude Code's own total differs by more than 5%">Flags</th></tr></thead>
+            <thead><tr><th>Started</th><th>Project / title</th><th className="r">Turns</th><th className="r">Duration</th><th className="r">Tokens</th><th className="r">Cost</th><th>Models</th><th>Flags</th></tr></thead>
             <tbody>
               {(list.data?.rows ?? []).map((s) => {
                 const cc = s.costState?.totalCostUSD;
@@ -111,11 +123,11 @@ export function SessionsPage({ f, reload }: { f: Filters; reload: number }) {
                     <td>
                       <div className="flags">
                         {!(s.switches || s.compactions || s.sidechainMessages || s.partialMessages || differs) && <span className="muted" title="No model switch, compaction, subagent or partial usage in this session">–</span>}
-                        {s.switches > 0 && <span className="badge" title={`${s.switches} model switch(es)`}>⇄ {s.switches}</span>}
-                        {s.compactions > 0 && <span className="badge" title={`${s.compactions} compaction(s)`}>◆ {s.compactions}</span>}
-                        {s.sidechainMessages > 0 && <span className="badge" title={`${s.sidechainMessages} API messages came from subagents`}>sub {s.sidechainMessages}</span>}
-                        {s.partialMessages > 0 && <span className="badge info" title="Some messages carry unfinalized usage in the transcript; output tokens (and cost) are a lower bound">≥ lower bound</span>}
-                        {differs && <span className="badge info" title={`Claude Code's own total for this session is ${usd(cc!)}`}>CC {usd(cc!)}</span>}
+                        {s.switches > 0 && <Chip label={`⇄ ${s.switches}`} help={FLAG_HELP.switches(s.switches)} />}
+                        {s.compactions > 0 && <Chip label={`◆ ${s.compactions}`} help={FLAG_HELP.compactions(s.compactions)} />}
+                        {s.sidechainMessages > 0 && <Chip label={`sub ${s.sidechainMessages}`} help={FLAG_HELP.sub(s.sidechainMessages)} />}
+                        {s.partialMessages > 0 && <Chip tone="info" label="≥ lower bound" help={FLAG_HELP.partial(s.partialMessages)} />}
+                        {differs && <Chip tone="info" label={`CC ${usd(cc!)}`} help={FLAG_HELP.cc(cc!, s.costUsd)} />}
                       </div>
                     </td>
                   </tr>

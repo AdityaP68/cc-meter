@@ -61,3 +61,34 @@ export function reconcile(s: Pick<SessionRow, 'models' | 'costState'>, table: Pr
     };
   });
 }
+
+export interface ClaudeCodeFigure {
+  model: string;
+  /** Sessions that used the model. */
+  sessions: number;
+  /** Of those, sessions whose cost-state entry carries a cost for the model. */
+  withFigure: number;
+  /** Sum of Claude Code's own costUSD for the model over those sessions. */
+  costUsd: number;
+}
+
+/**
+ * Claude Code's own recorded cost for each model, a stopgap for models ccmeter cannot price. It is shown next to
+ * ccmeter's numbers, labelled as Claude Code's, and never added to ccmeter's totals (unpriced stays NULL, ADR 0005).
+ */
+export function claudeCodeFigures(rows: Pick<SessionRow, 'models' | 'costState'>[], models: string[]): ClaudeCodeFigure[] {
+  return models.map((model) => {
+    const f: ClaudeCodeFigure = { model, sessions: 0, withFigure: 0, costUsd: 0 };
+    for (const s of rows) {
+      if (!s.models.some((m) => m.model === model)) continue;
+      f.sessions++;
+      const u = s.costState?.modelUsage[model];
+      if (u) {
+        f.withFigure++;
+        f.costUsd += u.costUSD;
+      }
+    }
+    return f;
+  });
+}
+

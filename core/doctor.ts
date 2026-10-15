@@ -7,7 +7,7 @@ import { ccmeterHome, claudeHome, dbPath } from './paths.js';
 import { PARSERS, cmpVersion } from './parser/index.js';
 import { lookupPrice, type PriceTable } from './pricing.js';
 import { listTranscripts, parseSession, transcriptSignature } from './record.js';
-import { reconcile } from './reconcile.js';
+import { claudeCodeFigures, reconcile } from './reconcile.js';
 import type { ParseStats } from './parser/types.js';
 
 export type Level = 'ok' | 'info' | 'warn' | 'error';
@@ -110,8 +110,14 @@ export function runDoctor(db: Db, table: PriceTable, opts: DoctorOptions = {}): 
 
   // 5. unpriced models
   const unpriced = db.prepare('SELECT model, COUNT(*) n, SUM(input + output + cache_write + cache_read) tok FROM messages WHERE priced = 0 GROUP BY model ORDER BY tok DESC').all() as { model: string; n: number; tok: number }[];
-  if (unpriced.length)
-    add('unpriced', 'warn', `Unpriced models (shown as "unpriced", never as $0): ${unpriced.map((u) => u.model).join(', ')}`, `${unpriced.map((u) => `${u.model}: ${u.n} messages / ${u.tok} tokens`).join('; ')}. Add them to ~/.ccmeter/pricing.json (same shape as pricing.json).`);
+  if (unpriced.length) {
+    const figures = claudeCodeFigures(listSessions(db, { limit: 1_000_000 }).rows, unpriced.map((u) => u.model)).map((f) =>
+      f.withFigure
+        ? `Claude Code's figure for ${f.model}: $${f.costUsd.toFixed(2)} (in ${f.withFigure} of ${f.sessions} session(s); not included in ccmeter's totals)`
+        : `Claude Code recorded no cost for ${f.model} in its ${f.sessions} session(s)`,
+    );
+    add('unpriced', 'warn', `Unpriced models (shown as "unpriced", never as $0): ${unpriced.map((u) => u.model).join(', ')}`, `${unpriced.map((u) => `${u.model}: ${u.n} messages / ${u.tok} tokens`).join('; ')}. ${figures.join('. ')}. Add a price to ~/.ccmeter/pricing.json (same shape as pricing.json).`);
+  }
   else add('unpriced', 'ok', 'Every recorded model has a price');
   const listOnly = (db.prepare('SELECT DISTINCT model FROM messages WHERE priced = 1 ORDER BY model').all() as { model: string }[])
     .map((r) => r.model)

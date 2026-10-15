@@ -188,7 +188,10 @@ export function SessionPage({ id, reload }: { id: string; reload: number }) {
           <Stat label="Turns" value={s.turns} sub={`${s.messages} API messages${s.sidechainMessages ? `, ${s.sidechainMessages} from subagents` : ''}`} />
           <Stat label="Switches / compactions" value={`${s.switches} / ${s.compactions}`} />
         </div>
-        {s.unpricedModels.length > 0 && <div className="banner warn"><b>⚠ Unpriced:</b> {s.unpricedModels.join(', ')}: the cost above excludes {tok(s.unpricedTokens)} tokens from {s.unpricedModels.length === 1 ? 'this model' : 'these models'}. Add a price in <code>~/.ccmeter/pricing.json</code>.</div>}
+        {s.unpricedModels.length > 0 && <div className="banner warn"><b>⚠ Unpriced:</b> {s.unpricedModels.join(', ')}: the cost above excludes {tok(s.unpricedTokens)} tokens from {s.unpricedModels.length === 1 ? 'this model' : 'these models'}. Add a price in <code>~/.ccmeter/pricing.json</code>.{s.unpricedModels.map((m) => {
+          const u = s.costState?.modelUsage[m];
+          return <div key={m} className="small">Claude Code's figure for {shortModel(m)} in this session: {u ? <b>{usd(u.costUSD)}</b> : 'none recorded'} (Claude Code's own estimate; not included in the cost above).</div>;
+        })}</div>}
         {s.partialMessages > 0 && <div className="banner info"><b>ℹ Lower bound:</b> {s.partialMessages} messages (mostly subagents) were saved mid-stream, so their output tokens, and the cost, are slightly understated. Claude Code's own total is shown above where it recorded one.</div>}
       </section>
 

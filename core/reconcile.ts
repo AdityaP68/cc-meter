@@ -100,6 +100,8 @@ export interface HiddenCallsEstimate {
   claudeCodeUsd: number;
   /** Output tokens Claude Code counts beyond the transcript, left out because replies were saved mid-stream. */
   outputTokensExcluded: number;
+  /** Those output tokens at list price: what the mid-stream replies leave out of ccmeter's cost, by Claude Code's count. */
+  outputUsdExcluded: number;
 }
 
 /** Below this the difference would print as $0.000; it is not shown. */
@@ -118,6 +120,7 @@ export function hiddenCallsEstimate(s: Pick<SessionRow, 'models' | 'costState' |
   let usd = 0;
   let claudeCodeUsd = 0;
   let outputTokensExcluded = 0;
+  let outputUsdExcluded = 0;
   for (const r of reconcile(s, table)) {
     if (!r.claudeCode || !r.delta) return null;
     const d = r.delta;
@@ -132,10 +135,11 @@ export function hiddenCallsEstimate(s: Pick<SessionRow, 'models' | 'costState' |
       if (out === null) return null;
       gap -= out;
       outputTokensExcluded += -d.output;
+      outputUsdExcluded += out;
     }
     usd += gap;
   }
-  return usd < MIN_ESTIMATE_USD ? null : { usd, claudeCodeUsd, outputTokensExcluded };
+  return usd < MIN_ESTIMATE_USD ? null : { usd, claudeCodeUsd, outputTokensExcluded, outputUsdExcluded };
 }
 
 export interface ClaudeCodeFigure {

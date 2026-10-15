@@ -2,7 +2,7 @@
 export interface ModelTotals { model: string; messages: number; input: number; output: number; cacheWrite: number; cacheRead: number; cost: number; unpriced: boolean }
 export interface CostState { totalCostUSD: number; modelUsage: Record<string, { costUSD: number }> }
 /** Estimated cost of calls Claude Code billed but never wrote to the transcript; null where no estimate is valid. */
-export interface HiddenCalls { usd: number; claudeCodeUsd: number; outputTokensExcluded: number }
+export interface HiddenCalls { usd: number; claudeCodeUsd: number; outputTokensExcluded: number; outputUsdExcluded: number }
 /** Claude Code's cost-state covers only part of the session: models it lacks, and models where it counted fewer tokens. */
 export interface PartialRecord { missingModels: string[]; fewerTokens: { model: string; classes: ('input' | 'output' | 'cacheWrite' | 'cacheRead')[] }[] }
 export interface Session {

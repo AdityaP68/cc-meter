@@ -124,6 +124,7 @@ describe('dashboard in a DOM', () => {
     await act(() => { c.blur(); });
     expect(tip().hidden).toBe(true);
     expect(root().querySelector('.flag-legend')?.textContent).toContain('lower bound');
+    expect(root().querySelector('.flag-legend')?.textContent, 'no unmeasured "slightly"').not.toContain('slightly');
     expect(errors).toEqual([]);
   });
 

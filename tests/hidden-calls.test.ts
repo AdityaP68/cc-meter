@@ -32,6 +32,7 @@ describe('hiddenCallsEstimate', () => {
     expect(e!.usd).toBeCloseTo(price(S, billed) - price(S, seen) + price(H, haikuOnly), 9);
     expect(e!.claudeCodeUsd).toBeCloseTo(price(S, billed) + price(H, haikuOnly), 9);
     expect(e!.outputTokensExcluded).toBe(0);
+    expect(e!.outputUsdExcluded).toBe(0);
   });
 
   it('is null without a cost-state entry, or when the tokens match exactly', () => {
@@ -56,6 +57,7 @@ describe('hiddenCallsEstimate', () => {
     const e = hiddenCallsEstimate({ models: [ours(S, seen)], costState: cs({ [S]: theirs(S, billed) }), partialMessages: 3 }, table)!;
     const outputGap = billed.output - seen.output;
     expect(e.outputTokensExcluded).toBe(outputGap);
+    expect(e.outputUsdExcluded).toBeCloseTo(price(S, { input: 0, output: outputGap, cacheWrite: 0, cacheRead: 0 }), 12);
     expect(e.usd).toBeCloseTo(price(S, billed) - price(S, seen) - price(S, { input: 0, output: outputGap, cacheWrite: 0, cacheRead: 0 }), 9);
     // a gap made only of output tokens in such a session is no estimate at all
     const onlyOutput = { ...seen, output: seen.output + 500 };

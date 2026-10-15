@@ -31,10 +31,15 @@ const FLAG_HELP = {
   switches: (k: number) => <><b>Model switches.</b> The main conversation changed model {n(k, 'time', 'times')} (for example with <code>/model</code>); subagents are not counted. Each model is priced at its own rate, and prompt caches are per model, so the first reply after a switch writes the context to the cache again.</>,
   compactions: (k: number) => <><b>Compactions.</b> The conversation was summarised {n(k, 'time', 'times')} to free context, automatically near the limit or with <code>/compact</code>. The summary is itself a model call, and later replies start from a much smaller context. The session page lists each one with the context size before and after.</>,
   sub: (k: number) => <><b>Subagent calls.</b> {n(k, 'API call', 'API calls')} in this session came from subagents (the Task or Agent tool). Their cost is included in the total; the session page shows it as hatched bars per turn.</>,
-  partial: (k: number) => <><b>Lower bound.</b> {n(k, 'reply', 'replies')} (mostly from subagents) {k === 1 ? 'was' : 'were'} saved to the transcript mid-stream, before the final token count was written. Their output tokens, and so the cost, are slightly understated; ccmeter never fills the gap with a guess.</>,
+  partial: (k: number, h: HiddenCalls | null) => <><b>Lower bound.</b> {n(k, 'reply', 'replies')} (mostly from subagents) {k === 1 ? 'was' : 'were'} saved to the transcript mid-stream, before the final token count was written. Their output tokens, and so the cost, are understated; ccmeter never fills the gap with a guess.{outputGap(h)}</>,
   hidden: (h: HiddenCalls, own: number) => <><b>Estimate: calls not in the transcript.</b> Claude Code's own total for this session is {usd(h.claudeCodeUsd)}, ccmeter's is {usd(own)}. Claude Code counted at least as many tokens as the transcript for every model, so its record covers the whole session, and the difference, {approxUsd(h.usd)}, is most likely calls it billed but never wrote to the transcript (server-side classifier calls are the leading explanation, not proven). It is derived from Claude Code's figures and not added to ccmeter's cost.{h.outputTokensExcluded > 0 && ` ${tok(h.outputTokensExcluded)} output tokens of the difference are left out: they belong to replies saved mid-stream.`}</>,
   cc: (cc: number, own: number, unpriced: boolean) => <><b>Claude Code's own total</b> for this session is {usd(cc)}, ccmeter's is {usd(own)}: they differ by more than 5%. Claude Code counted at least as many tokens as the transcript for every model, so its record covers the whole session. {cc > own ? (unpriced ? 'Part of the difference is the unpriced model, which ccmeter leaves out of its cost; the rest is most likely calls Claude Code billed but never wrote to the transcript.' : 'Most likely Claude Code billed calls that it never writes to the transcript, which ccmeter cannot see.') : 'Its total is still lower, so the difference is in the prices it applied, not in the tokens.'} The session page compares them per model.</>,
 };
+
+/** The size of the mid-stream output gap, by Claude Code's count, where its record covers the whole session. */
+const outputGap = (h: HiddenCalls | null) => (h && h.outputTokensExcluded > 0
+  ? ` Claude Code's own record counts ${tok(h.outputTokensExcluded)} more output tokens for this session, ${approxUsd(h.outputUsdExcluded)} at list price, not added to the cost.`
+  : " The size of the gap is shown only where Claude Code's record covers the whole session.");
 
 const CLASS_LABEL = { input: 'input', output: 'output', cacheWrite: 'cache-write', cacheRead: 'cache-read' } as const;
 const list = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
@@ -112,7 +117,7 @@ export function SessionsPage({ f, reload }: { f: Filters; reload: number }) {
           </div>
         </header>
         <p className="muted small rows-note">Sessions with activity in the selected range{f.model ? ' that used the selected model' : ''}. Each row shows the whole session, so a session that began before the range, or also used other models, costs more here than it adds to the totals above.</p>
-        <p className="flag-legend muted small"><b>Flags:</b> ⇄ model switches · ◆ compactions · sub = subagent calls · ≥ lower bound = cost slightly understated · ≈ $x not in transcript = estimated cost of calls Claude Code billed but never wrote to the transcript · CC = Claude Code's own total differs by more than 5% (shown only where its record covers the whole session) · + unpriced = a model with no price, left out of the cost. Hover, focus or tap a chip for details.</p>
+        <p className="flag-legend muted small"><b>Flags:</b> ⇄ model switches · ◆ compactions · sub = subagent calls · ≥ lower bound = output tokens and cost understated (replies saved mid-stream) · ≈ $x not in transcript = estimated cost of calls Claude Code billed but never wrote to the transcript · CC = Claude Code's own total differs by more than 5% (shown only where its record covers the whole session) · + unpriced = a model with no price, left out of the cost. Hover, focus or tap a chip for details.</p>
         <div className="scroll">
           <table className="tbl">
             <caption className="sr">Recorded Claude Code sessions</caption>
@@ -138,7 +143,7 @@ export function SessionsPage({ f, reload }: { f: Filters; reload: number }) {
                         {s.switches > 0 && <Chip label={`⇄ ${s.switches}`} help={FLAG_HELP.switches(s.switches)} />}
                         {s.compactions > 0 && <Chip label={`◆ ${s.compactions}`} help={FLAG_HELP.compactions(s.compactions)} />}
                         {s.sidechainMessages > 0 && <Chip label={`sub ${s.sidechainMessages}`} help={FLAG_HELP.sub(s.sidechainMessages)} />}
-                        {s.partialMessages > 0 && <Chip tone="info" label="≥ lower bound" help={FLAG_HELP.partial(s.partialMessages)} />}
+                        {s.partialMessages > 0 && <Chip tone="info" label="≥ lower bound" help={FLAG_HELP.partial(s.partialMessages, h)} />}
                         {h ? <Chip tone="info" label={`${approxUsd(h.usd)} not in transcript`} help={FLAG_HELP.hidden(h, s.costUsd)} />
                           : differs && <Chip tone="info" label={`CC ${usd(cc!)}`} help={FLAG_HELP.cc(cc!, s.costUsd, s.unpricedTokens > 0)} />}
                       </div>
@@ -220,7 +225,7 @@ export function SessionPage({ id, reload }: { id: string; reload: number }) {
         })}</div>}
         {s.claudeCodePartial && cc !== undefined && <div className="banner info"><b>ℹ Claude Code's record is partial:</b> {partialWhy(s.claudeCodePartial)}. Its total, {usd(cc)}, covers only part of this session (as happens when a session is resumed across Claude Code processes), so it is not this session's cost. ccmeter's total, {usd(s.costUsd)}, is the complete one: it counts every API response in the transcript. The table at the bottom compares per model.</div>}
         {s.hiddenCalls && <div className="banner info"><b>ℹ Calls not in the transcript {approxUsd(s.hiddenCalls.usd)}</b> (estimate): Claude Code's own total is {usd(s.hiddenCalls.claudeCodeUsd)} and it counted at least as many tokens as the transcript for every model, so the difference is most likely calls it billed but never wrote there. Not added to the cost above; the table at the bottom compares per model.{s.hiddenCalls.outputTokensExcluded > 0 && ` ${tok(s.hiddenCalls.outputTokensExcluded)} output tokens of the difference are left out, as they belong to replies saved mid-stream.`}</div>}
-        {s.partialMessages > 0 && <div className="banner info"><b>ℹ Lower bound:</b> {s.partialMessages} messages (mostly subagents) were saved mid-stream, so their output tokens, and the cost, are slightly understated. Claude Code's own total is shown above where it recorded one.</div>}
+        {s.partialMessages > 0 && <div className="banner info"><b>ℹ Lower bound:</b> {s.partialMessages} messages (mostly subagents) were saved mid-stream, so their output tokens, and the cost, are understated.{outputGap(s.hiddenCalls)}</div>}
       </section>
 
       <ChartCard title="Cost per turn" subtitle="Each bar is one user turn. Hatched = subagent cost." table={<TurnTable turns={turns} />}>

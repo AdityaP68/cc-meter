@@ -107,7 +107,7 @@ export function runDoctor(db: Db, table: PriceTable, opts: DoctorOptions = {}): 
 
   const partial = db.prepare('SELECT COUNT(*) n, COALESCE(SUM(partial_messages),0) m FROM sessions WHERE partial_messages > 0').get() as { n: number; m: number };
   if (partial.n)
-    add('partial-usage', 'info', `${partial.n} sessions contain ${partial.m} messages with unfinalized usage (output tokens are a lower bound, so cost is slightly understated)`, 'Seen in subagent transcripts. Claude Code\'s own total, where recorded, is shown by `ccmeter report --session <id>`. See docs/FORMATS.md.');
+    add('partial-usage', 'info', `${partial.n} sessions contain ${partial.m} messages with unfinalized usage (output tokens are a lower bound, so cost is understated; the session page shows by how much where Claude Code\'s record covers the session)`, 'Seen in subagent transcripts. Claude Code\'s own total, where recorded, is shown by `ccmeter report --session <id>`. See docs/FORMATS.md.');
 
   // 5. unpriced models
   const unpriced = db.prepare('SELECT model, COUNT(*) n, SUM(input + output + cache_write + cache_read) tok FROM messages WHERE priced = 0 GROUP BY model ORDER BY tok DESC').all() as { model: string; n: number; tok: number }[];

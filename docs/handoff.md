@@ -9,7 +9,11 @@ History of earlier hand-offs: `git log -p -- docs/handoff.md`.
 fallback label for untitled sessions and an explicit empty Flags cell (`a71f679`), overview totals now match the
 chart (`d391dc6`), record hook always exits 0 (`038ff40`). Built (`dist/` is live) and `doctor` is clean.
 The review findings are not fixed yet. They are in the shared notes file `review-2026-10-15.md` (path in the chat
-report) and in the commit bodies. Uncommitted: nothing.
+report) and in the commit bodies. Since then: happy-dom DOM smoke test (`7509466`) and skill `react-check`
+(`e6ee5d2`), both docs/tests/tooling only. Re-checked 2026-10-15: no `core/`, `cli/`, `server/`, `plugin/` or
+`dashboard/src/` file changed after this hand-off, so the findings below still apply; `npm run verify` passes
+(106 tests); real `doctor` 0 warnings, 0 errors. `main` is pushed (e6ee5d2); tags `m1`, `m2` are not.
+Uncommitted: nothing (before this refresh).
 
 ## Next
 

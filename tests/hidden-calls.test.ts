@@ -63,6 +63,11 @@ describe('hiddenCallsEstimate', () => {
   });
 });
 
+it('the dashboard shows the estimate to the cent, never finer', async () => {
+  const { approxUsd } = await import('../dashboard/src/format.ts');
+  expect([0.004, 0.108, 6.951, 1234.5].map(approxUsd)).toEqual(['< $0.01', '≈ $0.11', '≈ $6.95', '≈ $1,235']);
+});
+
 /* ---------- server API ---------- */
 let srv: RunningServer;
 function json(p: string): Promise<any> {

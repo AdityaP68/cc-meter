@@ -1,6 +1,9 @@
 export const usd = (n: number): string =>
   n >= 1000 ? `$${Math.round(n).toLocaleString()}` : n >= 100 ? `$${n.toFixed(0)}` : n >= 1 ? `$${n.toFixed(2)}` : n === 0 ? '$0' : `$${n.toFixed(3)}`;
 
+/** An estimate, so no more precision than cents: "≈ $0.11", "< $0.01". */
+export const approxUsd = (n: number): string => (n < 0.01 ? '< $0.01' : n >= 100 ? `≈ ${usd(n)}` : `≈ $${n.toFixed(2)}`);
+
 export function tok(n: number): string {
   if (n >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
   if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M`;

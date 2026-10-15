@@ -1,12 +1,14 @@
 // @vitest-environment happy-dom
+import fs from 'node:fs';
 import http from 'node:http';
+import path from 'node:path';
 import { act } from 'react';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { openDb } from '../core/db.js';
 import { loadPricing } from '../core/pricing.js';
 import { recordTranscript } from '../core/record.js';
 import { startServer, type RunningServer } from '../server/index.js';
-import { installFixture, tmpDir } from './helpers/util.js';
+import { asst, costStateLine, installFixture, tmpDir } from './helpers/util.js';
 
 // DOM smoke test for the SPA: the real server on fixture data, the real App, navigation through its own links.
 // It guards the class of failure behind the blank-page bug (82bf4ae): an error in the commit phase unmounts the
@@ -57,6 +59,12 @@ beforeAll(async () => {
   const table = loadPricing({ overridePath: null });
   recordTranscript(db, table, installFixture('cc-2.1.28x/multi-model-compaction.jsonl', claude, '-proj-a'));
   recordTranscript(db, table, installFixture('cc-2.1.287/sdk-complete.jsonl', claude, '-proj-b'));
+  // Claude Code counted more than the transcript in every class: an estimate of calls not in the transcript.
+  const dir = path.join(claude, 'projects', '-proj-h');
+  fs.mkdirSync(dir, { recursive: true });
+  const t = { input: 50_000, output: 2000, cacheWrite: 1000, cacheRead: 9_000_000, costUSD: 3.5 };
+  fs.writeFileSync(path.join(dir, 'hidden-calls.jsonl'), [asst({ id: 'h1', input: 100, output: 50, cw: 1000, cw1h: 1000, cr: 5000 }), costStateLine({ 'claude-sonnet-5-5': t })].join('\n'));
+  recordTranscript(db, table, path.join(dir, 'hidden-calls.jsonl'));
   srv = await startServer({ port: 0, db, table, staticDir: tmpDir('static-'), skipExternalChecks: true });
 
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -69,7 +77,7 @@ beforeAll(async () => {
   document.body.innerHTML = '<div id="root"></div>';
   location.hash = '#/';
   await act(async () => { await import('../dashboard/src/main.tsx'); });
-  await settle(() => root().querySelectorAll('a[href^="#/session/"]').length >= 2);
+  await settle(() => root().querySelectorAll('a[href^="#/session/"]').length >= 3);
 });
 afterAll(async () => {
   await srv?.close();
@@ -108,6 +116,23 @@ describe('dashboard in a DOM', () => {
     expect(tip().hidden).toBe(true);
     expect(root().querySelector('.flag-legend')?.textContent).toContain('lower bound');
     expect(errors).toEqual([]);
+  });
+
+  it('labels calls not in the transcript as an estimate, on the row and the session page', async () => {
+    const chip = [...root().querySelectorAll<HTMLButtonElement>('.flags button.chip')].find((c) => c.textContent!.includes('not in transcript'));
+    expect(chip, 'estimate chip on the hidden-calls row').toBeDefined();
+    expect(chip!.textContent).toMatch(/^≈ \$\d/);
+    const tip = document.getElementById(chip!.getAttribute('aria-describedby')!)!;
+    expect(tip.textContent).toContain('Estimate');
+    expect(tip.textContent).toContain('not added to');
+    // Only one Claude Code chip per row: the estimate replaces the plain "CC $x" chip.
+    expect(chip!.closest('.flags')!.textContent).not.toMatch(/CC \$/);
+    await go('#/session/hidden-calls', 'hidden-calls');
+    const banner = [...root().querySelectorAll('.banner')].find((b) => b.textContent!.includes('not in the transcript'));
+    expect(banner?.textContent).toMatch(/≈ \$\d/);
+    expect(banner?.textContent).toContain('estimate');
+    await go('#/', 'Sessions');
+    await settle(() => root().querySelectorAll('a[href^="#/session/"]').length >= 3);
   });
 
   it('survives navigating every route, session to session, and back', async () => {

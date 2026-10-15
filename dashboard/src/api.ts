@@ -1,12 +1,15 @@
 // Types mirror core/aggregate.ts (kept separate so the SPA has no dependency on Node-only modules).
 export interface ModelTotals { model: string; messages: number; input: number; output: number; cacheWrite: number; cacheRead: number; cost: number; unpriced: boolean }
 export interface CostState { totalCostUSD: number; modelUsage: Record<string, { costUSD: number }> }
+/** Estimated cost of calls Claude Code billed but never wrote to the transcript; null where no estimate is valid. */
+export interface HiddenCalls { usd: number; claudeCodeUsd: number; outputTokensExcluded: number }
 export interface Session {
   sessionId: string; source: string; project: string | null; cwd: string | null; title: string | null; label: string; entrypoint: string | null;
   startedAt: string | null; endedAt: string | null; durationMs: number | null; turns: number; messages: number;
   sidechainMessages: number; partialMessages: number; inputTokens: number; outputTokens: number; cacheWriteTokens: number;
   cacheReadTokens: number; totalTokens: number; costUsd: number; unpricedTokens: number; unpricedModels: string[];
   models: ModelTotals[]; switches: number; compactions: number; parserStatus: string | null; ccVersions: string[]; costState: CostState | null;
+  hiddenCalls: HiddenCalls | null;
 }
 export interface Turn { turn: number; ts: string | null; costUsd: number; sidechainCostUsd: number; unpricedTokens: number; tokens: number; messages: number; models: string[]; mainModel: string | null }
 export interface EventRow { kind: 'model_switch' | 'compaction'; ts: string | null; turn: number | null; fromModel: string | null; toModel: string | null; detail: Record<string, number | string | null> | null }

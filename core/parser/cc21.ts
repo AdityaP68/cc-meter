@@ -252,7 +252,11 @@ function readAssistant(
 function readCostState(o: Json): CostStateSnapshot | null {
   if (typeof o.totalCostUSD !== 'number') return null;
   const modelUsage: CostStateSnapshot['modelUsage'] = {};
-  for (const [m, raw] of Object.entries((o.modelUsage ?? {}) as Record<string, Json>)) {
+  const usage = o.modelUsage;
+  const entries = typeof usage === 'object' && usage !== null && !Array.isArray(usage) ? Object.entries(usage as Record<string, unknown>) : [];
+  for (const [m, rawEntry] of entries) {
+    if (typeof rawEntry !== 'object' || rawEntry === null || Array.isArray(rawEntry)) continue;
+    const raw = rawEntry as Json;
     modelUsage[m] = {
       inputTokens: num(raw.inputTokens),
       outputTokens: num(raw.outputTokens),

@@ -113,6 +113,17 @@ describe('cc-2.1 parser', () => {
     expect(r.meta.title).toBe('Mine');
   });
 
+  it('does not throw on a malformed cost-state modelUsage; keeps the well-formed entries', () => {
+    const good = { inputTokens: 1, outputTokens: 2, cacheReadInputTokens: 3, cacheCreationInputTokens: 4, costUSD: 1, webSearchRequests: 0 };
+    const cs = (modelUsage: unknown) => JSON.stringify({ type: 'cost-state', totalCostUSD: 1, modelUsage });
+    for (const bad of [null, 'text', 7, [null, 1], { 'claude-sonnet-5-5': null, 'claude-x': 'str', 'claude-y': 5 }]) {
+      expect(() => cc21.parse([cs(bad)])).not.toThrow();
+    }
+    const r = cc21.parse([cs({ 'claude-sonnet-5-5': good, broken: null, alsoBroken: [1] })]);
+    expect(Object.keys(r.costState!.modelUsage)).toEqual(['claude-sonnet-5-5']);
+    expect(r.costState!.totalCostUSD).toBe(1);
+  });
+
   it('survives a message with no id (falls back to requestId/uuid) and one with no usage', () => {
     const noId = JSON.parse(asst({ id: 'x', output: 7 }));
     delete noId.message.id;

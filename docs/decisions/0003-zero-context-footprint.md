@@ -8,5 +8,5 @@ whole conversation (priced by context size).
 
 **Decision.** Recording via Stop/SessionEnd hooks; no MCP server. `/ccmeter` is a `UserPromptSubmit` hook returning
 `{"continue":false,"stopReason":"<url>"}` (2026-10-15: replaces `decision:block`, which added an "Original prompt"
-echo). The M3 skill ships as `SKILL.md.stub`. A small command file remains as a discoverable fallback (open
-decision with the user). Enforced by `scripts/harness/check.mjs` and `tests/plugin.test.ts`.
+echo). The M3 skill ships as `SKILL.md.stub`. A small command file remains as a discoverable fallback (owner chose to keep it,
+2026-10-15). Enforced by `scripts/harness/check.mjs` and `tests/plugin.test.ts`.

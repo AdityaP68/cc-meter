@@ -17,9 +17,9 @@ Nothing pushed.
 
 ## Next
 
-1. **Ask the user** (one message): push `main` and tags `m1`, `m2` (needs explicit approval); keep or drop
-   `plugin/commands/ccmeter.md` (agent recommends keep: about 16 tokens per session, it is the only discoverable
-   entry point).
+1. **Push:** the user approved pushing `main` and tags `m1`, `m2` on 2026-10-15, but the session's permissions
+   blocked `git push`; check `git status -sb` and, if still ahead of `origin/main`, ask the user to run
+   `git push origin main m1 m2`. The command file `plugin/commands/ccmeter.md` is kept (decided).
 2. **Optional follow-ups:** look at the unpriced rows in the browser (`dashboard-check` with a transcript using an
    unknown model, isolated `CCMETER_HOME`); check that the dashboard bundle ships React's MIT notice before any
    public release.

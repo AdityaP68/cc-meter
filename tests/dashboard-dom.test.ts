@@ -65,6 +65,15 @@ beforeAll(async () => {
   const t = { input: 50_000, output: 2000, cacheWrite: 1000, cacheRead: 9_000_000, costUSD: 3.5 };
   fs.writeFileSync(path.join(dir, 'hidden-calls.jsonl'), [asst({ id: 'h1', input: 100, output: 50, cw: 1000, cw1h: 1000, cr: 5000 }), costStateLine({ 'claude-sonnet-5-5': t })].join('\n'));
   recordTranscript(db, table, path.join(dir, 'hidden-calls.jsonl'));
+  // Claude Code's record covers only part of the session (2026-10-15 case): no entry for the first model, about half
+  // of the second's output and cache. Its total is far below ccmeter's and must not read as the session's cost.
+  const opus = { id: 'p2', model: 'claude-opus-5-5', input: 400, output: 20_000, cw: 50_000, cw1h: 50_000, cr: 900_000 };
+  fs.writeFileSync(path.join(dir, 'cc-partial.jsonl'), [
+    asst({ id: 'p1', model: 'claude-sonnet-5-5', input: 300, output: 4000, cw: 20_000, cw1h: 20_000, cr: 100_000 }),
+    asst(opus),
+    costStateLine({ 'claude-opus-5-5': { input: 400, output: 10_000, cacheWrite: 25_000, cacheRead: 450_000, costUSD: 0.5 } }),
+  ].join('\n'));
+  recordTranscript(db, table, path.join(dir, 'cc-partial.jsonl'));
   srv = await startServer({ port: 0, db, table, staticDir: tmpDir('static-'), skipExternalChecks: true });
 
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -133,6 +142,20 @@ describe('dashboard in a DOM', () => {
     expect(banner?.textContent).toContain('estimate');
     await go('#/', 'Sessions');
     await settle(() => root().querySelectorAll('a[href^="#/session/"]').length >= 3);
+  });
+
+  it("shows no Claude Code total on a row whose record is partial, and says why on the session page", async () => {
+    const row = root().querySelector('a[href="#/session/cc-partial"]')!.closest('tr')!;
+    expect(row.querySelector('.flags')!.textContent).not.toMatch(/CC/);
+    expect(root().querySelector('.flag-legend')?.textContent).toContain('whole session');
+    await go('#/session/cc-partial', 'cc-partial');
+    const banner = [...root().querySelectorAll('.banner')].find((b) => b.textContent!.includes('partial'));
+    expect(banner?.textContent).toContain("Claude Code's record is partial");
+    expect(banner?.textContent).toContain('no entry for');
+    expect(banner?.textContent).toMatch(/ccmeter's total, \$[\d.,]+, is the complete one/);
+    expect(root().textContent, 'per-model comparison kept').toContain("Check against Claude Code's own accounting");
+    await go('#/', 'Sessions');
+    await settle(() => root().querySelectorAll('a[href^="#/session/"]').length >= 4);
   });
 
   it('survives navigating every route, session to session, and back', async () => {

@@ -3,6 +3,8 @@ export interface ModelTotals { model: string; messages: number; input: number; o
 export interface CostState { totalCostUSD: number; modelUsage: Record<string, { costUSD: number }> }
 /** Estimated cost of calls Claude Code billed but never wrote to the transcript; null where no estimate is valid. */
 export interface HiddenCalls { usd: number; claudeCodeUsd: number; outputTokensExcluded: number }
+/** Claude Code's cost-state covers only part of the session: models it lacks, and models where it counted fewer tokens. */
+export interface PartialRecord { missingModels: string[]; fewerTokens: { model: string; classes: ('input' | 'output' | 'cacheWrite' | 'cacheRead')[] }[] }
 export interface Session {
   sessionId: string; source: string; project: string | null; cwd: string | null; title: string | null; label: string; entrypoint: string | null;
   startedAt: string | null; endedAt: string | null; durationMs: number | null; turns: number; messages: number;
@@ -10,6 +12,7 @@ export interface Session {
   cacheReadTokens: number; totalTokens: number; costUsd: number; unpricedTokens: number; unpricedModels: string[];
   models: ModelTotals[]; switches: number; compactions: number; parserStatus: string | null; ccVersions: string[]; costState: CostState | null;
   hiddenCalls: HiddenCalls | null;
+  claudeCodePartial: PartialRecord | null;
 }
 export interface Turn { turn: number; ts: string | null; costUsd: number; sidechainCostUsd: number; unpricedTokens: number; tokens: number; messages: number; models: string[]; mainModel: string | null }
 export interface EventRow { kind: 'model_switch' | 'compaction'; ts: string | null; turn: number | null; fromModel: string | null; toModel: string | null; detail: Record<string, number | string | null> | null }

@@ -1,5 +1,5 @@
 import { useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { get, post, qs, type Check, type DayModel, type Facets, type Filters, type HiddenCalls, type Overview, type PricingRow, type Rollup, type Session, type SessionDetail } from './api';
+import { get, post, qs, type Check, type DayModel, type Facets, type Filters, type HiddenCalls, type Overview, type PartialRecord, type PricingRow, type Rollup, type Session, type SessionDetail } from './api';
 import { ChartCard, DayChart, HBars, Legend, MixBar, ModelColors, Timeline } from './charts';
 import { Chip } from './chip';
 import { approxUsd, dur, shortModel, tok, usd, when } from './format';
@@ -33,8 +33,16 @@ const FLAG_HELP = {
   sub: (k: number) => <><b>Subagent calls.</b> {n(k, 'API call', 'API calls')} in this session came from subagents (the Task or Agent tool). Their cost is included in the total; the session page shows it as hatched bars per turn.</>,
   partial: (k: number) => <><b>Lower bound.</b> {n(k, 'reply', 'replies')} (mostly from subagents) {k === 1 ? 'was' : 'were'} saved to the transcript mid-stream, before the final token count was written. Their output tokens, and so the cost, are slightly understated; ccmeter never fills the gap with a guess.</>,
   hidden: (h: HiddenCalls, own: number) => <><b>Estimate: calls not in the transcript.</b> Claude Code's own total for this session is {usd(h.claudeCodeUsd)}, ccmeter's is {usd(own)}. Claude Code counted at least as many tokens as the transcript for every model, so its record covers the whole session, and the difference, {approxUsd(h.usd)}, is most likely calls it billed but never wrote to the transcript (server-side classifier calls are the leading explanation, not proven). It is derived from Claude Code's figures and not added to ccmeter's cost.{h.outputTokensExcluded > 0 && ` ${tok(h.outputTokensExcluded)} output tokens of the difference are left out: they belong to replies saved mid-stream.`}</>,
-  cc: (cc: number, own: number) => <><b>Claude Code's own total</b> for this session is {usd(cc)}, ccmeter's is {usd(own)}: they differ by more than 5%. {cc > own ? 'Most likely Claude Code billed calls that it never writes to the transcript, which ccmeter cannot see.' : "Claude Code's record usually covers only the last run of a session that was resumed, so it is the smaller one."} The session page compares them per model.</>,
+  cc: (cc: number, own: number, unpriced: boolean) => <><b>Claude Code's own total</b> for this session is {usd(cc)}, ccmeter's is {usd(own)}: they differ by more than 5%. Claude Code counted at least as many tokens as the transcript for every model, so its record covers the whole session. {cc > own ? (unpriced ? 'Part of the difference is the unpriced model, which ccmeter leaves out of its cost; the rest is most likely calls Claude Code billed but never wrote to the transcript.' : 'Most likely Claude Code billed calls that it never writes to the transcript, which ccmeter cannot see.') : 'Its total is still lower, so the difference is in the prices it applied, not in the tokens.'} The session page compares them per model.</>,
 };
+
+const CLASS_LABEL = { input: 'input', output: 'output', cacheWrite: 'cache-write', cacheRead: 'cache-read' } as const;
+const list = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+/** What makes Claude Code's record provably partial, in words: "it has no entry for X; for Y it counted fewer … tokens than the transcript". */
+const partialWhy = (p: PartialRecord) => ([
+  ...(p.missingModels.length ? [`it has no entry for ${list(p.missingModels.map(shortModel))}`] : []),
+  ...p.fewerTokens.map((f) => `for ${shortModel(f.model)} it counted fewer ${list(f.classes.map((c) => CLASS_LABEL[c]))} tokens than the transcript`),
+]).join('; ');
 
 const Stat = ({ label, value, sub }: { label: string; value: ReactNode; sub?: ReactNode }) => (
   <div className="stat"><div className="stat-l">{label}</div><div className="stat-v">{value}</div>{sub && <div className="stat-s">{sub}</div>}</div>
@@ -103,7 +111,7 @@ export function SessionsPage({ f, reload }: { f: Filters; reload: number }) {
             {(['recent', 'cost', 'tokens'] as const).map((s) => <button key={s} className={sort === s ? 'on' : ''} onClick={() => setSort(s)} aria-pressed={sort === s}>{s === 'recent' ? 'Most recent' : s === 'cost' ? 'Highest cost' : 'Most tokens'}</button>)}
           </div>
         </header>
-        <p className="flag-legend muted small"><b>Flags:</b> ⇄ model switches · ◆ compactions · sub = subagent calls · ≥ lower bound = cost slightly understated · ≈ $x not in transcript = estimated cost of calls Claude Code billed but never wrote to the transcript · CC = Claude Code's own total differs by more than 5% · + unpriced = a model with no price, left out of the cost. Hover, focus or tap a chip for details.</p>
+        <p className="flag-legend muted small"><b>Flags:</b> ⇄ model switches · ◆ compactions · sub = subagent calls · ≥ lower bound = cost slightly understated · ≈ $x not in transcript = estimated cost of calls Claude Code billed but never wrote to the transcript · CC = Claude Code's own total differs by more than 5% (shown only where its record covers the whole session) · + unpriced = a model with no price, left out of the cost. Hover, focus or tap a chip for details.</p>
         <div className="scroll">
           <table className="tbl">
             <caption className="sr">Recorded Claude Code sessions</caption>
@@ -111,7 +119,8 @@ export function SessionsPage({ f, reload }: { f: Filters; reload: number }) {
             <tbody>
               {(list.data?.rows ?? []).map((s) => {
                 const cc = s.costState?.totalCostUSD;
-                const differs = cc !== undefined && cc > 0 && Math.abs(cc - s.costUsd) / cc > 0.05;
+                // A partial record's total is not the session's cost: no chip (the session page explains it).
+                const differs = !s.claudeCodePartial && cc !== undefined && cc > 0 && Math.abs(cc - s.costUsd) / cc > 0.05;
                 const h = s.hiddenCalls;
                 return (
                   <tr key={s.sessionId}>
@@ -130,7 +139,7 @@ export function SessionsPage({ f, reload }: { f: Filters; reload: number }) {
                         {s.sidechainMessages > 0 && <Chip label={`sub ${s.sidechainMessages}`} help={FLAG_HELP.sub(s.sidechainMessages)} />}
                         {s.partialMessages > 0 && <Chip tone="info" label="≥ lower bound" help={FLAG_HELP.partial(s.partialMessages)} />}
                         {h ? <Chip tone="info" label={`${approxUsd(h.usd)} not in transcript`} help={FLAG_HELP.hidden(h, s.costUsd)} />
-                          : differs && <Chip tone="info" label={`CC ${usd(cc!)}`} help={FLAG_HELP.cc(cc!, s.costUsd)} />}
+                          : differs && <Chip tone="info" label={`CC ${usd(cc!)}`} help={FLAG_HELP.cc(cc!, s.costUsd, s.unpricedTokens > 0)} />}
                       </div>
                     </td>
                   </tr>
@@ -197,7 +206,7 @@ export function SessionPage({ id, reload }: { id: string; reload: number }) {
         <p className="muted">{s.cwd ?? s.project ?? '–'} · {when(s.startedAt)} → {when(s.endedAt)} ({dur(s.durationMs)}) · Claude Code {s.ccVersions.join(', ') || '–'} · parser <span className={`badge ${s.parserStatus === 'verified' ? '' : 'warn'}`}>{s.parserStatus}</span> · <span className="badge">{s.source}</span></p>
         <p className="mono small muted">{s.sessionId}</p>
         <div className="stats">
-          <Stat label="Estimated cost" value={<Cost usd={s.costUsd} unpriced={s.unpricedTokens} />} sub={cc !== undefined ? `Claude Code reports ${usd(cc)}` : 'no Claude Code cost entry'} />
+          <Stat label="Estimated cost" value={<Cost usd={s.costUsd} unpriced={s.unpricedTokens} />} sub={cc === undefined ? 'no Claude Code cost entry' : s.claudeCodePartial ? `Claude Code's partial record: ${usd(cc)}` : `Claude Code reports ${usd(cc)}`} />
           <Stat label="Tokens" value={tok(s.totalTokens)} sub={`in ${tok(s.inputTokens)} · out ${tok(s.outputTokens)}`} />
           <Stat label="Cache" value={tok(s.cacheReadTokens)} sub={`read · ${tok(s.cacheWriteTokens)} written`} />
           <Stat label="Turns" value={s.turns} sub={`${s.messages} API messages${s.sidechainMessages ? `, ${s.sidechainMessages} from subagents` : ''}`} />
@@ -207,6 +216,7 @@ export function SessionPage({ id, reload }: { id: string; reload: number }) {
           const u = s.costState?.modelUsage[m];
           return <div key={m} className="small">Claude Code's figure for {shortModel(m)} in this session: {u ? <b>{usd(u.costUSD)}</b> : 'none recorded'} (Claude Code's own estimate; not included in the cost above).</div>;
         })}</div>}
+        {s.claudeCodePartial && cc !== undefined && <div className="banner info"><b>ℹ Claude Code's record is partial:</b> {partialWhy(s.claudeCodePartial)}. Its total, {usd(cc)}, covers only part of this session (as happens when a session is resumed across Claude Code processes), so it is not this session's cost. ccmeter's total, {usd(s.costUsd)}, is the complete one: it counts every API response in the transcript. The table at the bottom compares per model.</div>}
         {s.hiddenCalls && <div className="banner info"><b>ℹ Calls not in the transcript {approxUsd(s.hiddenCalls.usd)}</b> (estimate): Claude Code's own total is {usd(s.hiddenCalls.claudeCodeUsd)} and it counted at least as many tokens as the transcript for every model, so the difference is most likely calls it billed but never wrote there. Not added to the cost above; the table at the bottom compares per model.{s.hiddenCalls.outputTokensExcluded > 0 && ` ${tok(s.hiddenCalls.outputTokensExcluded)} output tokens of the difference are left out, as they belong to replies saved mid-stream.`}</div>}
         {s.partialMessages > 0 && <div className="banner info"><b>ℹ Lower bound:</b> {s.partialMessages} messages (mostly subagents) were saved mid-stream, so their output tokens, and the cost, are slightly understated. Claude Code's own total is shown above where it recorded one.</div>}
       </section>

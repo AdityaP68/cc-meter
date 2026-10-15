@@ -7,6 +7,7 @@ bodies (`git show <sha>`); do not duplicate it here.
 
 | Date | Change | Where |
 |---|---|---|
+| 2026-10-15 | Dashboard: "≈ $x not in transcript" estimate (Claude Code minus ccmeter) where Claude Code's cost-state covers the whole session; 10 sessions, ≈ $10.32 on the user's data | `4fd4306`, `d28fa43`, `f15c525` |
 | 2026-10-15 | Hook mode no longer drops a stdin payload that arrives late (EAGAIN on a non-blocking fd 0; reproduced, fixed, tested) | `d5ea40c` |
 | 2026-10-15 | Flag chips explain themselves (hover, focus, tap); server idle stop 30 min, memory checked (no leak found); hidden-calls gap measured, OTel export read (docs only) | `7635635`, `38a70ab`, `docs/FORMATS.md` |
 | 2026-10-15 | `/ccmeter` labels its line: `ccmeter dashboard: <url>` | see `git log -- plugin/scripts/prompt-hook.sh` |

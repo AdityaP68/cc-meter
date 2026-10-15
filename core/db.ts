@@ -122,14 +122,21 @@ export function schemaVersion(db: Db): number {
   return row.user_version;
 }
 
+/**
+ * Apply pending migrations. The unlocked read of user_version is only a fast path: another process (a hook, the
+ * server, the CLI) may migrate between it and our transaction, so each step takes the write lock first and re-reads
+ * the version under it.
+ */
 export function migrate(db: Db): void {
   let v = schemaVersion(db);
   for (const m of MIGRATIONS) {
     if (m.version <= v) continue;
-    db.exec('BEGIN');
+    db.exec('BEGIN IMMEDIATE');
     try {
-      db.exec(m.sql);
-      db.exec(`PRAGMA user_version = ${m.version}`);
+      if (schemaVersion(db) < m.version) {
+        db.exec(m.sql);
+        db.exec(`PRAGMA user_version = ${m.version}`);
+      }
       db.exec('COMMIT');
     } catch (e) {
       db.exec('ROLLBACK');

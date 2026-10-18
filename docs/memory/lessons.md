@@ -70,3 +70,9 @@ Report what the data shows per model, and say explicitly when there is nothing t
 Touching `process.stdin` (even `.isTTY`) on a pipe opens fd 0 as a non-blocking stream; a later
 `fs.readFileSync(0)` throws EAGAIN if the writer has not written yet, so hook mode silently read no payload under
 load. Use `tty.isatty(0)` and `readStdinText` (`cli/stdin.ts`), which retries EAGAIN. Guarded by `tests/stdin.test.ts`.
+
+## 2026-10-18 — An isolated `CLAUDE_CONFIG_DIR` is not logged in
+A fresh `CLAUDE_CONFIG_DIR` makes `claude -p` answer "Not logged in" (`terminal_reason: api_error`, cost 0) and
+`claude auth status` shows `loggedIn: false`; credentials are not shared with the default config. The user must log
+in there themselves (agents never handle credentials). Check with `CLAUDE_CONFIG_DIR=<dir> claude auth status`
+before any paid experiment. macOS has no `timeout` command; Bash calls touching `dist/` were denied in this setup, use `.test-dist/`.

@@ -10,6 +10,8 @@ whose numbers can be trusted, and which costs zero tokens in the sessions it mea
 ## What is done and verified
 - **Renamed to sessionscope** on 2026-10-19 (ADR `decisions/0010-*`; was ccmeter). Live install migrated: `~/.sessionscope`,
   plugin `sessionscope@sessionscope`, `dist/` rebuilt. The old `~/.ccmeter` is kept; old env var and paths are read as fallbacks.
+- **Docs section** (2026-10-19): guide pages in `docs/guide/` (one source: GitHub and the dashboard `#/docs`; `USAGE.md` is the index).
+  Fact-checked against code and the CLI in isolation; unverified items carry `> **Unverified:**` labels. Verify green (183 tests).
 - **M1 (core + recorder)** and **M2 (dashboard + status line)** are built; tags `m1`, `m2`.
   139 tests pass on 2026-10-15 (unit, golden fixtures from 5 Claude Code versions, server, CLI, plugin
   scripts, a happy-dom smoke test that route changes keep the dashboard mounted).
@@ -36,6 +38,6 @@ whose numbers can be trusted, and which costs zero tokens in the sessions it mea
 - M3 (digest, heuristics, judge, review overhead) is designed only: `docs/ARCHITECTURE.md`.
 
 ## Retrieve on demand
-[Scope v2](SCOPE.md) · [Gap taxonomy](GAPS.md) · [Usage](USAGE.md) · [Formats](FORMATS.md) · [Architecture + M3 design](ARCHITECTURE.md) ·
+[Scope v2](SCOPE.md) · [Gap taxonomy](GAPS.md) · [Usage index](USAGE.md) · [Guide](guide/overview.md) · [Formats](FORMATS.md) · [Architecture + M3 design](ARCHITECTURE.md) ·
 [Assumptions](ASSUMPTIONS.md) · [Acceptance](ACCEPTANCE.md) · [Status](status.md) ·
 [Decisions](decisions/) · [Lessons](memory/lessons.md) · [Harness](harness.md) · [References](references.md)

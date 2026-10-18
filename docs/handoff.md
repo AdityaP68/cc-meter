@@ -12,10 +12,13 @@ the verified 2.1.295 (run the `format-drift` skill). Earlier 2026-10-19: Health 
 
 ## Next
 
-1. In parallel sessions (disjoint files): (a) prompt reviewer M3 (`docs/ARCHITECTURE.md` section Milestone 3; `claude -p` judge,
-   consent prompt, no sessionscope network call; ADR 0009 still proposed, ask to accept first); (b) dashboard **Docs** section:
-   route + page in `dashboard/src`, content written by role-split agents (concepts and accuracy, CLI/install how-to, fact-checker
-   against `docs/FORMATS.md`), then `react-check`.
+1. Prompt reviewer M3 (`docs/ARCHITECTURE.md` section Milestone 3; `claude -p` judge, consent prompt, no sessionscope network call;
+   ADR 0009 still proposed, ask to accept first). When it ships, update `docs/guide/{overview,privacy,cli}.md` (they say "not
+   released"); `docs/guide/` is compiled into the dashboard (renderer subset: `dashboard/src/docs-markdown.tsx`), keep it fact-checked.
+1b. Docs section is done (`800d839`, branch `claude/cranky-davinci-cdb18d`, not merged or pushed). Code oddities the guide documents
+   but nobody fixed (cli/core, left alone): all-unpriced session prints `$0.000+unpriced`; `--url-only` not registered as a switch;
+   `report --by <bad>` falls back silently; `setup --uninstall` prints success even if `claude` failed. Guide numbers marked "date
+   not recorded" (17 versions, 62 files, price checks) need a dated survey. If the product is renamed again, sweep `docs/guide/`.
 2. `format-drift` for Claude Code 2.1.302 (verified range ends 2.1.295) so `doctor` is back to 0 warnings. Zero spend.
 3. `sessionscope audit` command (design: reconcile sessionscope vs cost-state, optional OTel events file or gateway export, exit
    non-zero on unexplained difference). Ask first: placement (new command, recommended) and OTel input.

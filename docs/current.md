@@ -9,8 +9,7 @@ whose numbers can be trusted, and which costs zero tokens in the sessions it mea
 
 ## What is done and verified
 - **Named agent-lens** since 2026-10-19 (ADR `decisions/0011-*`; earlier names ccmeter, then sessionscope, both still read as
-  fallbacks). The dashboard has the lens identity (brand, favicon, header). Whether the live install already runs the new name:
-  see `docs/handoff.md`.
+  fallbacks). The dashboard has the lens identity (brand, favicon, header). The live install runs the new name (migrated 2026-10-19).
 - **M1 (core + recorder)** and **M2 (dashboard + status line)** are built; tags `m1`, `m2`.
   139 tests pass on 2026-10-15 (unit, golden fixtures from 5 Claude Code versions, server, CLI, plugin
   scripts, a happy-dom smoke test that route changes keep the dashboard mounted).

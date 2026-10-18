@@ -5,12 +5,11 @@
 History of earlier hand-offs: `git log -p -- docs/handoff.md`.
 
 ## Where things stand
-2026-10-19: renamed ccmeter -> sessionscope (live install migrated) -> **agent-lens** (ADR 0011). The agent-lens rename and the new
-dashboard identity are committed on branch `rename-agent-lens` (verify --full green, 181 tests; isolated fresh-clone install with both
-old plugins and old data passed). **Live migration pending owner approval**: merge the branch into `main`, `npm run build`,
-`node dist/cli/index.js setup` in the real home (copies `~/.sessionscope` to `~/.agent-lens`, replaces the old plugin), back up
-`~/.claude/settings.json` first, then real `doctor`. Real `doctor` today: 0 errors, 2 warnings (Claude Code 2.1.302 newer than the
-verified 2.1.295 -> `format-drift`).
+2026-10-19: renamed ccmeter -> sessionscope -> **agent-lens** (ADR 0011), plus a new dashboard identity. **Live install migrated and built**:
+`~/.agent-lens` (copied from `~/.sessionscope`, 394 sessions), plugin `agent-lens@agent-lens`, `dist/` rebuilt, main pushed (`ef06d5c`).
+Backups: `~/.claude/settings.json.pre-agent-lens-backup`; `~/.sessionscope` and `~/.ccmeter` are kept. Real `doctor`: 0 errors, 2 warnings
+(Claude Code 2.1.302 newer than the verified 2.1.295 -> `format-drift`). Parallel worktrees started before the rename (reviewer, docs
+section) still carry the old name in their files: merge main into them before they commit.
 
 ## Next
 

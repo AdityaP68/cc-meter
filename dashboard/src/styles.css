@@ -94,7 +94,7 @@ select { font: inherit; font-size: 13px; color: var(--text-primary); background:
 .badge.ok { background: var(--ok-bg); color: var(--ok-fg); border-color: transparent; }
 .badge.warn { background: var(--warn-bg); color: var(--warn-fg); border-color: transparent; }
 .badge.info { background: var(--info-bg); color: var(--info-fg); border-color: transparent; }
-button.chip { font-family: inherit; cursor: help; position: relative; }
+button.chip { font-family: inherit; cursor: default; position: relative; }
 button.chip::after { content: ''; position: absolute; inset: -4px -2px; } /* a larger tap target */
 .chip-tip { position: fixed; z-index: 20; top: 0; left: 0; width: max-content; max-width: min(300px, calc(100vw - 16px)); background: var(--surface-1); color: var(--text-primary); border: 1px solid var(--border); box-shadow: 0 4px 14px rgba(0,0,0,.18); border-radius: 8px; padding: 8px 10px; font-size: 12px; line-height: 1.45; font-weight: 400; text-align: left; white-space: normal; font-variant-numeric: normal; }
 .chip-tip[hidden] { display: none; }

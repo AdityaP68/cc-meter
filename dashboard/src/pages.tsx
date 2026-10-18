@@ -1,5 +1,5 @@
 import { useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { get, post, qs, type Check, type DayModel, type Facets, type Filters, type HiddenCalls, type Overview, type PartialRecord, type PricingRow, type Rollup, type Session, type SessionDetail } from './api';
+import { get, post, qs, type Accuracy, type Check, type DayModel, type Facets, type Filters, type HiddenCalls, type Overview, type PartialRecord, type PricingRow, type Rollup, type Session, type SessionDetail } from './api';
 import { ChartCard, DayChart, HBars, Legend, MixBar, ModelColors, Timeline } from './charts';
 import { Chip } from './chip';
 import { approxUsd, dur, shortModel, tok, usd, when } from './format';
@@ -271,12 +271,38 @@ function TurnTable({ turns }: { turns: SessionDetail['turns'] }) {
 }
 
 /* ---------- health ---------- */
+const pc = (a: number, b: number) => (b ? `${Math.floor((a / b) * 1000) / 10}%` : '–');
+
+/** A short, honest report of how far the numbers can be trusted, from what ccmeter can compare locally. */
+function AccuracyCard({ a }: { a: Accuracy }) {
+  if (a.sessions === 0) return null;
+  const hasCC = a.withClaudeCodeRecord > 0;
+  return (
+    <section className="card"><h2>Accuracy report</h2>
+      <p className="muted">ccmeter compares two sources it has on this machine: the transcript (priced with <code>pricing.json</code>) and Claude Code's own cost record in the same transcript. It has no third, independent source such as OpenTelemetry or your provider's invoice, so this shows agreement with Claude Code's accounting, not with a bill.</p>
+      <ul className="checks">
+        {hasCC ? <>
+          <li className="check ok"><span className="ico" aria-hidden>✔</span><div><b>{a.exact.toLocaleString()} of {a.withClaudeCodeRecord.toLocaleString()}</b> sessions with a Claude Code cost record match it exactly, token for token ({pc(a.exact, a.withClaudeCodeRecord)}). By (session, model) pair: {a.pairsMatched.toLocaleString()} of {a.pairs.toLocaleString()}.</div></li>
+          {a.hiddenCalls.sessions > 0 && <li className="check info"><span className="ico" aria-hidden>ℹ</span><div><b>{a.hiddenCalls.sessions.toLocaleString()}</b> {a.hiddenCalls.sessions === 1 ? 'session has' : 'sessions have'} calls Claude Code billed but never wrote to the transcript: an estimated <b>{approxUsd(a.hiddenCalls.usd)}</b> ({pc(a.hiddenCalls.usd, a.costUsd)} of ccmeter's {usd(a.costUsd)}). Derived from Claude Code's figures; not added to ccmeter's costs.</div></li>}
+          {a.partialRecord > 0 && <li className="check info"><span className="ico" aria-hidden>ℹ</span><div><b>{a.partialRecord.toLocaleString()}</b> {a.partialRecord === 1 ? 'session' : 'sessions'} where Claude Code's record covers only part of the session (resumed across processes). ccmeter's total, from the whole transcript, is the complete one.</div></li>}
+          {a.other > 0 && <li className="check warn"><span className="ico" aria-hidden>⚠</span><div><b>{a.other.toLocaleString()}</b> {a.other === 1 ? 'session differs' : 'sessions differ'} from Claude Code's record without a known explanation (for example an unpriced model). Sessions that differ show a “CC $x” chip in the Sessions list; open one for the per-model comparison.</div></li>}
+        </> : <li className="check info"><span className="ico" aria-hidden>ℹ</span><div>No session has a Claude Code cost record yet, so there is nothing to compare against.</div></li>}
+        {a.withoutClaudeCodeRecord > 0 && <li className="check info"><span className="ico" aria-hidden>ℹ</span><div>{a.withoutClaudeCodeRecord.toLocaleString()} {a.withoutClaudeCodeRecord === 1 ? 'session has' : 'sessions have'} no Claude Code cost record, so {a.withoutClaudeCodeRecord === 1 ? 'it' : 'they'} cannot be cross-checked.</div></li>}
+        <li className={`check ${a.pricing.pairs && a.pricing.consistent < a.pricing.pairs ? 'warn' : 'ok'}`}><span className="ico" aria-hidden>{a.pricing.pairs && a.pricing.consistent < a.pricing.pairs ? '⚠' : '✔'}</span><div>Prices: {a.pricing.consistent.toLocaleString()} of {a.pricing.pairs.toLocaleString()} comparisons land on the cost Claude Code recorded, across {a.pricing.models} {a.pricing.models === 1 ? 'model' : 'models'} ({a.pricing.verified} verified, {a.pricing.list} list price{a.pricing.derived > 0 ? `, ${a.pricing.derived} derived` : ''}).</div></li>
+        {a.unpricedModels.length > 0 && <li className="check warn"><span className="ico" aria-hidden>⚠</span><div>Unpriced: {a.unpricedModels.map(shortModel).join(', ')} ({tok(a.unpricedTokens)} tokens). Left out of every dollar figure, never counted as $0.</div></li>}
+        {a.unverifiedParserSessions > 0 && <li className="check info"><span className="ico" aria-hidden>ℹ</span><div>{a.unverifiedParserSessions.toLocaleString()} {a.unverifiedParserSessions === 1 ? 'session was' : 'sessions were'} recorded from a Claude Code version outside the verified range; the format is checked by <code>ccmeter doctor</code>.</div></li>}
+      </ul>
+    </section>
+  );
+}
+
 export function HealthPage({ reload }: { reload: number }) {
-  const { data, error } = useApi<{ checks: Check[]; pricing: PricingRow[] }>('/api/doctor', [reload]);
+  const { data, error } = useApi<{ checks: Check[]; pricing: PricingRow[]; accuracy: Accuracy }>('/api/doctor', [reload]);
   if (error) return <div className="banner error">{error}</div>;
   if (!data) return <div className="empty">Running checks…</div>;
   return (
     <>
+      <AccuracyCard a={data.accuracy} />
       <section className="card"><h2>Health checks</h2>
         <p className="muted">Same checks as <code>ccmeter doctor</code>.</p>
         <ul className="checks">{data.checks.map((c) => (

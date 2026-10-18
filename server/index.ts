@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
+import { accuracyReport } from '../core/accuracy.js';
 import { facets, getSession, listSessions, overview, rollup, rollupDayModel, type Filters, type SessionSort } from '../core/aggregate.js';
 import { openDb, type Db } from '../core/db.js';
 import { runDoctor, verifyPricing, type Check } from '../core/doctor.js';
@@ -141,7 +142,10 @@ export function startServer(opts: ServerOptions): Promise<RunningServer> {
             return send(res, 200, rollup(db, by, filtersFrom(q)));
           }
           case '/api/doctor':
-            return send(res, 200, { checks: doctor(), pricing: verifyPricing(db, table) });
+            {
+            const pricing = verifyPricing(db, table);
+            return send(res, 200, { checks: doctor(), pricing, accuracy: accuracyReport(listSessions(db, { limit: 100000 }).rows, pricing, table) });
+          }
           default: {
             const m = /^\/api\/sessions\/([\w.-]+)$/.exec(url.pathname);
             if (m) {

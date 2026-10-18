@@ -34,6 +34,12 @@ export interface Facets { projects: string[]; models: string[]; sources: string[
 export interface Check { id: string; level: 'ok' | 'info' | 'warn' | 'error'; title: string; detail?: string }
 export interface PricingRow { model: string; basis: string; pairs: number; consistent: number; maxOutsideUsd: number; exactTokenPairs: number; exactMaxAbsErrUsd: number }
 
+export interface Accuracy {
+  sessions: number; withClaudeCodeRecord: number; withoutClaudeCodeRecord: number; exact: number; hiddenCalls: { sessions: number; usd: number };
+  partialRecord: number; other: number; pairs: number; pairsMatched: number; costUsd: number; unpricedTokens: number; unpricedModels: string[];
+  pricing: { models: number; verified: number; list: number; derived: number; pairs: number; consistent: number }; unverifiedParserSessions: number;
+}
+
 export interface Filters { range: string; project: string; model: string; source: string }
 
 export const qs = (input: object): string => {

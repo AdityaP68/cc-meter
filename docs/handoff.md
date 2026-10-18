@@ -19,8 +19,7 @@ Not pushed: commits after `3f231b5`.
    agreement OTel = transcript = `cost-state` = CLI `total_cost_usd` on one non-interactive run. Not covered: the
    interactive hidden-call gap (needs an interactive session with OTel on; ask the owner, it is their `settings.json`
    `env` or a paid interactive run). Scratch receiver and config are in the session scratchpad and may be gone.
-1. **Docs are uncommitted** (SCOPE.md, GAPS.md, ADR 0009, status, references, current, handoff, lessons). Ask the
-   owner to commit. ADR 0009 is **proposed**; O1 (store reviews) and O2 (test) answered, **O3 open**: gate (85 %
+1. **Docs are committed** (`e59119c`, `2a902ff`, `f185549`; not pushed). ADR 0009 is **proposed**; O1 (store reviews) and O2 (test) answered, **O3 open**: gate (85 %
    proposed) and who labels the gold set. Two confirms: may CSV export include review text; "server only" means the
    dashboard DB on the Claude machine. Windows is unverified.
 2. Owner also wants concrete accuracy proof for a closed environment: item 0 is done, so propose a `ccmeter audit` command

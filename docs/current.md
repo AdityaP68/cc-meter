@@ -1,6 +1,6 @@
 # Current state
 
-**Updated:** 2026-10-15
+**Updated:** 2026-10-17
 **Branch:** `main` (the SessionStart hook prints live state). Rewrite this file; never append. Under 500 words.
 
 ## Objective
@@ -22,6 +22,9 @@ whose numbers can be trusted, and which costs zero tokens in the sessions it mea
 - **Review fixes of 2026-10-15 are done** (six commits, `docs/status.md`); built and live, `doctor` 0 warnings.
 
 ## Open
+- **Scope v2 (2026-10-17):** the owner's analyst/org-layer scope is condensed in `SCOPE.md`. ADR `decisions/0009-*` is
+  **proposed**, not accepted: it resolves six invariant conflicts and leaves O1 (stored review text), O2 (OTel run: done 2026-10-18, exact on one `-p` run; receiver design still open), O3 (precision gate, gold-set labeller) to the owner. `GAPS.md` drafts 12 gap types (all `draft`, advice
+  unreviewed). No code was written; Phase A is done, Phase B is designed or missing, Phases C/D are gated.
 - The user is trying ccmeter and will report; their read-through questions are pending.
 - Decided 2026-10-15 (`docs/decisions/0007-*`): compliance parameters (local-only, accurate, MIT), `node:sqlite`,
   M3 judge via `claude -p`; unpriced models handled per `0008-*` (prompt, Claude Code's figure, derived price).
@@ -31,6 +34,6 @@ whose numbers can be trusted, and which costs zero tokens in the sessions it mea
 - M3 (digest, heuristics, judge, review overhead) is designed only: `docs/ARCHITECTURE.md`.
 
 ## Retrieve on demand
-[Usage](USAGE.md) · [Formats](FORMATS.md) · [Architecture + M3 design](ARCHITECTURE.md) ·
+[Scope v2](SCOPE.md) · [Gap taxonomy](GAPS.md) · [Usage](USAGE.md) · [Formats](FORMATS.md) · [Architecture + M3 design](ARCHITECTURE.md) ·
 [Assumptions](ASSUMPTIONS.md) · [Acceptance](ACCEPTANCE.md) · [Status](status.md) ·
 [Decisions](decisions/) · [Lessons](memory/lessons.md) · [Harness](harness.md) · [References](references.md)

@@ -1,12 +1,14 @@
 # Status log
 
-**Updated:** 2026-10-15
+**Updated:** 2026-10-17
 
 Newest first. One line per material change, pointing at the commit or document. Reasoning lives in commit
 bodies (`git show <sha>`); do not duplicate it here.
 
 | Date | Change | Where |
 |---|---|---|
+| 2026-10-18 | Paid OTel accuracy test (Haiku 5.5, `claude -p` 2.1.302, Bash + subagent, ~$0.0074): 4 OTel `api_request` events equal the 4 transcript messages and ccmeter's cost exactly; totals equal `cost-state` and the CLI `total_cost_usd`. Interactive hidden-call gap not exercised | `docs/FORMATS.md`, `docs/ACCEPTANCE.md` |
+| 2026-10-17 | Scope v2 (owner's analyst/org-layer scope) condensed into `docs/SCOPE.md`; ADR 0009 **proposed** (invariant conflicts and resolutions, open items O1–O3); gap taxonomy and playbook drafted (12 types, all `draft`, unreviewed). Docs only, no code | `docs/SCOPE.md`, `docs/decisions/0009-*`, `docs/GAPS.md` |
 | 2026-10-15 | Accuracy audit of the user's data (independent re-parse of 624 transcripts): 8,365 messages equal the DB in tokens, flags and cost; sonnet-5-5 (297) and haiku-4-5 (11) exact-token sessions reproduce Claude Code's costUSD to $0; turns and models sum to every session total. Fixed: session list now matches the overview's sessions (was by start date), stale session shown during navigation, "slightly understated" replaced by the measured gap (≈ $23.06 in 2 sessions) | `a7dc057`, `8f0e392`, `06e1605` |
 | 2026-10-15 | Dashboard: no "CC $x" chip where Claude Code's cost-state is provably partial (a model missing, or fewer tokens in a class); session page says so and that ccmeter's total is complete. User's data (388 sessions, 321 with cost-state): 3 partial, all 3 former CC chips | `35d095a`, `682d3a2` |
 | 2026-10-15 | Subagent null `stop_reason` investigated: 79 % of subagent final messages, still present on 2.1.293/.295, tied to the last tool (Bash 97 %), not to aborts; not preventable by the user as far as observed | `docs/FORMATS.md` Known discrepancies item 1 |

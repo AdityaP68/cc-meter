@@ -2,12 +2,15 @@
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
-import { act } from 'react';
+import { act, createElement, Fragment } from 'react';
+import { createRoot } from 'react-dom/client';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { openDb } from '../core/db.js';
 import { loadPricing } from '../core/pricing.js';
 import { recordTranscript } from '../core/record.js';
 import { startServer, type RunningServer } from '../server/index.js';
+import { DOC_PAGES, DOC_SLUGS } from '../dashboard/src/docs-content.ts';
+import { renderMarkdown, resolveHref } from '../dashboard/src/docs-markdown.tsx';
 import { asst, costStateLine, installFixture, tmpDir } from './helpers/util.js';
 
 // DOM smoke test for the SPA: the real server on fixture data, the real App, navigation through its own links.
@@ -183,5 +186,147 @@ describe('dashboard in a DOM', () => {
     await go('#/rollups', 'Rollups');
     await go('#/', 'Sessions');
     expect(root().childElementCount).toBeGreaterThan(0);
+  });
+
+  it('opens the docs index and every docs page without unmounting the app', async () => {
+    await go('#/docs', 'Documentation');
+    expect(root().querySelector('h1')?.textContent).toBe('Documentation');
+    expect(root().querySelector('.filters'), 'no filter bar on docs pages').toBeNull();
+    expect(root().querySelector('nav[aria-label="Pages"] a[href="#/docs"]')?.getAttribute('aria-current')).toBe('page');
+    for (const p of DOC_PAGES) expect(root().querySelector(`.docs-cards a[href="#/docs/${p.slug}"]`), `index links ${p.slug}`).not.toBeNull();
+    for (const p of DOC_PAGES) {
+      await go(`#/docs/${p.slug}`, p.title);
+      const h1s = root().querySelectorAll('h1');
+      expect(h1s.length, `one h1 on ${p.slug}`).toBe(1);
+      expect(h1s[0]!.textContent).toBe(p.title);
+      expect(root().querySelector('.filters'), `no filter bar on ${p.slug}`).toBeNull();
+      expect(root().querySelector('.md'), `body of ${p.slug}`).not.toBeNull();
+      expect(root().querySelector(`.docs-nav a[href="#/docs/${p.slug}"]`)?.getAttribute('aria-current')).toBe('page');
+    }
+    // A heading in the address, an unknown page and an unknown heading must not crash.
+    const first = DOC_PAGES[0]!;
+    await go(`#/docs/${first.slug}/no-such-heading`, first.title);
+    await go('#/docs/no-such-page', 'Page not found');
+    expect(root().querySelector('h1')?.textContent).toBe('Page not found');
+    expect(root().querySelector('a[href="#/docs"]'), 'link back to the index').not.toBeNull();
+    await go('#/docs/%E0%A4%A', 'Page not found'); // a malformed escape
+    await go('#/rollups', 'Rollups');
+    await go('#/', 'Sessions');
+    expect(errors).toEqual([]);
+  });
+
+  it('scrolls to a heading named in the address after the lazy docs chunk loads, and moves focus to the h1 on page change', async () => {
+    const scrolled: string[] = [];
+    const orig = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function (this: Element) { scrolled.push(this.id); };
+    try {
+      const page = DOC_PAGES.find((p) => p.slug === 'overview')!;
+      await go('#/', 'Sessions');
+      await go(`#/docs/${page.slug}`, page.title);
+      const target = root().querySelector<HTMLAnchorElement>('.docs-toc nav a');
+      expect(target, 'overview has a contents list').not.toBeNull();
+      const anchor = target!.getAttribute('href')!.split('/').pop()!;
+      await go(`#/docs/${page.slug}/${anchor}`, page.title);
+      await settle(() => scrolled.length > 0);
+      expect(scrolled).toContain(`d-${anchor}`);
+      const next = root().querySelector<HTMLAnchorElement>('.docs-pn a.next')!;
+      await act(() => { next.click(); });
+      await settle(() => document.activeElement?.tagName === 'H1');
+      expect(document.activeElement?.tagName, 'focus moves to the new page heading').toBe('H1');
+      expect(document.activeElement?.getAttribute('tabindex')).toBe('-1');
+    } finally {
+      Element.prototype.scrollIntoView = orig;
+    }
+    await go('#/', 'Sessions');
+  });
+
+  it('resolves only guide pages and dashboard routes as links', () => {
+    const known = new Set(['costs']);
+    expect(resolveHref('costs.md', known)).toBe('#/docs/costs');
+    expect(resolveHref('./Costs.md#Unpriced', known)).toBe('#/docs/costs/unpriced');
+    expect(resolveHref('nope.md', known)).toBeNull();
+    expect(resolveHref('#/rollups')).toBe('#/rollups');
+    for (const bad of ['javascript:alert(1)', 'https://example.com', '//evil.example', '#frag', '#/a b', '#/"x', 'data:text/html,x', '../x.md', 'a/b.md', '']) {
+      expect(resolveHref(bad), bad).toBeNull();
+    }
+  });
+
+  it('keeps every guide link live and the guide inside the supported subset', async () => {
+    for (const p of DOC_PAGES) {
+      const body = p.body.replace(/^(\s*)(```|~~~)[\s\S]*?^\s*\2.*$/gm, '').replace(/`[^`\n]*`/g, '');
+      const written = (body.match(/\]\(/g) ?? []).length;
+      const host = document.createElement('div');
+      document.body.appendChild(host);
+      const rr = createRoot(host);
+      await act(() => { rr.render(createElement(Fragment, null, ...renderMarkdown(p.body, { knownSlugs: DOC_SLUGS }).nodes)); });
+      expect(host.querySelectorAll('a').length, `${p.slug}: every [text](target) resolves to a guide page or dashboard route`).toBe(written);
+      expect(body, `${p.slug}: no HTML tags`).not.toMatch(/<\/?(div|span|a|b|i|br|img|details|summary|table|p)[\s>/]/);
+      expect(body, `${p.slug}: no images`).not.toMatch(/!\[/);
+      expect(body, `${p.slug}: no indented list item (nested lists are flattened)`).not.toMatch(/^ {2,}([-*+]|\d+\.) /m);
+      await act(() => { rr.unmount(); });
+      host.remove();
+    }
+  });
+
+  it('renders the docs markdown subset as safe React elements', async () => {
+    const md = [
+      '# Title', '', '## First *section*', 'Some `code` and **bold** text, [a page](costs.md), [a route](#/health), [unknown](nope.md),',
+      '[web](https://example.com/x), [js](javascript:alert(1)), ![img](x.png) <script>window.__xss = 1</script> <b>x</b>.', '',
+      '- one', '- two', 'continued', '', '1. a', '```bash', 'sessionscope doctor | grep warn', '```', '2. b', '',
+      '> **Unverified:** a claim', '', '| a | b |', '| --- | ---: |', '| `x\\|y` | 2 |', '| only |', '', '### Sub', '#### Deeper', '---', '', '```json', '{ "unterminated": true',
+    ].join('\n');
+    const r = renderMarkdown(md, { knownSlugs: DOC_SLUGS });
+    expect(r.outline.map((o) => o.text)).toEqual(['First section']);
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const rr = createRoot(host);
+    await act(() => { rr.render(createElement(Fragment, null, ...r.nodes)); });
+    const hrefs = [...host.querySelectorAll('a')].map((a) => a.getAttribute('href'));
+    expect(hrefs).toEqual(['#/docs/costs', '#/health']);
+    expect(host.textContent).toContain('unknown');
+    expect(host.textContent).toContain('web');
+    expect(host.querySelector('script'), 'raw HTML is text, not markup').toBeNull();
+    expect(host.querySelector('b'), 'raw HTML is text, not markup').toBeNull();
+    expect(host.textContent).toContain('<script>');
+    expect(host.querySelector('img')).toBeNull();
+    expect(host.querySelector('h2#d-first-section em')?.textContent).toBe('section');
+    expect(host.querySelector('ol[start="2"]'), 'numbering continues after a code block').not.toBeNull();
+    expect(host.querySelectorAll('li').length).toBe(4);
+    expect(host.querySelector('.md-code-h button')?.textContent).toBe('Copy');
+    expect(host.querySelectorAll('.md-code-h button').length, 'copy button on bash blocks only').toBe(1);
+    expect(host.querySelector('pre code')?.textContent).toBe('sessionscope doctor | grep warn');
+    expect(host.querySelector('blockquote.unverified strong')?.textContent).toBe('Unverified:');
+    const table = host.querySelector('.md-table')!;
+    expect(table.getAttribute('role')).toBe('region');
+    expect(table.getAttribute('tabindex')).toBe('0');
+    expect(table.getAttribute('aria-label')).toContain('Table');
+    expect(table.querySelectorAll('tbody tr').length).toBe(2);
+    expect(table.querySelectorAll('tbody tr:last-child td').length, 'short rows are padded').toBe(2);
+    expect(host.querySelector('h4')?.textContent).toBe('Deeper');
+    expect(host.querySelectorAll('pre').length).toBe(2);
+    expect(host.querySelectorAll('pre')[1]!.textContent, 'unterminated fence runs to the end').toContain('unterminated');
+    // Hostile or malformed input degrades to text; it never throws.
+    for (const bad of ['', '[', '[]()', '**', '*', '`', '```', '| a |\n| - |', '> > > > > x', '[[[[[[a]]]]]](x.md)', '#'.repeat(10), '\\', '- ', '1. ']) {
+      expect(() => renderMarkdown(bad)).not.toThrow();
+    }
+    await act(() => { rr.unmount(); });
+    host.remove();
+    expect(errors).toEqual([]);
+  });
+
+  it('renders pathological input in bounded time (the inline scanners are quadratic, so long runs are plain text)', () => {
+    const cases: Array<[string, string]> = [
+      ['unmatched emphasis', '*a '.repeat(350_000)],
+      ['unmatched brackets', '['.repeat(500_000)],
+      ['unclosed links', '[a](b '.repeat(150_000)],
+      ['one long list item', `- ${'*a '.repeat(200_000)}`],
+      ['one long table cell', `| h |\n| - |\n| ${'[a](b '.repeat(100_000)} |`],
+    ];
+    for (const [name, md] of cases) {
+      const t = performance.now();
+      const r = renderMarkdown(md);
+      expect(r.nodes.length, name).toBeGreaterThan(0);
+      expect(performance.now() - t, `${name}: milliseconds`).toBeLessThan(3000);
+    }
   });
 });

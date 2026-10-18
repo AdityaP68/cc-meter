@@ -5,26 +5,26 @@
 History of earlier hand-offs: `git log -p -- docs/handoff.md`.
 
 ## Where things stand
-2026-10-19: renamed ccmeter -> sessionscope -> **agent-lens** (ADR 0011), plus a new dashboard identity. **Live install migrated and built**:
-`~/.agent-lens` (copied from `~/.sessionscope`, 394 sessions), plugin `agent-lens@agent-lens`, `dist/` rebuilt, main pushed (`ef06d5c`).
-Backups: `~/.claude/settings.json.pre-agent-lens-backup`; `~/.sessionscope` and `~/.ccmeter` are kept. Real `doctor`: 0 errors, 2 warnings
-(Claude Code 2.1.302 newer than the verified 2.1.295 -> `format-drift`). Parallel worktrees started before the rename (reviewer, docs
-section) still carry the old name in their files: merge main into them before they commit.
+2026-10-19: renamed ccmeter -> sessionscope -> **agent-lens** (ADR 0011) with a new dashboard identity; live install migrated and built
+(`~/.agent-lens`, plugin `agent-lens@agent-lens`; backups `~/.claude/settings.json.pre-agent-lens-backup`, `~/.sessionscope`, `~/.ccmeter`
+kept). Real `doctor`: 0 errors, 2 warnings (Claude Code 2.1.302 newer than the verified 2.1.295 -> `format-drift`).
+Two parallel branches are now both merged into `main` locally: **M3 reviewer** (built, live, ADR 0009 accepted, one real review
+2026-10-19, $0.0178, estimate ~10 % low) and the **Docs section** (route `#/docs`, 12 pages in `docs/guide/`, 183 tests green;
+dashboard not rebuilt, so `dist` lacks it until `npm run build`). Not pushed.
 
 ## Next
 
-1. (a) **Prompt reviewer M3 is merged into `main` and built (live, not pushed).** ADR 0009 accepted and one real review done
-   (2026-10-19, $0.0178; estimate ran ~10 % low). Next: a dashboard review view. After the merge reviews target the one real DB (no migration was added). Judge runs now run in a folder named
-   `agent-lens-judge` and the recorder tags any transcript from such a cwd (so `record --all` tags them; the first real review's
-   transcript ran in an older `judge` folder and stays untagged, $0.018); `facets()` hides judge sessions. Known M3 gaps: a skill's
-   `$ARGUMENTS` is user text in a pre-approved shell line;
-   `$ARGUMENTS`/`!` expansion in a skill is unverified (no test runs the skill). (b) Dashboard **Docs** section (parallel session):
-   route + page in `dashboard/src`, content written by role-split agents (concepts and accuracy, CLI/install how-to, fact-checker
-   against `docs/FORMATS.md`), then `react-check`.
-2. `format-drift` for Claude Code 2.1.302 (verified range ends 2.1.295) so `doctor` is back to 0 warnings. Zero spend.
-3. `agent-lens audit` command (design: reconcile agent-lens vs cost-state, optional OTel events file or gateway export, exit
-   non-zero on unexplained difference). Ask first: placement (new command, recommended) and OTel input.
-4. Open with the owner: ADR 0009 O3 (gate 85 %, gold-set labeller), CSV export with review text, "server only" meaning.
-   Interactive OTel run would size the hidden-call gap. Owner-only: rename the GitHub repo (then `git remote set-url`), delete
-   `~/.ccmeter` and `~/.sessionscope` when satisfied, `npm link` for an `agent-lens` command on PATH (hooks work without it), trademark check.
-5. Agents may `git push origin main` (since 2026-10-19). Never force-push or publish without asking.
+1. **Sweep the Docs text** (it predates agent-lens and M3): `docs/guide/*`, `docs/USAGE.md` (now an index; old USAGE incl. "Reviewing a
+   session": `git show 8c1bf77:docs/USAGE.md`). Names (`~/.agent-lens`, `AGENT_LENS_HOME`, `x-agent-lens`, `/agent-lens`, legacy
+   fallbacks documented on purpose, so no blind sed), add a Reviewing page (guide still says "not released"), re-run the fact-check
+   against the code, `react-check`. Guide numbers marked "date not recorded" (17 versions, 62 files, price checks) need a dated survey.
+   Unfixed oddities it documents: all-unpriced session prints `$0.000+unpriced`; `--url-only` not a registered switch; `report --by
+   <bad>` silently lists sessions; `setup --uninstall` prints success if `claude` failed.
+2. M3 follow-ups: a dashboard review view; judge runs use folder `agent-lens-judge` (recorder tags them; the first review's older
+   `judge` folder stays untagged); a skill's `$ARGUMENTS`/`!` expansion is unverified (no test runs the skill).
+3. `format-drift` for Claude Code 2.1.302 so `doctor` is back to 0 warnings. Zero spend.
+4. `agent-lens audit` command (reconcile vs cost-state, optional OTel events file; exit non-zero on unexplained difference). Ask first:
+   placement (new command, recommended) and OTel input.
+5. Open with the owner: ADR 0009 O3 (gate 85 %, gold-set labeller), CSV export with review text, "server only" meaning, interactive
+   OTel run. Owner-only: rename the GitHub repo, delete `~/.ccmeter` and `~/.sessionscope`, `npm link`, trademark check.
+6. Agents may `git push origin main` (since 2026-10-19). Never force-push or publish without asking.

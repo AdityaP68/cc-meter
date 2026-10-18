@@ -21,7 +21,8 @@ whose numbers can be trusted, and which costs zero tokens in the sessions it mea
 - **Context harness** for working on this repo (this document, handoff, hooks, rules, skills, checks,
   verify loop, skills incl. `react-check`): `docs/harness.md`. Tags `m1`, `m2` and `main` are on GitHub
   (pushed by the user; see `git status -sb` for unpushed commits).
-- **Review fixes of 2026-10-15 are done** (six commits, `docs/status.md`); built and live, `doctor` 0 warnings.
+
+- **Docs section** (merged 2026-10-19, not built): `#/docs`, `docs/guide/`; text predates agent-lens and M3 (handoff Next 1).
 
 ## Open
 - **Scope v2 (2026-10-17):** the owner's analyst/org-layer scope is condensed in `SCOPE.md`. ADR `decisions/0009-*` is

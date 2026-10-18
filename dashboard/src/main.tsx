@@ -1,10 +1,13 @@
-import { StrictMode, useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, StrictMode, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Brand } from './brand';
 import { get, post, type Check, type Facets, type Filters } from './api';
 import { makeModelColors, ModelColors } from './charts';
 import { HealthPage, FilterBar, RollupsPage, SessionPage, SessionsPage, useApi } from './pages';
 import './styles.css';
+
+// The docs (markdown included) load as their own chunk on the first visit to #/docs; they make no /api call.
+const DocsPage = lazy(() => import('./docs').then((m) => ({ default: m.DocsPage })));
 
 const DEFAULT: Filters = { range: '30d', project: '', model: '', source: '' };
 
@@ -69,7 +72,7 @@ function App() {
   // The unpriced banner below says it more usefully, so the generic health banner skips that check.
   const otherIssues = issues.filter((c) => !(c.id === 'unpriced' && unpriced.length));
   const [, route = '', arg = ''] = hash.split('/');
-  const page = route === 'session' ? 'session' : route === 'rollups' ? 'rollups' : route === 'health' ? 'health' : 'sessions';
+  const page = route === 'session' ? 'session' : route === 'rollups' ? 'rollups' : route === 'health' ? 'health' : route === 'docs' ? 'docs' : 'sessions';
 
   return (
     <ModelColors.Provider value={colors}>
@@ -80,6 +83,7 @@ function App() {
             <a href="#/" aria-current={page === 'sessions' || page === 'session' ? 'page' : undefined}>Sessions</a>
             <a href="#/rollups" aria-current={page === 'rollups' ? 'page' : undefined}>Rollups</a>
             <a href="#/health" aria-current={page === 'health' ? 'page' : undefined}>Health{issues.length > 0 && <span className="badge warn" title={issues.map((i) => i.title).join('\n')}>⚠ {issues.length}</span>}</a>
+            <a href="#/docs" aria-current={page === 'docs' ? 'page' : undefined}>Docs</a>
           </nav>
           <span className="grow" />
           <span className="local" title="The dashboard only listens on 127.0.0.1; nothing leaves this machine"><i className="pulse" aria-hidden="true" />local only</span>
@@ -88,7 +92,7 @@ function App() {
         </div>
       </header>
       <main>
-        {page !== 'session' && page !== 'health' && <FilterBar f={filters} set={setFilters} facets={facets.data} />}
+        {page !== 'session' && page !== 'health' && page !== 'docs' && <FilterBar f={filters} set={setFilters} facets={facets.data} />}
         {unpriced.length > 0 && (
           <div className="banner warn" role="status">
             <b>⚠ No price for {unpriced.join(', ')}.</b> Costs for {unpriced.length === 1 ? 'this model are' : 'these models are'} left out of every total (never counted as $0).
@@ -104,6 +108,7 @@ function App() {
         {page === 'rollups' && <RollupsPage f={filters} reload={reload} />}
         {page === 'session' && <SessionPage id={arg} reload={reload} />}
         {page === 'health' && <HealthPage reload={reload} />}
+        {page === 'docs' && <Suspense fallback={<p className="muted" role="status">Loading…</p>}><DocsPage hash={hash} /></Suspense>}
       </main>
     </ModelColors.Provider>
   );

@@ -31,7 +31,7 @@ guard and session continuity below target exactly that. **Re-measure** after a f
 | 4c | Subagents | `transcript-surveyor` (aggregates only), `invariant-reviewer` (diff in, findings out) | description always | ≈ 180 | no |
 | 5 | Checks that must hold | `scripts/harness/check.mjs`, `.githooks/pre-commit`, `core/migrations.lock.json` | on commit and in verify | 0 | **yes** |
 | 6 | In-task verify loop | `npm run verify` (`scripts/harness/verify.mjs`) | when run | output capped at 2.5k chars | feedback |
-| 7 | Permissions | `.claude/settings.json` allow (verify, tests, git reads, ccmeter reads) / deny (push, publish, reading `dist/`) | — | 0 | **yes** |
+| 7 | Permissions | `.claude/settings.json` allow (verify, tests, git reads, ccmeter reads) / deny (publish, reading `dist/`; `git push origin main` is allowed since 2026-10-18) | — | 0 | **yes** |
 | 8 | Measurement | `scripts/harness/metrics.mjs` (dogfoods ccmeter) | when run | 0 | — |
 | 9 | Durable knowledge | `docs/decisions/`, `docs/memory/lessons.md`, `docs/references.md` | on demand | 0 | — |
 

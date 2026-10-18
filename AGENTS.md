@@ -52,7 +52,7 @@ Run it before claiming anything works. A UI change also needs a look in the brow
 
 ## Commits
 Small, logical commits; run `npm run verify` first. Pre-commit checks: `git config core.hooksPath .githooks`
-(once per clone). Tag milestones `mN`. Never push or publish without the user's explicit approval.
+(once per clone). Tag milestones `mN`. Pushing `main` to `origin` is allowed (owner decision 2026-10-18); never force-push, and never publish (npm etc.) without the user's explicit approval.
 
 ## Models
 Routine implementation and fixes: Sonnet-class. Design, harness and review work: Opus-class. Bulk

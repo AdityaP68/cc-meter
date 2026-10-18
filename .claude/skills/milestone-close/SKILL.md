@@ -12,4 +12,4 @@ description: Close a ccmeter milestone — full verification, fresh-clone instal
 3. Real install health: `ccmeter doctor` (read-only). Rebuild `dist/` for the live install only after 1–2 pass.
 4. Check every acceptance criterion in `docs/ACCEPTANCE.md` and `docs/SCOPE.md` with evidence, not memory.
 5. Update `docs/current.md`, one line in `docs/status.md`, rewrite `docs/handoff.md` `## Next`.
-6. Commit, then `git tag -a mN -m "..."`. Never push or publish without the user's explicit approval.
+6. Commit, then `git tag -a mN -m "..."`. Pushing `main` is allowed; never force-push or publish without the user's explicit approval.

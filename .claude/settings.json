@@ -23,12 +23,12 @@
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",
+      "Bash(git push origin main)",
       "Bash(git show:*)",
       "Bash(ccmeter report:*)",
       "Bash(ccmeter doctor:*)"
     ],
     "deny": [
-      "Bash(git push:*)",
       "Bash(npm publish:*)",
       "Read(./dist/**)",
       "Read(./dashboard/dist/**)",

@@ -15,7 +15,7 @@ Do not ask the user to restate context and do not re-read history.
    needed. Say in one sentence what you will do and where you will stop.
 3. **Do it with the loop**: `npm run verify -- --changed` while editing, `npm run verify` before claiming done.
 4. **Stop at the item's stop point**, especially before anything needing approval (network, paid runs, writing to
-   the user's `~/.claude` or `~/.ccmeter`, publishing, pushing).
+   the user's `~/.claude` or `~/.ccmeter`, publishing, force-pushing).
 5. **Before ending, run the `handoff` skill.**
 
 If `## Next` is empty, ask the user what to do; do not invent a roadmap.

@@ -24,7 +24,7 @@ Not pushed: commits after `3f231b5`.
    dashboard DB on the Claude machine. Windows is unverified.
 2. Owner also wants concrete accuracy proof for a closed environment: item 0 is done, so propose a `ccmeter audit` command
    (reproducible report: ccmeter vs cost-state vs OTel, plus the hidden-call gap). Code: ask first.
-3. Then push (`git push origin main`; agent push is denied), and pick the Phase B order in `docs/SCOPE.md`.
+3. Then push (`git push origin main`; the agent may push since 2026-10-18), and pick the Phase B order in `docs/SCOPE.md`.
 4. Older follow-ups (offer): `/api/refresh` reload `pricing.json`; React MIT notice; running dashboard server needs
    `ccmeter serve --stop` to pick up the 30 min idle stop.
 5. Before changing `core/`, `cli/`, `server/` or `plugin/`: `npm run verify`, then `npm run build` (live install).

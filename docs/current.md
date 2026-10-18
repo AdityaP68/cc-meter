@@ -1,6 +1,6 @@
 # Current state
 
-**Updated:** 2026-10-17
+**Updated:** 2026-10-19
 **Branch:** `main` (the SessionStart hook prints live state). Rewrite this file; never append. Under 500 words.
 
 ## Objective
@@ -8,6 +8,8 @@ A local-first usage, cost and quality tracker for Claude Code that a teammate in
 whose numbers can be trusted, and which costs zero tokens in the sessions it measures.
 
 ## What is done and verified
+- **Renamed to sessionscope** on 2026-10-19 (ADR `decisions/0010-*`; was ccmeter). Live install migrated: `~/.sessionscope`,
+  plugin `sessionscope@sessionscope`, `dist/` rebuilt. The old `~/.ccmeter` is kept; old env var and paths are read as fallbacks.
 - **M1 (core + recorder)** and **M2 (dashboard + status line)** are built; tags `m1`, `m2`.
   139 tests pass on 2026-10-15 (unit, golden fixtures from 5 Claude Code versions, server, CLI, plugin
   scripts, a happy-dom smoke test that route changes keep the dashboard mounted).

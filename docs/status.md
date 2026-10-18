@@ -1,12 +1,13 @@
 # Status log
 
-**Updated:** 2026-10-17
+**Updated:** 2026-10-19
 
 Newest first. One line per material change, pointing at the commit or document. Reasoning lives in commit
 bodies (`git show <sha>`); do not duplicate it here.
 
 | Date | Change | Where |
 |---|---|---|
+| 2026-10-19 | Renamed ccmeter to **sessionscope** (ADR 0010): package, CLI, plugin `sessionscope@sessionscope`, `~/.sessionscope`, `SESSIONSCOPE_HOME`, `x-sessionscope`; old names read as fallbacks; `setup` copies `~/.ccmeter` once, replaces the old plugin and status line. Isolated fresh-clone install (legacy plugin + data -> new) passed; live install migrated (392 sessions, schema v1 untouched, 177 tests); real `doctor` 0 errors, 2 warnings, both Claude Code 2.1.302 being newer than the verified 2.1.295 (not rename related). Rows below keep the old name | `fe175dd`, `0368d06`, `docs/decisions/0010-*` |
 | 2026-10-19 | Health page: accuracy report (exact sessions, hidden-calls estimate, partial records, price agreement, unpriced, unverified versions; two sources only, says so); `?` cursor on chips is now the normal one; every served number cross-checked against the raw DB (20 checks, 0 failures; 2026-10-19 copy: 391 sessions, 309 of 325 exact, 13 sessions ≈ $10.55 hidden calls) | `core/accuracy.ts`, `tests/accuracy.test.ts` |
 | 2026-10-18 | Paid OTel accuracy test (Haiku 5.5, `claude -p` 2.1.302, Bash + subagent, ~$0.0074): 4 OTel `api_request` events equal the 4 transcript messages and ccmeter's cost exactly; totals equal `cost-state` and the CLI `total_cost_usd`. Interactive hidden-call gap not exercised | `docs/FORMATS.md`, `docs/ACCEPTANCE.md` |
 | 2026-10-17 | Scope v2 (owner's analyst/org-layer scope) condensed into `docs/SCOPE.md`; ADR 0009 **proposed** (invariant conflicts and resolutions, open items O1–O3); gap taxonomy and playbook drafted (12 types, all `draft`, unreviewed). Docs only, no code | `docs/SCOPE.md`, `docs/decisions/0009-*`, `docs/GAPS.md` |

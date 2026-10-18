@@ -80,9 +80,18 @@ export async function cmdSetup(args: Parsed): Promise<number> {
 Optional: show live cost in Claude Code's status line by adding this to ~/.claude/settings.json
   "statusLine": { "type": "command", "command": "sessionscope statusline" }
 (or run \`sessionscope setup --statusline\` and I'll add it if you have none).`);
-  const statuslineOk = args.flags.statusline ? installStatusline() : true;
+  const statuslineOk = args.flags.statusline || hasLegacyStatusline() ? installStatusline() : true;
   console.log(`\n${statuslineOk ? 'Done.' : 'Done, except the status line (see above).'} Run \`sessionscope doctor\` to verify, and \`/sessionscope\` in Claude Code (or \`sessionscope serve --open\`) for the dashboard.`);
   return statuslineOk ? 0 : 1;
+}
+
+/** True when settings.json still runs the status line under its pre-rename command; setup then updates it unasked. */
+export function hasLegacyStatusline(): boolean {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(claudeHome(), 'settings.json'), 'utf8')).statusLine?.command === LEGACY_STATUSLINE;
+  } catch {
+    return false;
+  }
 }
 
 /**

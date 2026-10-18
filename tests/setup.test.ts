@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { installStatusline } from '../cli/commands/setup.js';
+import { hasLegacyStatusline, installStatusline } from '../cli/commands/setup.js';
 import { tmpDir } from './helpers/util.js';
 
 let dir: string;
@@ -47,8 +47,10 @@ describe('setup --statusline', () => {
 
   it('replaces the pre-rename statusLine command and backs the file up', () => {
     fs.writeFileSync(file, JSON.stringify({ statusLine: { type: 'command', command: 'ccmeter statusline' } }));
+    expect(hasLegacyStatusline()).toBe(true);
     expect(installStatusline()).toBe(true);
     expect(JSON.parse(fs.readFileSync(file, 'utf8')).statusLine.command).toBe('sessionscope statusline');
     expect(JSON.parse(fs.readFileSync(`${file}.sessionscope-backup`, 'utf8')).statusLine.command).toBe('ccmeter statusline');
+    expect(hasLegacyStatusline()).toBe(false);
   });
 });

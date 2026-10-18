@@ -32,7 +32,7 @@ Each phase is usable alone and reuses the earlier schema. Milestone order after 
 | Phase | Delivered as | In scope | Explicitly out | State (2026-10-17) |
 |---|---|---|---|---|
 | **A. Personal meter** | plugin, CLI, local dashboard | tokens, cost estimate, model switches, compactions, status line, **harness fingerprint, active time** | any network call | M1 + M2 built, verified. Fingerprint and active time missing |
-| **B. Personal analyst** | same repo | modes and phases, Tier 0 features, heuristic gap detectors, on-demand review, goal stitching, intervention log | automatic LLM review of every session | M3 digest/judge **designed only**; the rest not designed |
+| **B. Personal analyst** | same repo | modes and phases, Tier 0 features, heuristic gap detectors, on-demand review, goal stitching, intervention log | automatic LLM review of every session | M3 digest, flags, judge and `agent-lens review` **built 2026-10-19 on a branch against a stub** (no real review yet); the rest not designed |
 | **C. Team pilot** | same repo + opt-in exporter + small central store | feature rows (no text) from 1–2 teams, workspace registry, trend dashboard, gold set and precision numbers, cluster diagnosis | org-wide rollout, Jira write-back | not started; **gated** (ADR 0009 #1) |
 | **D. Org layer** | central service, possibly an npm package | cross-workspace trends, adoption maturity, shared fix-once backlog, Jira cost/time sync, other sources (Copilot org metrics) | individual rankings, any manager view of a person | not started; gated |
 

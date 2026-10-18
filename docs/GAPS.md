@@ -33,7 +33,7 @@ Rules that govern this file: `docs/SCOPE.md` (Evidence rules), `docs/decisions/0
 | Session `gitBranch`, `cwd`, entrypoint | observed in parser, **branch not stored** | `core/parser` |
 | `tool_use` blocks (tool name, input) in assistant content | observed for counting; **names/inputs not stored** | transcript |
 | `tool_result` entries (7,905 in the corpus) | observed as non-prompts; their content and size not recorded | `FORMATS.md` |
-| `tool_result.is_error` | **unverified** (named in the M3 design only) | – |
+| `tool_result.is_error` | **observed 2026-10-19** (`FORMATS.md` Tool blocks); absent = not an error | transcript |
 | Permission prompts / denials | **unverified**: how they appear (entry or tool_result text) is unknown | – |
 | Skill invocations, MCP tool names (`mcp__<server>__<tool>`), subagent launch tool | **unverified** as transcript facts | – |
 | `permission-mode` entries (5 in corpus), `mode` entries (1,036) | types observed; **contents unknown** | `FORMATS.md` entry types |

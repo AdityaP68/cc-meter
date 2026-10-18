@@ -37,6 +37,26 @@ export function migrationHashes(src = fs.readFileSync(path.join(ROOT, 'core', 'd
   return out;
 }
 
+/**
+ * The review skill is a wrapper, nothing more (AGENTS.md invariant): user-invoked only, one shell line that calls the plugin
+ * launcher with `review`, no instruction that would make the session read, quote or store the digest or a transcript.
+ */
+export function skillErrors(text) {
+  const errors = [];
+  const m = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/.exec(text);
+  if (!m) return ['needs front matter'];
+  const [, front, body] = m;
+  const field = (k) => new RegExp(`^${k}:\\s*(.*)$`, 'm').exec(front)?.[1]?.trim();
+  if (field('disable-model-invocation') !== 'true') errors.push('must set disable-model-invocation: true (only the user starts a review)');
+  if (field('allowed-tools') !== 'Bash(*/scripts/agent-lens.sh review *)') errors.push('allowed-tools must be exactly Bash(*/scripts/agent-lens.sh review *)');
+  if ((field('description') ?? '').length > 100) errors.push('description must stay under 100 characters (it is in every session context)');
+  const shell = body.split('\n').filter((l) => l.startsWith('!'));
+  if (shell.length !== 1 || !/^!`"\$\{CLAUDE_PLUGIN_ROOT\}"\/scripts\/agent-lens\.sh review "\$ARGUMENTS"( --yes)?`$/.test(shell[0])) errors.push('must contain exactly one shell line: agent-lens.sh review "$ARGUMENTS" [--yes]');
+  if (/digest|--show-input|transcript|\.jsonl/i.test(body)) errors.push('must not mention the digest or transcripts (it may not load them into the session)');
+  if (body.split('\n').filter((l) => l.trim()).length > 3) errors.push('body is longer than the one command and one reply instruction');
+  return errors;
+}
+
 const words = (t) => t.split(/\s+/).filter(Boolean).length;
 
 export function structuralChecks() {
@@ -63,9 +83,15 @@ export function structuralChecks() {
   else if (next && next[1].trim().length > 2500) errors.push(`docs/handoff.md "## Next" is ${next[1].trim().length} chars; the SessionStart hook injects at most 2500`);
   const instr = (read('CLAUDE.md') ?? '') + (read('AGENTS.md') ?? '');
   if (instr.split('\n').length > 200) errors.push(`CLAUDE.md + AGENTS.md are ${instr.split('\n').length} lines; keep them under 200 (move detail to rules, skills or docs)`);
-  // zero context footprint: no loadable skill in the plugin until it exists for real
+  // zero context footprint: the only loadable skill is the thin review wrapper, and it may only run `agent-lens review`
   const skills = path.join(ROOT, 'plugin', 'skills');
-  if (fs.existsSync(skills)) for (const d of fs.readdirSync(skills)) if (fs.existsSync(path.join(skills, d, 'SKILL.md'))) errors.push(`plugin/skills/${d}/SKILL.md would load into every user's session (~39 tokens); ship it only with its feature`);
+  if (fs.existsSync(skills))
+    for (const d of fs.readdirSync(skills)) {
+      const f = path.join(skills, d, 'SKILL.md');
+      if (!fs.existsSync(f)) continue;
+      if (d !== 'convo-review') errors.push(`plugin/skills/${d}/SKILL.md would load into every user's session (~39 tokens); only convo-review (a wrapper for \`agent-lens review\`) is allowed`);
+      else for (const e of skillErrors(fs.readFileSync(f, 'utf8'))) errors.push(`plugin/skills/convo-review/SKILL.md: ${e}`);
+    }
   for (const s of ['plugin/scripts/agent-lens.sh', 'plugin/scripts/prompt-hook.sh']) {
     try {
       fs.accessSync(path.join(ROOT, s), fs.constants.X_OK);

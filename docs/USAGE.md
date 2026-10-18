@@ -26,7 +26,7 @@ agent-lens answers: **what did my Claude Code sessions cost, which models did th
 - **Data sources:** only Claude Code transcripts today. The database has a `source` column so other sources can be added later; none exist yet.
 
 ### What it does not do (yet)
-- No quality scores, prompt grading or session summaries: that is milestone 3, designed in [ARCHITECTURE.md](ARCHITECTURE.md) but not built. `agent-lens review` is a stub.
+- Quality review is on demand only: `agent-lens review <session-id>` (§ Reviewing a session). Nothing is scored automatically, and nothing ranks people.
 - It is not your bill. Costs are **estimates at list price** from the transcripts; subscriptions, discounts and credits are not modelled.
 - It does not watch a session mid-turn: numbers update when a turn ends (the status line refreshes from the transcript every time Claude Code redraws it).
 - No other tools (Copilot, Cursor, API logs) and no teams or accounts. By design there are no per-person leaderboards.
@@ -139,3 +139,14 @@ Files: `agent-lens.db` (data), `record.log` (hook activity: ids and timings only
 - Stored: counts, ids, model names, timestamps, the session title and working directory. **Never stored:** prompts, replies, tool inputs/outputs; the hook payload's `last_assistant_message` is ignored.
 - The database is a normal SQLite file; delete `~/.agent-lens` to remove everything.
 - Uninstall: `agent-lens setup --uninstall`, then `npm unlink -g agent-lens` if you linked it.
+
+## Reviewing a session (milestone 3)
+
+```
+agent-lens review <session-id> [--model m] [--dry-run | --show-input] [--force] [--json] [--yes]
+```
+- Prints hints from simple rules (tool errors, repeated identical calls, correction phrases, compactions), then asks a Claude model, through `claude -p`, for a summary and for 1–5 scores of every prompt on clarity, context, scope and verifiability, with a suggestion each.
+- **Text leaves the machine**: the prompts (secrets, emails and home paths masked, each cut to 500 characters), tool names and counts, costs and events go to Anthropic through your Claude Code login. No tool output, file contents or assistant replies. The first review explains this and needs a typed `yes`; every review prints its estimated cost first. `--show-input` prints exactly what would be sent; `--dry-run` prints the estimate; neither spends anything.
+- The result is cached per session, digest, rubric and model, so asking again is free. It is stored in `~/.agent-lens` (the judge's own summary and notes; quotes of your prompts are removed). The review's cost shows as "Review overhead" in `report` and is not part of your usage totals.
+- It is for improving prompts and workflows. There is no per-person view and no ranking.
+- `/convo-review <session-id>` in Claude Code runs the same command; it needs the consent from a terminal run first.

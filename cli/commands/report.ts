@@ -2,6 +2,7 @@ import { facets, getSession, listSessions, overview, rollup, type SessionSort } 
 import { openDb } from '../../core/db.js';
 import { loadPricing } from '../../core/pricing.js';
 import { reconcile } from '../../core/reconcile.js';
+import { reviewOverhead } from '../../core/review.js';
 import { flagNum, flagStr, type Parsed } from '../args.js';
 import { costCell, dur, pad, table, tok, unpricedNotice, usd, usdOrUnpriced } from '../format.js';
 
@@ -103,5 +104,7 @@ export async function cmdReport(args: Parsed): Promise<number> {
     ),
   );
   if (total > rows.length) console.log(`… ${total - rows.length} more (use --limit)`);
+  const rv = reviewOverhead(db, f.since);
+  if (rv.reviews) console.log(`Review overhead (not in the totals above): ${rv.reviews} review${rv.reviews === 1 ? '' : 's'}, ${usd(rv.costUsd)}${rv.unreportedCost ? ` + ${rv.unreportedCost} with unreported cost` : ''}`);
   return 0;
 }

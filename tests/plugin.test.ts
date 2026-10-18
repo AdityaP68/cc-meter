@@ -23,9 +23,10 @@ describe('plugin manifests', () => {
     }
   });
 
-  it('ships no loadable skill (zero context footprint until milestone 3)', () => {
-    expect(fs.existsSync(path.join(PLUGIN, 'skills', 'convo-review', 'SKILL.md'))).toBe(false);
-    expect(fs.existsSync(path.join(PLUGIN, 'skills', 'convo-review', 'SKILL.md.stub'))).toBe(true);
+  it('ships exactly one skill, the thin review wrapper (zero context footprint otherwise)', () => {
+    expect(fs.readdirSync(path.join(PLUGIN, 'skills'))).toEqual(['convo-review']);
+    expect(fs.existsSync(path.join(PLUGIN, 'skills', 'convo-review', 'SKILL.md'))).toBe(true);
+    expect(fs.existsSync(path.join(PLUGIN, 'skills', 'convo-review', 'SKILL.md.stub'))).toBe(false);
   });
 });
 

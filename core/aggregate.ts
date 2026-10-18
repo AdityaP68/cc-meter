@@ -9,6 +9,12 @@ export interface Filters {
   source?: string;
 }
 
+/**
+ * "Your usage" never includes the reviewer's own judge runs (source `agent-lens-judge`, or `ccmeter-judge` from before the
+ * rename); they are shown separately as review overhead (core/review.ts). Asking for that source explicitly still returns them.
+ */
+const notJudge = (alias: string) => `${alias}.source NOT IN ('agent-lens-judge', 'sessionscope-judge', 'ccmeter-judge')`;
+
 export interface SessionRow {
   sessionId: string;
   source: string;
@@ -112,6 +118,7 @@ function sessionWhere(f: Filters, alias = 's'): { sql: string; params: Record<st
   if (f.model) (m.push('m.model = :model'), (p.model = f.model));
   if (f.project) (w.push(`${alias}.project = :project`), (p.project = f.project));
   if (f.source) (w.push(`${alias}.source = :source`), (p.source = f.source));
+  else w.push(notJudge(alias));
   if (m.length) w.push(`EXISTS (SELECT 1 FROM messages m WHERE m.session_id = ${alias}.session_id AND ${m.join(' AND ')})`);
   return { sql: w.length ? 'WHERE ' + w.join(' AND ') : '', params: p };
 }
@@ -227,6 +234,7 @@ export function rollup(db: Db, by: 'day' | 'project' | 'model', f: Filters = {})
   if (f.until) (w.push('m.ts < :until'), (p.until = f.until));
   if (f.project) (w.push('s.project = :project'), (p.project = f.project));
   if (f.source) (w.push('s.source = :source'), (p.source = f.source));
+  else w.push(notJudge('s'));
   if (f.model) (w.push('m.model = :model'), (p.model = f.model));
   const where = w.length ? 'WHERE ' + w.join(' AND ') : '';
   const key = by === 'day' ? "date(m.ts, 'localtime')" : by === 'project' ? "COALESCE(s.project, '(unknown)')" : 'm.model';
@@ -278,6 +286,7 @@ function messageWhere(f: Filters): { sql: string; params: Record<string, string>
   if (f.until) (w.push('m.ts < :until'), (p.until = f.until));
   if (f.project) (w.push('s.project = :project'), (p.project = f.project));
   if (f.source) (w.push('s.source = :source'), (p.source = f.source));
+  else w.push(notJudge('s'));
   if (f.model) (w.push('m.model = :model'), (p.model = f.model));
   return { sql: w.length ? 'WHERE ' + w.join(' AND ') : '', params: p };
 }
@@ -329,8 +338,8 @@ export function overview(db: Db, f: Filters = {}): Overview {
 export function facets(db: Db): { projects: string[]; models: string[]; sources: string[]; unpriced: string[] } {
   const col = (sql: string) => (db.prepare(sql).all() as Raw[]).map((r) => String(Object.values(r)[0]));
   return {
-    projects: col("SELECT DISTINCT project FROM sessions WHERE project IS NOT NULL ORDER BY project"),
-    models: col('SELECT DISTINCT model FROM messages ORDER BY model'),
+    projects: col(`SELECT DISTINCT project FROM sessions s WHERE project IS NOT NULL AND ${notJudge('s')} ORDER BY project`),
+    models: col(`SELECT DISTINCT m.model FROM messages m JOIN sessions s ON s.session_id = m.session_id WHERE ${notJudge('s')} ORDER BY m.model`),
     sources: col('SELECT DISTINCT source FROM sessions ORDER BY source'),
     /** Models with at least one message that has no price, across all data (drives the upfront prompt). */
     unpriced: col('SELECT DISTINCT model FROM messages WHERE priced = 0 ORDER BY model'),
@@ -353,6 +362,7 @@ export function rollupDayModel(db: Db, f: Filters = {}): DayModelRow[] {
   if (f.until) (w.push('m.ts < :until'), (p.until = f.until));
   if (f.project) (w.push('s.project = :project'), (p.project = f.project));
   if (f.source) (w.push('s.source = :source'), (p.source = f.source));
+  else w.push(notJudge('s'));
   if (f.model) (w.push('m.model = :model'), (p.model = f.model));
   const where = w.length ? 'WHERE ' + w.join(' AND ') : '';
   const rows = db

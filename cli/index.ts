@@ -14,14 +14,16 @@ const HELP = `agent-lens — local-first usage and cost tracker for Claude Code
   agent-lens serve [--port n] [--open] [--ensure] [--stop]     local dashboard on 127.0.0.1
   agent-lens statusline                                         Claude Code statusLine command (reads JSON on stdin)
   agent-lens setup [--no-backfill] [--statusline] [--uninstall]   register the plugin, create ~/.agent-lens, backfill history
-  agent-lens review <session-id>                                (milestone 3, not implemented)
+  agent-lens review <session-id> [--model m] [--dry-run | --show-input] [--force] [--json] [--yes]
+        Prompt and workflow review of one session by a Claude model (via claude -p). On demand only; prints the estimated
+        cost first and asks consent before the first review, because prompt text leaves the machine.
 
 Everything is local: reads ~/.claude, writes ~/.agent-lens. No network calls.`;
 
 async function main(): Promise<number> {
   const argv = process.argv.slice(2);
   const cmd = argv[0];
-  const args = parseArgs(argv.slice(1), ['all', 'force', 'json', 'open', 'ensure', 'stop', 'messages', 'verify-pricing', 'quiet', 'uninstall', 'statusline', 'no-backfill']);
+  const args = parseArgs(argv.slice(1), ['all', 'force', 'json', 'open', 'ensure', 'stop', 'messages', 'verify-pricing', 'quiet', 'uninstall', 'statusline', 'no-backfill', 'dry-run', 'show-input', 'yes', 'accept-data-leaves-machine']);
   switch (cmd) {
     case 'record':
       return (await import('./commands/record.js')).cmdRecord(args);
@@ -38,8 +40,7 @@ async function main(): Promise<number> {
     case 'setup':
       return (await import('./commands/setup.js')).cmdSetup(args);
     case 'review':
-      console.error('agent-lens review is milestone 3 and is not implemented yet. See docs/ARCHITECTURE.md.');
-      return 1;
+      return (await import('./commands/review.js')).cmdReview(args);
     case '--version':
     case 'version':
       console.log(JSON.parse(fs.readFileSync(path.join(packageRoot(), 'package.json'), 'utf8')).version);

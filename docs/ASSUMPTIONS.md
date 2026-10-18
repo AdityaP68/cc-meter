@@ -19,7 +19,7 @@ You asked me to take the best assumptions and build. These are the ones that cou
 | Dashboard on `127.0.0.1:7337` (falls back to the next free port), auto-exits after 4 h idle | predictable URL; no zombie server | `~/.agent-lens/config.json`: `port`, `idleMinutes` |
 | `/agent-lens` implemented as a `UserPromptSubmit` hook, plus a fallback command | a plain slash command costs a model turn that re-reads the whole context | delete the hook, or the command file |
 | `Stop` hook is `async` | keeps turns snappy; `SessionEnd` + the server's 30 s rescan are the guarantee | remove `"async": true` in `plugin/hooks/hooks.json` |
-| The M3 skill ships as `SKILL.md.stub` | a loaded skill costs ≈ 39 tokens in every session even when model-invocation is disabled | rename it to `SKILL.md` when M3 ships |
+| The M3 skill `convo-review` ships as `SKILL.md` (2026-10-19) | the feature exists; measured ≈ 20 tokens always-on (the earlier stub measured ≈ 39 with a longer description); `check.mjs` keeps it a thin wrapper | rename it to `SKILL.md.stub` to go back to zero footprint |
 | A **turn** = a real human prompt (definition in `docs/FORMATS.md`) | tool results, meta entries, slash-command echoes and compaction summaries are not prompts | `isRealPrompt` in `core/parser/cc21.ts` |
 | Subagent usage is part of the session's totals, tagged `sidechain` | Claude Code's own accounting includes it; verified on a real session | – |
 | Status line reads cumulative tokens/cost from the transcript, not from stdin | stdin only has *current-context* tokens | `cli/commands/statusline.ts` |
@@ -32,3 +32,18 @@ You asked me to take the best assumptions and build. These are the ones that cou
 
 ## Things I could not verify
 Listed at the end of `docs/FORMATS.md` ("Not verified"): the live statusLine payload, the async Stop hook in an interactive session, `/agent-lens` behaviour in an interactive session (it was verified headlessly), what `advisorModel` bills as, fast mode, web search billing.
+
+## Milestone 3 reviewer (2026-10-19): choices made without asking
+
+| Decision | Why | To change |
+|---|---|---|
+| Prompts cut to 500 characters; 80 prompts max (first 20 and last 60) | bounds the text that leaves the machine and the cost; the judge still sees every turn's numbers | `DEFAULT_*` in `core/digest.ts` (changes the digest hash, so cached reviews no longer match) |
+| Correction phrases exactly as the design table lists them (starts with "no,", or contains "that's wrong", "I said", "undo", "revert") plus optional `extraPhrases` per config | no invented definition; `complaint` stays unbuilt | `detectors.user_corrections.extraPhrases` in config.json |
+| "Retry loop" = identical tool and input (whitespace-normalised) at least 3 times in one turn | the only repeat signal observable without storing inputs | `detectors.retry_loops.minRepeats` |
+| `Task` counted as a subagent launcher next to `Agent` | older name; **not observed**, harmless if absent | `SUBAGENT_TOOLS` in `core/parser/cc21-detail.ts` |
+| Default judge `claude-sonnet-5-5`; spend cap = 4x the estimate (min $0.25) | design says Sonnet-class; the cap stops a runaway, not a normal run | `review.model` in config.json, `--model` |
+| Estimate = characters / 3.5 + 1,500 fixed tokens, priced as a 1-hour cache write | the one probe showed the whole prompt billed as cache creation; compared with one real review 2026-10-19: ran 10 % low on cost (the fixed overhead was larger than 1,500 tokens), so it does not lean high after all | `estimateReview` in `core/judge.ts` |
+| Judge runs are persisted by Claude Code (not `--no-session-persistence`) | the design records them as tagged sessions; the cost is a redacted copy of the digest in `~/.claude/projects` | add the flag and record overhead from the JSON result only |
+| Cost fields are left out of `digest_hash` | a price-table update must not trigger a new paid review | `digestHash` in `core/digest.ts` |
+| The judge schema omits `minimum`/`maximum`/`maxLength` | unprobed keywords might be rejected; ranges are validated in code | `REVIEW_SCHEMA` (bump `RUBRIC_VERSION`) |
+

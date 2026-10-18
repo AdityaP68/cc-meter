@@ -6,7 +6,7 @@ import { currentContext, decide } from '../scripts/harness/context-guard.mjs';
 // @ts-ignore
 import { lines, nextSection } from '../scripts/harness/orientation.mjs';
 // @ts-ignore
-import { migrationHashes, scanText, structuralChecks } from '../scripts/harness/check.mjs';
+import { migrationHashes, scanText, skillErrors, structuralChecks } from '../scripts/harness/check.mjs';
 // @ts-ignore
 import { summarize } from '../scripts/harness/metrics.mjs';
 import { ROOT, asst, tmpDir } from './helpers/util.js';
@@ -70,6 +70,34 @@ describe('repository checks', () => {
     expect(migrationHashes()['1']).toBe(lock['1']);
     expect(migrationHashes('version: 1,\n    sql: `CHANGED`')['1']).not.toBe(lock['1']);
     expect(structuralChecks()).toEqual([]);
+  });
+});
+
+describe('review skill invariant', () => {
+  const ok = [
+    '---',
+    'name: convo-review',
+    'description: Review a session with agent-lens: /convo-review <session-id>',
+    'disable-model-invocation: true',
+    'allowed-tools: Bash(*/scripts/agent-lens.sh review *)',
+    '---',
+    '!`"${CLAUDE_PLUGIN_ROOT}"/scripts/agent-lens.sh review "$ARGUMENTS" --yes`',
+    '',
+    'Reply with the output above exactly as written, and nothing else.',
+    '',
+  ].join('\n');
+  it('accepts the shipped wrapper', () => {
+    expect(skillErrors(ok)).toEqual([]);
+    expect(skillErrors(fs.readFileSync(path.join(ROOT, 'plugin', 'skills', 'convo-review', 'SKILL.md'), 'utf8'))).toEqual([]);
+  });
+  it.each([
+    ['model invocation allowed', ok.replace('disable-model-invocation: true', 'disable-model-invocation: false')],
+    ['broader tools', ok.replace('review *)', '*)')],
+    ['another command', ok.replace('review "$ARGUMENTS" --yes', 'serve --ensure')],
+    ['reading the digest', ok + '\nThen read the digest and summarise the transcript.\n'],
+    ['an extra shell line', ok + '!`ls`\n'],
+  ])('rejects %s', (_n, text) => {
+    expect(skillErrors(text).length).toBeGreaterThan(0);
   });
 });
 

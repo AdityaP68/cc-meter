@@ -13,6 +13,12 @@ export const RECORDER_VERSION = 3;
 
 export const SOURCE_CLAUDE_CODE = 'claude-code';
 export const SOURCE_JUDGE = 'agent-lens-judge';
+/**
+ * The reviewer runs `claude -p` in a folder with this name (core/review.ts), so any transcript whose cwd is such a folder is a
+ * judge run, whichever route recorded it (hook, `record --all`, another machine's home).
+ */
+export const JUDGE_DIR_NAME = 'agent-lens-judge';
+export const isJudgeCwd = (cwd: string | null): boolean => !!cwd && path.basename(cwd) === JUDGE_DIR_NAME;
 /** Tag of the same thing before the rename; rows and environments that still carry it count as judge runs. */
 const LEGACY_SOURCE_JUDGES = ['sessionscope-judge', 'ccmeter-judge'];
 
@@ -116,6 +122,7 @@ export function recordTranscript(db: Db, table: PriceTable, transcriptPath: stri
   const source = resolveSource(existing?.source, opts.source);
   const summary = parseSession(transcriptPath, table, { source });
   if (!summary || summary.messageCount === 0) return { status: 'empty', sessionId };
+  if (isJudgeCwd(summary.cwd)) summary.source = SOURCE_JUDGE;
 
   writeSession(db, summary, { sig, pricingHash: table.hash });
   return { status: 'recorded', sessionId, summary };

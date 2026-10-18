@@ -1,6 +1,6 @@
 # 0009 — Scope v2: from meter to analyst; how it fits the invariants
 
-**Status:** proposed 2026-10-17. The resolutions below are the author's; each marked **[O#]** needs the owner's
+**Status:** accepted 2026-10-19 by the owner in chat ("ADR 0009 accepted"), as far as rows 3 and 6 and the M3 reviewer go; O3 (precision gate, gold-set labeller) and the two **[confirm]** points in row 3 stay open. Proposed 2026-10-17. The resolutions below are the author's; each marked **[O#]** needs the owner's
 yes or a change before it binds. Until accepted, `AGENTS.md` and the shipped behaviour are unchanged.
 **2026-10-18, owner's answers in chat:** O1 yes, store the review (see row 3); O2 yes, the paid test may run (see
 row 4); O3 still open (explained to the owner in chat). The environment is **closed**: everything must work from the

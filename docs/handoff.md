@@ -13,8 +13,13 @@ section) still carry the old name in their files: merge main into them before th
 
 ## Next
 
-1. In parallel sessions (disjoint files): (a) prompt reviewer M3 (`docs/ARCHITECTURE.md` section Milestone 3; `claude -p` judge,
-   consent prompt, no agent-lens network call; ADR 0009 still proposed, ask to accept first); (b) dashboard **Docs** section:
+1. (a) **Prompt reviewer M3 is built on branch `claude/m3-reviewer-agent-lens`** (not merged; stub-tested). ADR 0009 accepted and one real review done
+   (2026-10-19, $0.0178; estimate ran ~10 % low). Owner: merge (adds the `convo-review` skill, ~20 tokens/session) and `npm run build`. Then a dashboard
+   review view. After the merge reviews target the one real DB (no migration was added). Judge runs now run in a folder named
+   `agent-lens-judge` and the recorder tags any transcript from such a cwd (so `record --all` tags them; the first real review's
+   transcript ran in an older `judge` folder and stays untagged, $0.018); `facets()` hides judge sessions. Known M3 gaps: a skill's
+   `$ARGUMENTS` is user text in a pre-approved shell line;
+   `$ARGUMENTS`/`!` expansion in a skill is unverified (no test runs the skill). (b) Dashboard **Docs** section (parallel session):
    route + page in `dashboard/src`, content written by role-split agents (concepts and accuracy, CLI/install how-to, fact-checker
    against `docs/FORMATS.md`), then `react-check`.
 2. `format-drift` for Claude Code 2.1.302 (verified range ends 2.1.295) so `doctor` is back to 0 warnings. Zero spend.

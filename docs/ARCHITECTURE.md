@@ -73,7 +73,41 @@ Bound to `127.0.0.1` only (a test asserts it); `Host` must be a loopback name on
 
 ---
 
-# Milestone 3 design (not built in v1)
+# Milestone 3: prompt/session reviewer (built 2026-10-19 on a branch, not merged; ADR 0009 still proposed)
+
+**Implementation notes (what exists; the design below is unchanged unless noted).** Code: `core/digest.ts`, `core/redact.ts`,
+`core/parser/cc21-detail.ts` (the only place that reads tool blocks), `core/flags.ts`, `core/judge.ts`, `core/review.ts`,
+`cli/commands/review.ts`, `plugin/skills/convo-review/`. No migration: the v1 `reviews` table already had every column needed.
+- **Digest.** Per turn: prompt (redacted, first 500 characters; for sessions over 80 turns the middle turns keep their numbers
+  but `text: null`), message and subagent-message counts, models, cost (null when unpriced, with `unpriced_messages`), tokens,
+  tool counts, tool errors by tool, denials by `toolDenialKind`, subagent launches (`Agent`), repeated identical calls, how the turn
+  ended (`stop_reason`). Events: compactions with pre/post tokens, model switches. Not in it: tool output or input values, file
+  contents, assistant text, session id, cwd, project, title, timestamps. `digest_hash` = sha256 of the canonical JSON without
+  cost fields (a price update must not make a paid review look new). In memory only; never persisted by agent-lens.
+- **Flags** (`tool_errors`, `retry_loops`, `user_corrections`, `compactions`): fixed-template hints, parameters under
+  `detectors.<id>` in `~/.agent-lens/config.json`. "Retry loop" = the same tool with an identical input (whitespace-normalised
+  fingerprint, never stored) at least 3 times in one turn; fuzzier "near-identical" matching is not built. `complaint` is a reserved
+  id with no detector (`docs/ASSUMPTIONS.md`).
+- **Judge.** `claude -p --output-format json --json-schema <schema> --tools "" --strict-mcp-config --disable-slash-commands
+  --system-prompt <rubric> --max-budget-usd <4x estimate>`, prompt on stdin, the agent-lens plugin disabled for that run, env
+  `AGENT_LENS_JUDGE_RUNNING=1`, cwd `~/.agent-lens/agent-lens-judge`. Rubric `r1` (frozen by a hash test), 4 dimensions 1–5. The answer is
+  validated (ranges, known turns, enum) and any 40+ character span copied from a prompt is replaced by `[quote removed]` before
+  storing. Default model `claude-sonnet-5-5`, override with `--model` or `review.model` in config. A cached review is keyed by
+  `(session_id, digest_hash, rubric_version, model)`; `--force` re-runs.
+- **Judge sessions.** After the call the run's own transcript is recorded with `source = agent-lens-judge` (also when its answer
+  failed validation: the money was spent). `core/aggregate.ts` leaves that source out of overview, rollups, session lists and the
+  day/model chart unless asked for by source. `report` and the review command print "Review overhead" (reviews table cost plus count);
+  `doctor` reports the stored review text size. A persisted judge run leaves a transcript in Claude Code's own
+  `~/.claude/projects/<judge cwd>/` holding the redacted digest: agent-lens does not control that store. The recorder tags any
+  transcript whose cwd folder is named `agent-lens-judge` as a judge run, so hook-less routes (`record --all`) tag it too.
+- **Consent.** The first review prints what leaves the machine and needs `yes` typed in a terminal, or `--accept-data-leaves-machine`;
+  consent is kept in `config.json` (`review.consent`). Later reviews print the estimate and ask `y/N` (non-interactive: `--yes`).
+  `--dry-run` and `--show-input` (the exact payload) spend nothing.
+- **Skill.** `convo-review` runs `agent-lens.sh review "$ARGUMENTS" --yes`; user-invoked only; `scripts/harness/check.mjs` fails if it
+  grows past that. About 20 tokens always-on per session (measured with `claude plugin details`).
+- **Tests** use a stub `claude` (`tests/helpers/stub-claude.ts`); no test spends money.
+
+# Milestone 3 design
 
 ## Goal
 Make quality visible, for improving prompts and workflows — **never for ranking people**. Reviews are per session; there is no per-developer aggregation, no identity field, and the dashboard will only roll up by project/model/rubric dimension.
@@ -83,7 +117,7 @@ Make quality visible, for improving prompts and workflows — **never for rankin
 
 - per turn: user prompt text (length-capped, first N chars), assistant outcome flags, cost, tokens, tools used (names + counts), tool errors (`tool_result.is_error`), model, subagent calls;
 - events: model switches, compactions (with pre/post tokens);
-- no tool outputs, no file contents.
+- no tool outputs, no tool inputs, no file contents.
 
 `digest_hash = sha256(canonical JSON of digest)`. Stored nowhere in plaintext except inside `~/.agent-lens`.
 

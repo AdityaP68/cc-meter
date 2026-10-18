@@ -36,4 +36,4 @@ CLAUDE_CONFIG_DIR=$T/claude AGENT_LENS_HOME=$T/home ./install.sh
 
 **M2** — local API + SPA (sessions, detail with per-turn timeline and markers, rollups by day/project/model) ✔ · `serve` lazy start, 127.0.0.1, optional browser open ✔ · `/agent-lens` one line ✔ (verified headlessly; interactive not verified) · statusLine command ✔ (stdin payload from docs, not captured live) · unpriced models and doctor warnings visible ✔.
 
-**M3** — design only, in `docs/ARCHITECTURE.md`; `agent-lens review` is a stub.
+**M3** (built 2026-10-19 on a branch) — digest ✔ (no tool output/input, redacted prompts, stable hash; tests) · heuristic flags ✔ · `complaint` slot reserved only · judge via `claude -p` ✔ against a **stub** (the real call was probed once, trivially, 2026-10-19; one real review of a short real session was run 2026-10-19 (Sonnet 5.5, output valid on the first try; estimate $0.016 and 2,676 tokens in versus actual $0.0178 and 3,277 in: the estimate ran about 10 % low on cost and 18 % low on input, treat it as a floor)) · cache, consent, estimate, judge-session tagging and usage-total exclusion ✔ (tests) · `convo-review` skill ✔ (validates; invocation not run).

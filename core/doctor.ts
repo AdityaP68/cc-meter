@@ -147,6 +147,13 @@ export function runDoctor(db: Db, table: PriceTable, opts: DoctorOptions = {}): 
     );
   }
   if (table.rejected.length) add('pricing-override', 'warn', `Ignored entries in ~/.agent-lens/pricing.json: ${table.rejected.join(', ')}`, 'Each model needs finite, non-negative numbers for input, output, cacheRead, cacheWrite5m and cacheWrite1h. Those models stay unpriced (never $0) until fixed.');
+  // stored reviews (ADR 0009: growth control; the first real reviews will show whether "a few KB" holds)
+  try {
+    const rv = db.prepare('SELECT COUNT(*) n, COALESCE(SUM(length(summary_json) + length(prompt_scores_json)),0) b FROM reviews').get() as { n: number; b: number };
+    if (rv.n) add('reviews', 'info', `${rv.n} stored review${rv.n === 1 ? '' : 's'}, ${(rv.b / 1024).toFixed(1)} KB of review text (about ${(rv.b / 1024 / rv.n).toFixed(1)} KB each)`);
+  } catch {
+    /* no reviews table: the database check above reports an unreadable database */
+  }
   add('pricing', 'ok', `Pricing table ${table.version} (${table.hash}) from ${table.sources.join(' + ')}`);
 
   // 6. hook installation

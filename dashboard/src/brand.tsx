@@ -21,7 +21,7 @@ export function Brand() {
   return (
     <a className="brand" href="#/" aria-label="agent-lens, home">
       <LensMark />
-      <span className="brand-name">agent-<span className="brand-grad">lens</span></span>
+      <span className="brand-name">agent-lens</span>
     </a>
   );
 }

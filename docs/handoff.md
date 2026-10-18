@@ -1,10 +1,12 @@
 # Active task handoff
 
-**Updated:** 2026-10-18
+**Updated:** 2026-10-19
 **Branch:** `main`. Milestones `m1`, `m2` tagged and pushed.
 History of earlier hand-offs: `git log -p -- docs/handoff.md`.
 
 ## Where things stand
+2026-10-19: Health page accuracy report built and pushed (`859aff3`); OTel test done (exact); agent push allowed; rename to
+`sessionscope` approved, not started. `dist/` is still the old build (live hooks), `npm run build` happens in the rename.
 2026-10-17/18: scope v2 drafted (docs only). 2026-10-15: unpriced-model support is built (ADR 0008), one commit per part, tests first, verify passing (139
 tests), built and live, real `doctor` 0 warnings: (a) upfront prompt: banner on every dashboard page, `⚠ unpriced:
 <model>` in the status line, first line of `ccmeter report`; (b) Claude Code's own `cost-state` figure for an unpriced
@@ -15,16 +17,20 @@ Not pushed: commits after `3f231b5`.
 
 ## Next
 
-0. **Paid OTel accuracy test: done 2026-10-18** (`docs/FORMATS.md` OpenTelemetry, `docs/ACCEPTANCE.md` check 3): exact
-   agreement OTel = transcript = `cost-state` = CLI `total_cost_usd` on one non-interactive run. Not covered: the
-   interactive hidden-call gap (needs an interactive session with OTel on; ask the owner, it is their `settings.json`
-   `env` or a paid interactive run). Scratch receiver and config are in the session scratchpad and may be gone.
-1. **Docs are committed** (`e59119c`, `2a902ff`, `f185549`; not pushed). ADR 0009 is **proposed**; O1 (store reviews) and O2 (test) answered, **O3 open**: gate (85 %
-   proposed) and who labels the gold set. Two confirms: may CSV export include review text; "server only" means the
-   dashboard DB on the Claude machine. Windows is unverified.
-2. Owner also wants concrete accuracy proof for a closed environment: item 0 is done, so propose a `ccmeter audit` command
-   (reproducible report: ccmeter vs cost-state vs OTel, plus the hidden-call gap). Code: ask first.
-3. Then push (`git push origin main`; the agent may push since 2026-10-18), and pick the Phase B order in `docs/SCOPE.md`.
-4. Older follow-ups (offer): `/api/refresh` reload `pricing.json`; React MIT notice; running dashboard server needs
-   `ccmeter serve --stop` to pick up the 30 min idle stop.
-5. Before changing `core/`, `cli/`, `server/` or `plugin/`: `npm run verify`, then `npm run build` (live install).
+0. **Rename ccmeter -> `sessionscope`** (owner approved 2026-10-19, incl. the live install). Free on npm/PyPI/crates, no
+   project found (trademark unchecked). One writer, no parallel sessions until done. Tests first, `npm run verify`.
+   Scope: package, CLI bin, plugin id (`sessionscope@sessionscope`), hooks, statusLine, env vars (`CCMETER_HOME` ->
+   `SESSIONSCOPE_HOME`, keep the old as a fallback), `x-ccmeter` header, docs, `AGENTS.md`. Immutable: shipped DB
+   migrations and `core/migrations.lock.json` (keep the file name or add a rename-safe path); never edit v1.
+   Live install (approved): COPY `~/.ccmeter` -> `~/.sessionscope` (never delete the old; read it as fallback);
+   `setup` re-registers the plugin in the real `~/.claude`; then `npm run build`. Back up `~/.claude/settings.json`
+   first. Verify in an isolated `CLAUDE_CONFIG_DIR`/`HOME` before touching the real one. Owner renames the GitHub repo.
+1. After 0, in parallel sessions (disjoint files): (a) prompt reviewer M3 (`docs/ARCHITECTURE.md` section Milestone 3;
+   `claude -p` judge, consent prompt, no ccmeter network call; ADR 0009 still proposed, ask to accept first);
+   (b) dashboard **Docs** section: route + page in `dashboard/src`, content written by role-split agents (concepts and
+   accuracy, CLI/install how-to, fact-checker against `docs/FORMATS.md`), then `react-check`.
+2. `ccmeter audit` command (design in this thread: reconcile ccmeter vs cost-state, optional OTel events file or
+   gateway export, exit non-zero on unexplained difference). Ask first: placement (new command, recommended) and OTel input.
+3. Open with the owner: ADR 0009 O3 (gate 85 %, gold-set labeller), CSV export with review text, "server only"
+   meaning. Interactive OTel run would size the hidden-call gap (needs their `settings.json` env or a paid run).
+4. Agents may `git push origin main` (since 2026-10-19). Never force-push or publish without asking.

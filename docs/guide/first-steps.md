@@ -14,13 +14,13 @@ One warning is common: "Claude Code x.y.z is newer than the newest version verif
 
 ## 2. Make sure your history is recorded
 
-The install already backfilled. To repeat it (always safe):
+The install already backfilled. To repeat it (always safe; a repeat prints `recorded 0, unchanged N`):
 
 ```bash
 sessionscope record --all
 ```
 
-Expected:
+Expected on a first run:
 
 ```
 Scanned 120 transcripts under ~/.claude/projects in 0.9s
@@ -39,13 +39,15 @@ Expected: one header line with the session count, tokens and estimated cost, the
 
 ## 4. Open the dashboard
 
-In Claude Code, type `/sessionscope` and press Enter. A line appears with the dashboard address, usually `http://127.0.0.1:7337/`. Open it in your browser. It costs no model tokens.
+In Claude Code, type `/sessionscope` and press Enter. A line appears with the dashboard address, usually `http://127.0.0.1:7337/`. Open it in your browser. It is designed to cost no model tokens (see the notes on that in [Status line and /sessionscope](statusline-and-command.md)).
 
 From a shell instead:
 
 ```bash
 sessionscope serve --open
 ```
+
+This runs in the foreground: leave the terminal open, and press Ctrl-C to stop it.
 
 Expected: the Sessions page with five cards (Estimated cost, Tokens, Sessions, Model switches, Compactions), a "Cost per day" chart and a sessions table. If the page shows no sessions, widen the Range filter to "All time".
 

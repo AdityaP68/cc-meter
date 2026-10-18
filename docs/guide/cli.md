@@ -1,6 +1,6 @@
 # Command line
 
-Every command is `sessionscope <command> [flags]`. This page matches `sessionscope --help` for version 0.1.0 and the behaviour of each command. If `sessionscope` is not on your PATH, run `npm link` in the clone, or call `node <clone>/dist/cli/index.js` instead.
+Every command is `sessionscope <command> [flags]`. This page matches `sessionscope --help` for version 0.1.0 and the behaviour of each command. A few working flags are missing from `--help`: `report --sort`, `report --source`, `serve --url-only` and `--json` on `record`. They are marked below. If `sessionscope` is not on your PATH, run `npm link` in the clone, or call `node <clone>/dist/cli/index.js` instead.
 
 | Command | Purpose |
 |---|---|
@@ -17,7 +17,7 @@ Every command is `sessionscope <command> [flags]`. This page matches `sessionsco
 
 - Flags are `--flag value` or `--flag=value`. A flag followed by another flag, or by nothing, is a switch. Boolean switches never take a value.
 - Everything is local. Commands read `~/.claude` (or `$CLAUDE_CONFIG_DIR`) and read and write `~/.sessionscope` (or `$SESSIONSCOPE_HOME`). See [Configuration and pricing](config-and-pricing.md).
-- A session id may be any unique prefix. The id column in `report` shows the first 8 characters.
+- `report --session` accepts any unique prefix of a session id (the id column shows the first 8 characters). `record --session` needs the full id.
 - `sessionscope --version` (also `version`) prints the version, `sessionscope help`, `--help`, `-h` or no command prints the usage text and exits 0. An unknown command prints the usage text after "unknown command: x" and exits 1.
 
 Exit codes:
@@ -31,7 +31,8 @@ Exit codes:
 | `doctor` | no check is an error (warnings still exit 0) | 2 if any check is an error |
 | `serve` | started, reused or stopped | 1 if `--ensure` could not start the server |
 | `setup` | done | 1 if the status line step failed (invalid `settings.json`) |
-| `statusline`, `export` | always | never |
+| `statusline` | always | never |
+| `export` | success | 1 only if the `--out` file cannot be written |
 | `review` | never | always 1 |
 
 ## record
@@ -48,7 +49,7 @@ sessionscope record            # hook mode: JSON payload on stdin
 | `--all` | Scan every transcript under `~/.claude/projects` and record what is new or changed. Prints `Scanned N transcripts ...` then `recorded n, unchanged n, skipped (no assistant messages) n, errors n`. |
 | `--session <id>` | Record one session. Needs the **full** session id (the transcript file name without `.jsonl`), not a prefix. Prints `recorded: <id>  N messages, $x`, `unchanged: <id>` or similar. |
 | `--transcript <file>` | Record one transcript file by path. |
-| `--force` | Recompute even if nothing changed (for example after editing prices; see [Configuration and pricing](config-and-pricing.md)). |
+| `--force` | Recompute even if nothing changed, for debugging or a row you suspect is stale. Not needed after editing prices: changing the price table re-costs sessions automatically the next time they are recorded (see [Configuration and pricing](config-and-pricing.md)). |
 | `--json` | Machine-readable output. For `--all`: `{ total, recorded, unchanged, empty, errors[] }`. |
 
 Recording is idempotent: the whole session is re-read and upserted, so running it twice changes nothing. Transcripts with no real API call are skipped ("empty").
@@ -121,10 +122,10 @@ sessionscope serve --stop
 | Flag | Meaning |
 |---|---|
 | (none) | Run the dashboard in the foreground and print `sessionscope dashboard: <url>  (127.0.0.1 only; Ctrl-C to stop)`. If one is already running it prints its address and exits. |
-| `--port n` | Preferred port. If it is taken, the next free port is used (up to 20 tries). Default from `config.json`, else 7337. |
+| `--port n` | Preferred port. If it is taken, the next free port is used (the port, then up to 20 higher ones). Default from `config.json`, else 7337. |
 | `--open` | Open the dashboard in your browser (`open` on macOS, `xdg-open` on Linux, `start` on Windows; only macOS is verified). |
-| `--ensure` | Reuse a running server or start a detached one, wait for it, and print its URL. This is what `/sessionscope` runs. Exits 1 with a message if it cannot start. |
-| `--url-only` | With a running server, print just the URL. |
+| `--ensure` | Reuse a running server (then `--port` is ignored) or start a detached one, wait for it, and print its URL. This is what `/sessionscope` runs. Exits 1 with a message if it cannot start. |
+| `--url-only` | Print just the URL when a server is already running (foreground form). With `--ensure` the URL alone is always printed. Not shown in `--help`. Put it last or before another flag: it is not registered as a switch, so a bare word right after it would be read as its value. |
 | `--stop` | Stop the background server recorded in `server.json`. |
 
 The server listens on `127.0.0.1` only and rescans transcripts every 30 seconds. A server started with `--ensure` stops itself after `idleMinutes` (default 30) without a request; a foreground one runs until Ctrl-C. `config.json` can set `port`, `openBrowser` and `idleMinutes`. A running server loads the price table when it starts, so after editing `pricing.json` run `sessionscope serve --stop` and start it again.

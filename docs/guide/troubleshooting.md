@@ -18,25 +18,29 @@ Start with `sessionscope doctor` (or the [Health page](#/health), which shows th
 | Port busy | Another program uses 7337. | sessionscope picks the next free port by itself. To choose one, set `port` in `config.json` or run `sessionscope serve --port 7400`. |
 | The server is stuck or the address in `server.json` is stale | A background server crashed or was killed. | `sessionscope serve --stop`, then `sessionscope serve --ensure`. |
 | `/sessionscope` does nothing, or Claude answers instead of showing an address | The plugin is not loaded in this session, or the hook could not start the server. | Run `/reload-plugins` or restart Claude Code, check `claude plugin list`, then try `sessionscope serve --open`. |
-| `/sessionscope` shows "Operation stopped by hook: sessionscope dashboard: http://..." | This is the working message. Claude Code adds the prefix. | Open the address. See [Status line and /sessionscope](statusline-and-command.md). |
+| `/sessionscope` shows "Operation stopped by hook: sessionscope dashboard: http://..." | This is the working message; the prefix is Claude Code's wording in a headless run (interactive rendering is **unverified**). | Open the address. See [Status line and /sessionscope](statusline-and-command.md). |
 | The status line shows nothing, or `$–` and `– tok` | `sessionscope` is not on the PATH Claude Code uses, or the payload had no transcript path. | Run `npm link`; check the `statusLine` entry in `~/.claude/settings.json`. The live payload is **unverified**. |
 | `setup --statusline` says a statusLine is already configured | You have one; sessionscope never replaces it. | Edit `~/.claude/settings.json` yourself, or restore the backup (`settings.json.sessionscope-backup`). |
 | Claude Code updated and `doctor` warns | The release is newer than the verified range (2.1.236 to 2.1.295). | Recording continues. Look at "Unrecognized" lines in `doctor`; if there are none, the format is unchanged. See [Accuracy](accuracy.md). |
-| The dashboard looks stale after an upgrade | Your browser kept the old page. | Reload the page. Saved filters and theme live in browser storage and can be cleared there. |
-| Start over | You want a clean database. | `sessionscope serve --stop`, delete `~/.sessionscope/sessionscope.db*`, then `sessionscope record --all`. Your `config.json` and `pricing.json` are kept. |
+| The dashboard behaves like the old version after an upgrade | A server started before the update is still running the old code. The server sends no-store headers, so the browser cache is not the cause. | `sessionscope serve --stop`, then `/sessionscope` or `sessionscope serve --open`. |
+| Start over | You want a clean database. | `sessionscope serve --stop`, delete `~/.sessionscope/sessionscope.db*`, then `sessionscope record --all`. Your `config.json` and `pricing.json` are kept. If the folder also holds an old `ccmeter.db`, delete that too, or sessionscope falls back to it. |
+| A session with only an unpriced model shows `$0.000+unpriced` (CLI) or `$0` with a `+ unpriced` chip (dashboard) | The cost field is zero because nothing could be priced. The marker is the signal: read it as "unknown", not free. `export` shows it correctly as an empty cost with `costComplete` false. | Add the model's price ([Configuration and pricing](config-and-pricing.md)). |
+| `report --by <something>` prints the session list | Only `day`, `project` and `model` are valid; any other value (or none) silently falls back to the session list. | Use one of the three. |
+| `serve --url-only word` loses `word`, or `--json=false` still prints JSON | `--url-only` is not registered as a switch, so a bare word after it is taken as its value; any non-empty `--json` value turns JSON on. | Put `--url-only` last or before another flag; omit `--json` to turn it off. |
+| `serve --ensure --port 7400` ignores the port | A server is already running and is reused. | `sessionscope serve --stop`, then start again with the port. |
 
 To see what the hooks are doing, read `~/.sessionscope/record.log`: one line per call with the event, session id, result (`recorded`, `unchanged`, ...) and time. It never contains conversation text.
 
 ## Doctor checks
 
-Each check has an id (shown with `sessionscope doctor --json`) and a level: ok, info, warning or error. Errors make `doctor` exit with code 2.
+Each check has an id and a level, shown by `sessionscope doctor --json` as `ok`, `info`, `warn` or `error`. Errors make `doctor` exit with code 2.
 
 | Check id | Reports | What to do |
 |---|---|---|
 | `node` | Node version; error if older than 22.13. | Install Node 22.13 or newer. |
 | `db` | Database integrity and schema version; error if damaged or unreadable. | Start over (above). If the schema version differs from the CLI's, update the clone and run `./install.sh`. |
 | `cc-version` | The installed Claude Code against the verified range; warns if `claude` is missing, newer, older, or has no matching parser. | Newer: nothing needed, recording continues. Missing: put `claude` on PATH. |
-| `parser-status` | Sessions recorded from a Claude Code version outside the verified range. | Informational; the Accuracy report on Health counts them. |
+| `parser-status` | A warning (`warn`) when some recorded sessions came from a Claude Code version outside the verified range. | Recording was not blocked; the Accuracy report on Health counts them. See [Accuracy](accuracy.md). |
 | `unknown-types` | Transcript entry types sessionscope does not know (skipped, not fatal). | If listed, the format may have changed; numbers might be incomplete. |
 | `unknown-usage` | Unrecognized token fields: a new billable token class may be uncounted. | Treat costs as a lower bound until sessionscope is updated for that Claude Code version. |
 | `unparsable` | Transcript lines that were not valid JSON. | Usually harmless; recorded sessions skip those lines. |

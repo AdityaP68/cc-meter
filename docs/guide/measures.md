@@ -4,11 +4,11 @@ The vocabulary used across the dashboard, the CLI and these docs. Everything her
 
 ## Session
 
-One Claude Code conversation, identified by its transcript file name (the session id). The session's totals include its subagents' transcript files. Sessions can come from the terminal CLI, the Claude desktop app's Code tab, or headless `claude -p` runs; they all write the same kind of transcript. The `entrypoint` recorded for a session is `cli`, `claude-desktop` or `sdk-cli`.
+One Claude Code conversation, identified by its transcript file name (the session id). The session's totals include its subagents' transcript files. Sessions can come from the terminal CLI, the Claude desktop app (entry point `claude-desktop`) or headless `claude -p` runs; all three write transcripts of the same kind, which is what sessionscope reads. Whether the plugin's hooks fire inside the desktop app is not verified; the transcripts are picked up by a rescan either way. The `entrypoint` recorded for a session is `cli`, `claude-desktop` or `sdk-cli`.
 
 ## Message
 
-One API response from the model, as written in the transcript (the dashboard calls them "API messages"). Claude Code writes one transcript line per content block, all with the same message id, so sessionscope keeps **one message per id** and the last copy wins. See [Costs](costs.md). Error placeholders (`<synthetic>`) are ignored.
+One API response from the model, as written in the transcript (the dashboard calls them "API messages"). Claude Code (observed on 2.1.236 to 2.1.295) writes one transcript line per content block, all with the same message id, so sessionscope keeps **one message per id** and the last copy wins. See [Costs](costs.md). Error placeholders (`<synthetic>`) are ignored.
 
 ## Turn
 
@@ -41,7 +41,7 @@ Every model that produced a message in the session, with its own totals. The ses
 
 ## Model switch
 
-The main conversation changed model between two consecutive messages (for example with `/model`). **A subagent running a different model is not a switch**, because subagent messages are tagged separately. Each switch is listed with its time and turn on the session page. Prompt caches are per model, so the first reply after a switch writes the context to the cache again.
+The main conversation changed model between two consecutive messages (for example with `/model`). **A subagent running a different model is not a switch**, because subagent messages are tagged separately. Each switch is listed with its time and turn on the session page.
 
 ## Compaction
 
@@ -49,7 +49,7 @@ Claude Code summarised the conversation to free context, automatically near the 
 
 ## Subagent ("sub n")
 
-Work done by a subagent (the Task or Agent tool) in its own transcript file. The **sub n** chip on a session row is the number of API messages that came from subagents. Their cost is included in the session total and shown as hatched segments in the per-turn chart.
+Work done by a subagent (the Agent tool) in its own transcript file. The **sub n** chip on a session row is the number of API messages that came from subagents. Their cost is included in the session total and shown as hatched segments in the per-turn chart.
 
 ## Project
 
@@ -61,7 +61,7 @@ The time between the first and the last timestamp in the session's files. It is 
 
 ## Title
 
-The name Claude Code gave the session (`custom-title` beats `ai-title`). Most sessions have none; headless `claude -p` runs rarely get one. For untitled sessions the dashboard shows a label built from the entry point, the main model and the turn count, for example "desktop session · sonnet-5-5 · 12 turns". It is never built from prompt text.
+The name Claude Code wrote for the session: either a name you gave it (`custom-title`) or one Claude Code generated from the conversation (`ai-title`); the first wins. Most sessions have none (586 of 613 surveyed on 2026-10-15), and in that survey no headless `claude -p` session on Claude Code 2.1.264 or later had one. A title can therefore reflect what you worked on. For untitled sessions the dashboard shows a label built from the entry point, the highest-cost model and the turn count, for example "desktop session · sonnet-5-5 · 12 turns". It is never built from prompt text.
 
 ## Where each measure is shown
 

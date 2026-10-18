@@ -12,7 +12,7 @@ The dashboard is a local web page served by sessionscope on `127.0.0.1`. It read
 
 ## The page header
 
-- **sessionscope** (left) returns to the Sessions page. **Sessions**, **Rollups** and **Health** switch pages. The session detail page is part of Sessions.
+- **sessionscope** (left) returns to the Sessions page. **Sessions**, **Rollups**, **Health** and **Docs** switch pages. The session detail page is part of Sessions.
 - A **⚠ n** badge on Health appears when there are warnings or errors. Hover it for their titles.
 - **local only** is a reminder that the server listens on `127.0.0.1` and nothing leaves your machine.
 - **Refresh** rescans your transcripts (the same work as `sessionscope record --all`) and reloads the page. The button reads "Refreshing…" while it works. The server also rescans by itself every 30 seconds.
@@ -58,7 +58,7 @@ Definitions of every measure are in [Measures](measures.md); how the dollar figu
 
 ### Cost per day
 
-A stacked bar chart, one bar per day, split by model. Days use your local time zone, and a message belongs to the day of its own timestamp, so a session running past midnight is split. Hover a bar for the day's total and each model's share. **Show as table** swaps the chart for the same data as a table (Day, Model, Tokens, Cost); **Show chart** swaps back.
+A stacked bar chart, one bar per day, split by model. Days use your local time zone, and a message belongs to the day of its own timestamp, so a session running past midnight is split. Hover a bar for the day's total and each model's share. **Show as table** swaps the chart for the same data as a table (Day, Model, Tokens, Cost); **Show chart** swaps back. The chart draws at most the last 180 days; the table lists every day in the range.
 
 ### Sessions table
 
@@ -80,7 +80,7 @@ Every chip is a small button. Hover it, focus it with the keyboard or tap it to 
 
 | Chip | Meaning |
 |---|---|
-| `⇄ n` | The main conversation changed model n times (for example with `/model`). Subagents are not counted. The first reply after a switch writes the context to the cache again. |
+| `⇄ n` | The main conversation changed model n times (for example with `/model`). Subagents are not counted. Prompt caches are per model, so the first reply after a switch normally writes the context to the cache again (this comes from how Claude's prompt caching works, not from anything sessionscope measured). |
 | `◆ n` | The conversation was compacted n times, automatically or with `/compact`. The session page lists each with its context size before and after. |
 | `sub n` | n API calls came from subagents. Their cost is included in the total and shown hatched on the session page. |
 | `≥ lower bound` | Some replies were saved mid-stream before their final token count was written, so output tokens and cost are understated. Never filled in with a guess. |
@@ -103,7 +103,7 @@ Open it by clicking a title. It has these parts, top to bottom:
 2. **Cards.** Estimated cost (with Claude Code's own figure underneath), Tokens (in and out), Cache (read, and written), Turns (with API message and subagent counts) and Switches / compactions.
 3. **Notes**, only when relevant. "⚠ Unpriced" names models left out, and shows Claude Code's own figure for them. "ℹ Claude Code's record is partial" says Claude Code's total covers only part of the session, so sessionscope's complete total is the one to use. "ℹ Calls not in the transcript" gives the estimate behind the `≈` chip. "ℹ Lower bound" explains the `≥` chip.
 4. **Cost per turn** (below).
-5. **Models.** A table per model: Messages, Input, Output, Cache write, Cache read, Cost.
+5. **Models.** One table with a row per model: Messages, Input, Output, Cache write, Cache read, Cost.
 6. **Events**, if any. Each model switch ("switched A → B") and compaction ("compaction (manual or auto): context before → after") with its time and turn.
 7. **Check against Claude Code's own accounting** (below).
 
@@ -128,7 +128,7 @@ Each bar is one turn: one user prompt and everything done in response.
 | Claude Code | The same four counts and Claude Code's own cost, if it recorded that model. |
 | `✔ match` or `ℹ difference` | `match` means all four counts are equal. Otherwise the row shows the difference per class, sessionscope minus Claude Code, so a negative number means Claude Code counted more. |
 
-Equal counts mean sessionscope read the transcript correctly. A difference means one side sees calls the other does not; sessionscope never silently prefers either number. See [Accuracy](accuracy.md) for the known causes. A session without a Claude Code entry shows no comparison rows and its cost card says "no Claude Code cost entry".
+Equal counts mean sessionscope read the transcript correctly. A difference means one side sees calls the other does not; sessionscope never silently prefers either number. See [Accuracy](accuracy.md) for the known causes. A model that appears only in Claude Code's entry and not in the transcript shows a sessionscope cost of `$0`: that means "no transcript data for this model", not that it was free. A session without a Claude Code entry shows no comparison rows and its cost card says "no Claude Code cost entry".
 
 ## Health page
 

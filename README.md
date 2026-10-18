@@ -37,7 +37,7 @@ Costs are **estimates at list price** computed from the token usage Claude Code 
 When Claude Code ships a new release, `sessionscope doctor` either confirms the format is still recognized or tells you exactly what is new.
 
 ## Docs
-**Start here: [docs/USAGE.md](docs/USAGE.md)** (what it can do, step-by-step guide, command reference, troubleshooting).
+**Start here: [docs/USAGE.md](docs/USAGE.md)** (index of the guide in `docs/guide/`: install, concepts, dashboard, command reference, troubleshooting; the same pages are in the dashboard under Docs, `#/docs`).
 
 [SCOPE](docs/SCOPE.md) · [FORMATS](docs/FORMATS.md) (what was inspected and found) · [ARCHITECTURE](docs/ARCHITECTURE.md) (incl. the milestone-3 review design) · [ASSUMPTIONS](docs/ASSUMPTIONS.md) · [ACCEPTANCE](docs/ACCEPTANCE.md)
 

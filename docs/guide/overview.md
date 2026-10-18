@@ -8,7 +8,7 @@ sessionscope is a local-first usage and cost tracker for Claude Code. It answers
 Claude Code plugin hooks  ->  recorder  ->  SQLite in ~/.sessionscope  ->  CLI + dashboard on 127.0.0.1
 ```
 
-1. A small Claude Code plugin registers hooks that run when a turn ends and when a session ends. They run as separate processes and print nothing.
+1. A small Claude Code plugin registers three hooks: `Stop` (a turn ended) and `SessionEnd` (the session ended) record the session, and `UserPromptSubmit` watches for the prompt `/sessionscope`. They run as separate processes. The two recording hooks print nothing; the `/sessionscope` hook prints one line (the dashboard address) only when you type exactly that prompt. Details in [Privacy](privacy.md) and the status line and command page ([Status line and /sessionscope](statusline-and-command.md)).
 2. The hook hands the path of the session's transcript file to the recorder. The recorder re-reads the whole transcript, prices every API response, and writes the result into a SQLite database. It is idempotent: recording a session twice gives the same rows.
 3. The `sessionscope` command line (`report`, `doctor`, `export`) and a local dashboard read that database. The dashboard server listens on `127.0.0.1` only.
 
@@ -21,7 +21,7 @@ Developers who use Claude Code and want to see where their tokens and dollars go
 - Every Claude Code session recorded automatically: tokens, estimated cost, models, turns, duration. Your existing history is backfilled on install.
 - Cost per day (stacked by model), per project, per model and per turn. See [Measures](measures.md) for the vocabulary and [Costs](costs.md) for how the dollar figure is computed.
 - Events worth knowing about: model switches, compactions, subagent cost, shown on the session page.
-- A cross-check of every session against Claude Code's own accounting, with the differences explained rather than hidden. See [Accuracy](accuracy.md) and the [Health page](#/health).
+- A cross-check of every session that has a Claude Code cost record against Claude Code's own accounting, with the differences explained rather than hidden. Sessions without such a record cannot be checked. See [Accuracy](accuracy.md) and the [Health page](#/health).
 - Warnings when a model has no price, when Claude Code's transcript format changes, or when hooks are missing (`sessionscope doctor` and the Health page).
 
 ## Sources
@@ -44,3 +44,8 @@ Claude Code is the first supported source. The design does not assume it is the 
 | Know how a dollar figure is produced | [Costs](costs.md) |
 | Know what is stored and what is not | [Privacy](privacy.md) |
 | Know how far to trust the numbers | [Accuracy](accuracy.md) |
+| Install it | [Install](install.md), then [First steps](first-steps.md) |
+| Find your way around the dashboard | [Dashboard](dashboard.md) |
+| Look up a command or flag | [Command line](cli.md) |
+| Change settings or add a price | [Configuration and pricing](config-and-pricing.md) |
+| Fix a problem | [Troubleshooting](troubleshooting.md) |

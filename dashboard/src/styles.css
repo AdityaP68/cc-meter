@@ -144,7 +144,8 @@ main > .banner { margin: 0; }
 /* ---------- Docs section (#/docs): sidebar + article, markdown subset from docs-markdown.tsx ---------- */
 .docs { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 24px; align-items: start; }
 .docs-side { position: sticky; top: 64px; max-height: calc(100vh - 80px); overflow-y: auto; }
-nav.docs-nav { flex-direction: column; gap: 1px; }
+nav.docs-nav, .docs-group { display: flex; flex-direction: column; gap: 1px; }
+nav.docs-nav a { display: block; }
 .docs-group-h { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); padding: 14px 10px 4px; }
 .docs-select { display: none; flex-direction: column; gap: 3px; }
 .docs-select select { width: 100%; }

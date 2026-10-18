@@ -56,7 +56,7 @@ Any other model is **unpriced**: its cost is empty, never $0. It is left out of 
 
 ### Adding or overriding a price
 
-Create `~/.sessionscope/pricing.json` with only the models you want to add or change. Use the model id exactly as sessionscope shows it (the `models` column of `sessionscope report`, or the "Unpriced models" line of `sessionscope doctor`):
+Create `~/.sessionscope/pricing.json` with only the models you want to add or change. Use the full model id as Claude Code writes it. The `models` column of `sessionscope report` and the dashboard drop the `claude-` prefix, so do not copy from them. Full ids appear in the "No price for ..." notice at the top of `report`, in the "Unpriced models" line of `sessionscope doctor`, and in the key column of `sessionscope report --by model`:
 
 ```json
 {
@@ -76,7 +76,7 @@ Create `~/.sessionscope/pricing.json` with only the models you want to add or ch
 | `fastMultiplier` | No | A number above 0 that multiplies the cost of messages recorded in fast mode. |
 | `longContext` | No | `{ "aboveTokens", "input", "output" }`: rates for requests whose prompt exceeds `aboveTokens`. Needs a non-zero `input`. |
 
-A top-level `"webSearchPerRequest"` (default 0.01 USD per request) can also be set. An entry for a model already in the built-in table replaces it; the others are added. An invalid entry is ignored on its own, the rest still apply, and `sessionscope doctor` and the Health page list it ("Ignored entries in pricing.json"). A model with an ignored entry keeps its built-in price, or stays unpriced if it has none, until you fix the entry.
+A top-level `"webSearchPerRequest"` (default 0.01 USD per request) can also be set. An entry for a model already in the built-in table replaces it; the others are added. An invalid entry is ignored on its own, the rest still apply, and `sessionscope doctor` and the Health page list it (the line starts "Ignored entries in ~/.sessionscope/pricing.json"). A model with an ignored entry keeps its built-in price, or stays unpriced if it has none, until you fix the entry.
 
 ### How re-costing works
 
@@ -85,7 +85,7 @@ sessionscope stores a hash of the effective price table with every session. When
 - for the session a hook fires on, immediately;
 - for every session, on `sessionscope record --all`, on the dashboard's Refresh button and on its 30-second rescan.
 
-`sessionscope record --all --force` recomputes everything regardless. A running dashboard server loads the price table at start-up, so after editing `pricing.json` run `sessionscope serve --stop`, then open the dashboard again.
+`sessionscope record --all --force` recomputes everything regardless. A running dashboard server loads the price table at start-up, so after editing `pricing.json` run `sessionscope serve --stop`, then open the dashboard again. Until you do, the old server keeps pricing at the old table, and its 30-second rescan can re-record sessions that a hook has just re-priced, putting the old prices back.
 
 ### Do the prices match Claude Code?
 

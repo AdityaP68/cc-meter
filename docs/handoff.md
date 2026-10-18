@@ -5,10 +5,12 @@
 History of earlier hand-offs: `git log -p -- docs/handoff.md`.
 
 ## Where things stand
-2026-10-19: **renamed to `agent-lens`** (ADR 0010, commits `fe175dd`..): live install migrated and built (`~/.agent-lens`, plugin
-`sessionscope@sessionscope`, old plugin replaced, `~/.claude/settings.json.pre-sessionscope-backup` kept, `~/.ccmeter` kept). Isolated
-fresh-clone install tested; verify green (177 tests). Real `doctor`: 0 errors, 2 warnings, both because Claude Code 2.1.302 is newer than
-the verified 2.1.295 (run the `format-drift` skill). Earlier 2026-10-19: Health accuracy report, OTel test (exact), agent push allowed.
+2026-10-19: renamed ccmeter -> sessionscope (live install migrated) -> **agent-lens** (ADR 0011). The agent-lens rename and the new
+dashboard identity are committed on branch `rename-agent-lens` (verify --full green, 181 tests; isolated fresh-clone install with both
+old plugins and old data passed). **Live migration pending owner approval**: merge the branch into `main`, `npm run build`,
+`node dist/cli/index.js setup` in the real home (copies `~/.sessionscope` to `~/.agent-lens`, replaces the old plugin), back up
+`~/.claude/settings.json` first, then real `doctor`. Real `doctor` today: 0 errors, 2 warnings (Claude Code 2.1.302 newer than the
+verified 2.1.295 -> `format-drift`).
 
 ## Next
 
@@ -21,5 +23,5 @@ the verified 2.1.295 (run the `format-drift` skill). Earlier 2026-10-19: Health 
    non-zero on unexplained difference). Ask first: placement (new command, recommended) and OTel input.
 4. Open with the owner: ADR 0009 O3 (gate 85 %, gold-set labeller), CSV export with review text, "server only" meaning.
    Interactive OTel run would size the hidden-call gap. Owner-only: rename the GitHub repo (then `git remote set-url`), delete
-   `~/.ccmeter` when satisfied, `npm link` for a `sessionscope` command on PATH (hooks work without it), trademark check.
+   `~/.ccmeter` and `~/.sessionscope` when satisfied, `npm link` for an `agent-lens` command on PATH (hooks work without it), trademark check.
 5. Agents may `git push origin main` (since 2026-10-19). Never force-push or publish without asking.

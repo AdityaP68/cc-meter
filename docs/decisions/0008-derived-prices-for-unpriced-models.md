@@ -9,13 +9,13 @@ price.
 
 **Decision.**
 - **Prompt up front:** a banner on every dashboard page, `⚠ unpriced: <model>` in the status line, and a first line in
-  `ccmeter report`, each pointing at `~/.ccmeter/pricing.json` and `ccmeter doctor`. Never in the conversation.
+  `sessionscope report`, each pointing at `~/.sessionscope/pricing.json` and `sessionscope doctor`. Never in the conversation.
 - **Claude Code's figure:** the summed `costUSD` Claude Code recorded for the model is shown, labelled as Claude
-  Code's, in Health/`doctor` and on the session page. It is never added to ccmeter's totals.
+  Code's, in Health/`doctor` and on the session page. It is never added to sessionscope's totals.
 - **Derived price:** `doctor` fits input, output, cache-read and one cache-write rate by least squares over the
   model's `cost-state` entries (`core/derive.ts`). It needs ≥ 4 entries, every token type present and varied mixes;
   otherwise it refuses and says why. It prints the fit's largest error, the sample count and a JSON snippet with
-  `"basis": "derived"`. ccmeter never writes it into a pricing file: the user pastes it.
+  `"basis": "derived"`. sessionscope never writes it into a pricing file: the user pastes it.
 
 **Consequences.** `derived` is a valid `basis` in `pricing.json` and shown in the Health table. `cost-state` does not
 split cache writes by TTL, so a derived price has one blended write rate for both 5m and 1h; the published price is

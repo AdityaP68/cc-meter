@@ -1,10 +1,10 @@
-# ccmeter — instructions for coding agents
+# sessionscope — instructions for coding agents
 
 Shared by every agent working here. Claude Code reads this file through the `@AGENTS.md` import in
 `CLAUDE.md`. Shared rules go here; agent-specific notes go in that agent's file.
 
-ccmeter is a local-first usage/cost tracker for Claude Code: plugin hooks → recorder → SQLite in
-`~/.ccmeter` → CLI and a 127.0.0.1 dashboard. TypeScript on Node ≥ 22.13, zero runtime dependencies.
+sessionscope is a local-first usage/cost tracker for Claude Code: plugin hooks → recorder → SQLite in
+`~/.sessionscope` → CLI and a 127.0.0.1 dashboard. TypeScript on Node ≥ 22.13, zero runtime dependencies.
 
 ## Entry
 1. Orientation is injected at session start (`scripts/harness/orientation.mjs`): Git state, Claude Code
@@ -14,9 +14,9 @@ ccmeter is a local-first usage/cost tracker for Claude Code: plugin hooks → re
 3. Retrieve everything else **on demand, by grep**, in 20–40-line windows. Do not read `docs/` linearly.
 
 ## Invariants (from docs/SCOPE.md; breaking one is a bug)
-- **No network calls** from ccmeter code. Ask the user before adding any dependency that makes one.
-- **Zero context footprint**: hooks/status line/server run out of process; no MCP server; `/ccmeter`
-  prints one line without a model call; a review skill may only wrap `ccmeter review <id>`.
+- **No network calls** from sessionscope code. Ask the user before adding any dependency that makes one.
+- **Zero context footprint**: hooks/status line/server run out of process; no MCP server; `/sessionscope`
+  prints one line without a model call; a review skill may only wrap `sessionscope review <id>`.
 - **Never store prompt, reply or tool text** anywhere; the DB holds counts, ids, models, timestamps,
   titles and cwd only. Never commit personal data (enforced by `scripts/harness/check.mjs`).
 - **Unpriced is never $0**: unknown models cost `NULL` and surface in `doctor` and the UI.
@@ -27,11 +27,11 @@ ccmeter is a local-first usage/cost tracker for Claude Code: plugin hooks → re
 - **Shipped migrations are immutable** (v1 is in users' databases; `core/migrations.lock.json`).
 
 ## The user's real installation
-The user's Claude Code runs **this checkout**: hooks call `dist/cli/index.js` (via `~/.ccmeter/cli-path`)
+The user's Claude Code runs **this checkout**: hooks call `dist/cli/index.js` (via `~/.sessionscope/cli-path`)
 and `plugin/` is loaded in place. So: verify before `npm run build`; a plugin edit is live at the next
-session; never write to the user's `~/.claude` or `~/.ccmeter` while experimenting. Use isolated
-`CLAUDE_CONFIG_DIR` / `CCMETER_HOME` and, for live `claude -p` experiments, disable the installed
-plugin with `--settings '{"enabledPlugins":{"ccmeter@ccmeter":false}}'` or its hooks contaminate results.
+session; never write to the user's `~/.claude` or `~/.sessionscope` while experimenting. Use isolated
+`CLAUDE_CONFIG_DIR` / `SESSIONSCOPE_HOME` and, for live `claude -p` experiments, disable the installed
+plugin with `--settings '{"enabledPlugins":{"sessionscope@sessionscope":false}}'` or its hooks contaminate results.
 
 ## Verify loop
 - `npm run verify` — typecheck (both projects), tests against `.test-dist/`, repo checks; errors first, capped.

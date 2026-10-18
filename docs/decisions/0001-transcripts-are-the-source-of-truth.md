@@ -7,7 +7,7 @@ own per-model totals. On the author's corpus they agree for 306 of 310 sessions;
 **both** directions (`docs/FORMATS.md` → Known discrepancies): `cost-state` can include calls never written as
 messages, and can cover less than the transcript in sessions spanning several processes.
 
-**Decision.** All ccmeter numbers come from transcript messages (deduplicated by `message.id`, last entry wins).
+**Decision.** All sessionscope numbers come from transcript messages (deduplicated by `message.id`, last entry wins).
 `cost-state` is stored and shown side by side, used by `doctor`, `report --session` and the golden tests, and never
 silently substituted.
 

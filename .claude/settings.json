@@ -25,8 +25,8 @@
       "Bash(git log:*)",
       "Bash(git push origin main)",
       "Bash(git show:*)",
-      "Bash(ccmeter report:*)",
-      "Bash(ccmeter doctor:*)"
+      "Bash(sessionscope report:*)",
+      "Bash(sessionscope doctor:*)"
     ],
     "deny": [
       "Bash(npm publish:*)",

@@ -1,13 +1,13 @@
 ---
 name: format-drift
-description: Check and adapt ccmeter after a Claude Code release, when doctor warns about an unverified version, unknown entry types or unknown usage fields, or when the orientation hook says Claude Code is newer than the verified range. Zero spend.
+description: Check and adapt sessionscope after a Claude Code release, when doctor warns about an unverified version, unknown entry types or unknown usage fields, or when the orientation hook says Claude Code is newer than the verified range. Zero spend.
 ---
 
 # Format drift
 
 Goal: a new Claude Code release yields correct data or a precise warning (decision 0004). No guessing.
 
-1. **Measure.** `ccmeter doctor` and `claude --version`. Note: unverified versions, unknown types, unknown usage
+1. **Measure.** `sessionscope doctor` and `claude --version`. Note: unverified versions, unknown types, unknown usage
    keys, unparsable lines, token-match count against `cost-state`.
 2. **Survey, isolated.** Delegate to the `transcript-surveyor` subagent: for transcripts whose `version` is outside
    the range in `core/parser/cc21.ts`, report entry-type counts, assistant/usage key sets, duplicate-id behaviour,

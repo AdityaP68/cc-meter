@@ -7,11 +7,11 @@ on are listed too.
 
 | Source | Class | Read | What it changed |
 |---|---|---|---|
-| ccmeter Scope v2, owner's document of 17 Oct 2026 (pasted in chat; condensed in `docs/SCOPE.md`) | owner requirements | 2026-10-17 | phases A–D, tiers, modes, evidence rules, gap taxonomy requirement, ADR 0009 and `docs/GAPS.md`; its survey of ccusage, Claude Code analytics, OTel, Faros/DX/Jellyfish/LinearB, Langfuse/LangSmith was **not re-verified** here |
+| sessionscope Scope v2, owner's document of 17 Oct 2026 (pasted in chat; condensed in `docs/SCOPE.md`) | owner requirements | 2026-10-17 | phases A–D, tiers, modes, evidence rules, gap taxonomy requirement, ADR 0009 and `docs/GAPS.md`; its survey of ccusage, Claude Code analytics, OTel, Faros/DX/Jellyfish/LinearB, Langfuse/LangSmith was **not re-verified** here |
 | code.claude.com/docs/en/hooks (first 100k of 270k chars) | vendor docs | 2026-10-14 | hook config shape, `${CLAUDE_PLUGIN_ROOT}`, timeouts, SessionEnd 1.5 s budget, `async`; payloads then captured live |
 | code.claude.com/docs/en/statusline | vendor docs | 2026-10-14 | stdin fields; `context_window` is current, not cumulative → status line reads the transcript |
 | code.claude.com/docs/en/plugins-reference | vendor docs | 2026-10-14 | manifest layout, `bin/` only on the Bash tool PATH → hook launcher script |
-| code.claude.com/docs/en/plugin-marketplaces | vendor docs | 2026-10-14 | `claude plugin marketplace add` / `install` used by `ccmeter setup` |
+| code.claude.com/docs/en/plugin-marketplaces | vendor docs | 2026-10-14 | `claude plugin marketplace add` / `install` used by `sessionscope setup` |
 | `claude-api` skill pricing table (cached 2026-10-06) | bundled vendor reference | 2026-10-14 | list prices in `pricing.json`; verified ones later checked against Claude Code `costUSD` |
 | `dataviz` skill reference palette | bundled design reference | 2026-10-14 | dashboard colours, mark specs, table view per chart |
 | User's Context Harness guides: `context-and-loop-engineering.md`, `implementation-kit.md` (~/Documents/context-harness/docs/guides, 2026-09-28) | internal method, measured on another repository | 2026-10-15 | this repository's agent harness (`docs/harness.md`) |

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { DOC_GROUPS, DOC_PAGES, DOC_SLUGS, type DocPage } from './docs-content';
 import { headingDomId, renderMarkdown } from './docs-markdown';
 
@@ -11,12 +11,12 @@ function scrollToHeading(anchor: string): void {
   document.getElementById(headingDomId(anchor))?.scrollIntoView?.();
 }
 
-function Sidebar({ current }: { current: string }) {
+function Sidebar({ current, onIndex }: { current: string; onIndex: boolean }) {
   return (
     <>
       <aside className="docs-side">
         <nav className="docs-nav" aria-label="Documentation">
-          <a href="#/docs" aria-current={current === '' ? 'page' : undefined}>All docs</a>
+          <a href="#/docs" aria-current={onIndex ? 'page' : undefined}>All docs</a>
           {DOC_GROUPS.map((g) => (
             <div key={g.name} className="docs-group">
               <div className="docs-group-h">{g.name}</div>
@@ -45,7 +45,7 @@ function Sidebar({ current }: { current: string }) {
 function DocsIndex() {
   return (
     <article className="docs-article">
-      <h1>Documentation</h1>
+      <h1 tabIndex={-1}>Documentation</h1>
       <p className="docs-lead">How sessionscope works, what its numbers mean, and how to use it. These pages are part of the dashboard, need no network, and are also readable as plain markdown in <code>docs/guide/</code> in the repository.</p>
       {DOC_GROUPS.map((g) => (
         <section key={g.name} className="docs-index-group" aria-labelledby={`docs-g-${g.name}`}>
@@ -70,7 +70,7 @@ function DocsIndex() {
 function NotFound({ slug }: { slug: string }) {
   return (
     <article className="docs-article">
-      <h1>Page not found</h1>
+      <h1 tabIndex={-1}>Page not found</h1>
       <p>There is no documentation page called <code>{slug}</code>.</p>
       <p><a href="#/docs">Back to the documentation index</a></p>
     </article>
@@ -80,6 +80,8 @@ function NotFound({ slug }: { slug: string }) {
 function DocArticle({ page, anchor }: { page: DocPage; anchor: string }) {
   const doc = useMemo(() => renderMarkdown(page.body, { knownSlugs: DOC_SLUGS }), [page]);
   const at = DOC_PAGES.findIndex((p) => p.slug === page.slug);
+  // Open the contents list on wide screens; on a phone it would push the page itself below the fold.
+  const [tocOpen] = useState(() => !window.matchMedia?.('(max-width: 720px)').matches);
   const prev = DOC_PAGES[at - 1];
   const next = DOC_PAGES[at + 1];
 
@@ -94,9 +96,9 @@ function DocArticle({ page, anchor }: { page: DocPage; anchor: string }) {
   return (
     <article className="docs-article">
       <div className="docs-eyebrow">{page.group}</div>
-      <h1>{page.title}</h1>
-      {doc.outline.length >= 2 && (
-        <details className="docs-toc" open>
+      <h1 tabIndex={-1}>{page.title}</h1>
+      {doc.outline.length >= 3 && (
+        <details className="docs-toc" open={tocOpen}>
           <summary>On this page</summary>
           <nav aria-label="On this page">
             {doc.outline.map((o) => {
@@ -119,12 +121,32 @@ function DocArticle({ page, anchor }: { page: DocPage; anchor: string }) {
 
 export function DocsPage({ hash }: { hash: string }) {
   const [, , rawSlug = '', rawAnchor = ''] = hash.split('/');
-  const slug = safeDecode(rawSlug);
-  const anchor = safeDecode(rawAnchor);
+  const slug = safeDecode(rawSlug.split('?')[0]!).toLowerCase();
+  const anchor = safeDecode(rawAnchor.split('?')[0]!);
   const page = slug ? DOC_PAGES.find((p) => p.slug === slug) : undefined;
+
+  // The sticky header wraps to a different height on narrow screens: publish it so headings and the sidebar clear it.
+  useEffect(() => {
+    const top = document.querySelector<HTMLElement>('.top');
+    if (!top) return;
+    const set = () => { document.documentElement.style.setProperty('--header-h', `${top.offsetHeight}px`); };
+    set();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(set);
+    ro.observe(top);
+    return () => { ro.disconnect(); document.documentElement.style.removeProperty('--header-h'); };
+  }, []);
+
+  // After moving to another docs page (Next, Previous, the sidebar) the clicked link is gone: put keyboard and screen-reader focus on the new h1.
+  const shown = useRef<string | null>(null);
+  useEffect(() => {
+    if (shown.current !== null && shown.current !== slug) document.querySelector<HTMLElement>('.docs-article h1')?.focus({ preventScroll: true });
+    shown.current = slug;
+  }, [slug]);
+
   return (
     <div className="docs">
-      <Sidebar current={page ? page.slug : ''} />
+      <Sidebar current={page ? page.slug : ''} onIndex={!slug} />
       {!slug ? <DocsIndex /> : page ? <DocArticle key={page.slug} page={page} anchor={anchor} /> : <NotFound slug={slug.slice(0, 80)} />}
     </div>
   );

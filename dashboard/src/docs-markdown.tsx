@@ -189,7 +189,12 @@ function closer(s: string, from: number, open: string, close: string): number {
 
 interface Ctx { known?: ReadonlySet<string> }
 
+/** Longest run of inline markdown that is parsed. The scanners below are quadratic in the worst case (an unmatched `*` or `[` rescans
+ *  the rest of the run), so anything longer, which only hostile input produces, is shown as plain text. */
+const MAX_INLINE = 5000;
+
 function inline(s: string, ctx: Ctx, key: string, depth = 0): ReactNode[] {
+  if (s.length > MAX_INLINE) return [s];
   const nodes: ReactNode[] = [];
   let buf = '';
   let seq = 0;
@@ -248,7 +253,7 @@ function inline(s: string, ctx: Ctx, key: string, depth = 0): ReactNode[] {
 /* ---------- block renderer ---------- */
 const COPY_LANGS = new Set(['bash', 'sh', 'shell', 'zsh', 'console']);
 
-function CopyButton({ text }: { text: string }) {
+function CopyButton({ text, label }: { text: string; label: string }) {
   const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle');
   useEffect(() => {
     if (state === 'idle') return;
@@ -266,7 +271,7 @@ function CopyButton({ text }: { text: string }) {
   };
   return (
     <>
-      <button type="button" className="btn small md-copy" onClick={() => { void copy(); }}>{state === 'copied' ? 'Copied' : state === 'failed' ? 'Copy failed' : 'Copy'}</button>
+      <button type="button" className="btn small md-copy" aria-label={`Copy ${label} code`} onClick={() => { void copy(); }}>{state === 'copied' ? 'Copied' : state === 'failed' ? 'Copy failed' : 'Copy'}</button>
       <span className="sr" role="status">{state === 'copied' ? 'Copied to clipboard' : state === 'failed' ? 'Could not copy; select the text instead' : ''}</span>
     </>
   );
@@ -277,7 +282,7 @@ function CodeBlock({ lang, text }: { lang: string; text: string }) {
   return (
     <div className="md-code">
       {(lang || copyable) && (
-        <div className="md-code-h"><span className="small muted">{lang}</span>{copyable && <CopyButton text={text} />}</div>
+        <div className="md-code-h"><span className="small muted">{lang}</span>{copyable && <CopyButton text={text} label={lang} />}</div>
       )}
       <pre tabIndex={0}><code>{text}</code></pre>
     </div>

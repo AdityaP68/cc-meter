@@ -1,10 +1,12 @@
-import { StrictMode, useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, StrictMode, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { get, post, type Check, type Facets, type Filters } from './api';
 import { makeModelColors, ModelColors } from './charts';
-import { DocsPage } from './docs';
 import { HealthPage, FilterBar, RollupsPage, SessionPage, SessionsPage, useApi } from './pages';
 import './styles.css';
+
+// The docs (markdown included) load as their own chunk on the first visit to #/docs; they make no /api call.
+const DocsPage = lazy(() => import('./docs').then((m) => ({ default: m.DocsPage })));
 
 const DEFAULT: Filters = { range: '30d', project: '', model: '', source: '' };
 
@@ -105,7 +107,7 @@ function App() {
         {page === 'rollups' && <RollupsPage f={filters} reload={reload} />}
         {page === 'session' && <SessionPage id={arg} reload={reload} />}
         {page === 'health' && <HealthPage reload={reload} />}
-        {page === 'docs' && <DocsPage hash={hash} />}
+        {page === 'docs' && <Suspense fallback={<p className="muted" role="status">Loading…</p>}><DocsPage hash={hash} /></Suspense>}
       </main>
     </ModelColors.Provider>
   );

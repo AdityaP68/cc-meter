@@ -10,7 +10,7 @@ import { loadPricing } from '../core/pricing.js';
 import { recordTranscript } from '../core/record.js';
 import { startServer, type RunningServer } from '../server/index.js';
 import { DOC_PAGES, DOC_SLUGS } from '../dashboard/src/docs-content.ts';
-import { renderMarkdown } from '../dashboard/src/docs-markdown.tsx';
+import { renderMarkdown, resolveHref } from '../dashboard/src/docs-markdown.tsx';
 import { asst, costStateLine, installFixture, tmpDir } from './helpers/util.js';
 
 // DOM smoke test for the SPA: the real server on fixture data, the real App, navigation through its own links.
@@ -215,6 +215,59 @@ describe('dashboard in a DOM', () => {
     expect(errors).toEqual([]);
   });
 
+  it('scrolls to a heading named in the address after the lazy docs chunk loads, and moves focus to the h1 on page change', async () => {
+    const scrolled: string[] = [];
+    const orig = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function (this: Element) { scrolled.push(this.id); };
+    try {
+      const page = DOC_PAGES.find((p) => p.slug === 'overview')!;
+      await go('#/', 'Sessions');
+      await go(`#/docs/${page.slug}`, page.title);
+      const target = root().querySelector<HTMLAnchorElement>('.docs-toc nav a');
+      expect(target, 'overview has a contents list').not.toBeNull();
+      const anchor = target!.getAttribute('href')!.split('/').pop()!;
+      await go(`#/docs/${page.slug}/${anchor}`, page.title);
+      await settle(() => scrolled.length > 0);
+      expect(scrolled).toContain(`d-${anchor}`);
+      const next = root().querySelector<HTMLAnchorElement>('.docs-pn a.next')!;
+      await act(() => { next.click(); });
+      await settle(() => document.activeElement?.tagName === 'H1');
+      expect(document.activeElement?.tagName, 'focus moves to the new page heading').toBe('H1');
+      expect(document.activeElement?.getAttribute('tabindex')).toBe('-1');
+    } finally {
+      Element.prototype.scrollIntoView = orig;
+    }
+    await go('#/', 'Sessions');
+  });
+
+  it('resolves only guide pages and dashboard routes as links', () => {
+    const known = new Set(['costs']);
+    expect(resolveHref('costs.md', known)).toBe('#/docs/costs');
+    expect(resolveHref('./Costs.md#Unpriced', known)).toBe('#/docs/costs/unpriced');
+    expect(resolveHref('nope.md', known)).toBeNull();
+    expect(resolveHref('#/rollups')).toBe('#/rollups');
+    for (const bad of ['javascript:alert(1)', 'https://example.com', '//evil.example', '#frag', '#/a b', '#/"x', 'data:text/html,x', '../x.md', 'a/b.md', '']) {
+      expect(resolveHref(bad), bad).toBeNull();
+    }
+  });
+
+  it('keeps every guide link live and the guide inside the supported subset', async () => {
+    for (const p of DOC_PAGES) {
+      const body = p.body.replace(/^(\s*)(```|~~~)[\s\S]*?^\s*\2.*$/gm, '').replace(/`[^`\n]*`/g, '');
+      const written = (body.match(/\]\(/g) ?? []).length;
+      const host = document.createElement('div');
+      document.body.appendChild(host);
+      const rr = createRoot(host);
+      await act(() => { rr.render(createElement(Fragment, null, ...renderMarkdown(p.body, { knownSlugs: DOC_SLUGS }).nodes)); });
+      expect(host.querySelectorAll('a').length, `${p.slug}: every [text](target) resolves to a guide page or dashboard route`).toBe(written);
+      expect(body, `${p.slug}: no HTML tags`).not.toMatch(/<\/?(div|span|a|b|i|br|img|details|summary|table|p)[\s>/]/);
+      expect(body, `${p.slug}: no images`).not.toMatch(/!\[/);
+      expect(body, `${p.slug}: no indented list item (nested lists are flattened)`).not.toMatch(/^ {2,}([-*+]|\d+\.) /m);
+      await act(() => { rr.unmount(); });
+      host.remove();
+    }
+  });
+
   it('renders the docs markdown subset as safe React elements', async () => {
     const md = [
       '# Title', '', '## First *section*', 'Some `code` and **bold** text, [a page](costs.md), [a route](#/health), [unknown](nope.md),',
@@ -259,5 +312,21 @@ describe('dashboard in a DOM', () => {
     await act(() => { rr.unmount(); });
     host.remove();
     expect(errors).toEqual([]);
+  });
+
+  it('renders pathological input in bounded time (the inline scanners are quadratic, so long runs are plain text)', () => {
+    const cases: Array<[string, string]> = [
+      ['unmatched emphasis', '*a '.repeat(350_000)],
+      ['unmatched brackets', '['.repeat(500_000)],
+      ['unclosed links', '[a](b '.repeat(150_000)],
+      ['one long list item', `- ${'*a '.repeat(200_000)}`],
+      ['one long table cell', `| h |\n| - |\n| ${'[a](b '.repeat(100_000)} |`],
+    ];
+    for (const [name, md] of cases) {
+      const t = performance.now();
+      const r = renderMarkdown(md);
+      expect(r.nodes.length, name).toBeGreaterThan(0);
+      expect(performance.now() - t, `${name}: milliseconds`).toBeLessThan(3000);
+    }
   });
 });

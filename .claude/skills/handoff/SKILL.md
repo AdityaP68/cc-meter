@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Update docs/handoff.md (and current/status) so the next session can resume sessionscope work with no manual context. Use at the end of a task or session, after a milestone, when the context guard asks, or when the user says hand off, wrap up, or we'll continue later.
+description: Update docs/handoff.md (and current/status) so the next session can resume agent-lens work with no manual context. Use at the end of a task or session, after a milestone, when the context guard asks, or when the user says hand off, wrap up, or we'll continue later.
 ---
 
 # Hand off

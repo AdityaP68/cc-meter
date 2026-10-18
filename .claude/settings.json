@@ -25,8 +25,8 @@
       "Bash(git log:*)",
       "Bash(git push origin main)",
       "Bash(git show:*)",
-      "Bash(sessionscope report:*)",
-      "Bash(sessionscope doctor:*)"
+      "Bash(agent-lens report:*)",
+      "Bash(agent-lens doctor:*)"
     ],
     "deny": [
       "Bash(npm publish:*)",

@@ -1,12 +1,12 @@
 {
-  "name": "sessionscope",
+  "name": "agent-lens",
   "description": "Local-first usage, cost and quality tracking for Claude Code",
-  "owner": { "name": "sessionscope contributors" },
+  "owner": { "name": "agent-lens contributors" },
   "plugins": [
     {
-      "name": "sessionscope",
+      "name": "agent-lens",
       "source": "./plugin",
-      "description": "Records token usage, cost and model switches for every Claude Code session into ~/.sessionscope; /sessionscope opens the local dashboard."
+      "description": "Records token usage, cost and model switches for every Claude Code session into ~/.agent-lens; /agent-lens opens the local dashboard."
     }
   ]
 }

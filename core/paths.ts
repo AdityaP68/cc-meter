@@ -3,24 +3,30 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const DB_NAME = 'sessionscope.db';
-const LEGACY_DB_NAME = 'ccmeter.db';
+const DB_NAME = 'agent-lens.db';
+/** Earlier names of this tool (ccmeter, then sessionscope): newest first. Read as fallbacks, never deleted. */
+const LEGACY = [
+  { dir: '.sessionscope', db: 'sessionscope.db' },
+  { dir: '.ccmeter', db: 'ccmeter.db' },
+];
+const ENV_HOMES = ['AGENT_LENS_HOME', 'SESSIONSCOPE_HOME', 'CCMETER_HOME'];
 
-/** The folder this tool was called before the rename to sessionscope (2026-10-19). Read as a fallback, never deleted. */
-export function legacyHome(): string {
-  return path.join(os.homedir(), '.ccmeter');
+const envHome = (): string | undefined => ENV_HOMES.map((k) => process.env[k]).find(Boolean);
+
+/** The newest earlier folder that exists (~/.sessionscope, then ~/.ccmeter), if any. */
+export function legacyHome(): string | undefined {
+  return LEGACY.map((l) => path.join(os.homedir(), l.dir)).find((d) => fs.existsSync(d));
 }
 
 /**
- * Where sessionscope keeps its DB and config. Override with SESSIONSCOPE_HOME (used by tests); the old CCMETER_HOME is
- * still honoured. Without either: ~/.sessionscope, or ~/.ccmeter while only that one exists (before `setup` copies it).
+ * Where agent-lens keeps its DB and config. Override with AGENT_LENS_HOME (used by tests); SESSIONSCOPE_HOME and CCMETER_HOME
+ * are still honoured. Without any: ~/.agent-lens, or the newest earlier folder while only that exists (before `setup` copies it).
  */
-export function sessionscopeHome(): string {
-  const env = process.env.SESSIONSCOPE_HOME || process.env.CCMETER_HOME;
+export function agentLensHome(): string {
+  const env = envHome();
   if (env) return env;
-  const fresh = path.join(os.homedir(), '.sessionscope');
-  if (!fs.existsSync(fresh) && fs.existsSync(legacyHome())) return legacyHome();
-  return fresh;
+  const fresh = path.join(os.homedir(), '.agent-lens');
+  return !fs.existsSync(fresh) && legacyHome() ? legacyHome()! : fresh;
 }
 
 /** Claude Code's config dir. Claude Code honours CLAUDE_CONFIG_DIR, so do we. */
@@ -29,10 +35,9 @@ export function claudeHome(): string {
 }
 
 export function dbPath(): string {
-  const home = sessionscopeHome();
-  const fresh = path.join(home, DB_NAME);
-  const legacy = path.join(home, LEGACY_DB_NAME);
-  return !fs.existsSync(fresh) && fs.existsSync(legacy) ? legacy : fresh;
+  const home = agentLensHome();
+  const names = [DB_NAME, ...LEGACY.map((l) => l.db)].map((n) => path.join(home, n));
+  return names.find((f) => fs.existsSync(f)) ?? path.join(home, DB_NAME);
 }
 
 export interface LegacyCopy {
@@ -42,20 +47,21 @@ export interface LegacyCopy {
 }
 
 /**
- * One-time, non-destructive copy of ~/.ccmeter to ~/.sessionscope (database renamed to sessionscope.db). Leaves out what
- * is only valid for a running process (server.json, cache/). Never deletes or edits the old folder, never overwrites.
- * Does nothing when a home is chosen by environment variable.
+ * One-time, non-destructive copy of the newest earlier folder to ~/.agent-lens (database renamed to agent-lens.db). Leaves
+ * out what is only valid for a running process (server.json, cache/). Never deletes or edits the old folder, never
+ * overwrites. Does nothing when a home is chosen by environment variable.
  */
 export function migrateLegacyHome(): LegacyCopy {
-  if (process.env.SESSIONSCOPE_HOME || process.env.CCMETER_HOME) return { status: 'skipped' };
-  const from = legacyHome();
-  const to = path.join(os.homedir(), '.sessionscope');
+  if (envHome()) return { status: 'skipped' };
+  const to = path.join(os.homedir(), '.agent-lens');
   if (fs.existsSync(to)) return { status: 'exists' };
-  if (!fs.existsSync(from)) return { status: 'none' };
+  const from = legacyHome();
+  if (!from) return { status: 'none' };
   fs.mkdirSync(to, { recursive: true });
   for (const e of fs.readdirSync(from, { withFileTypes: true })) {
     if (!e.isFile() || e.name === 'server.json') continue;
-    const name = e.name.startsWith(LEGACY_DB_NAME) ? DB_NAME + e.name.slice(LEGACY_DB_NAME.length) : e.name;
+    const old = LEGACY.find((l) => e.name.startsWith(l.db));
+    const name = old ? DB_NAME + e.name.slice(old.db.length) : e.name;
     fs.copyFileSync(path.join(from, e.name), path.join(to, name));
   }
   return { status: 'copied', from, to };
@@ -68,18 +74,18 @@ export function packageRoot(): string {
     const pj = path.join(dir, 'package.json');
     if (fs.existsSync(pj)) {
       try {
-        if (JSON.parse(fs.readFileSync(pj, 'utf8')).name === 'sessionscope') return dir;
+        if (JSON.parse(fs.readFileSync(pj, 'utf8')).name === 'agent-lens') return dir;
       } catch {
         /* keep walking */
       }
     }
     dir = path.dirname(dir);
   }
-  throw new Error('sessionscope package root not found');
+  throw new Error('agent-lens package root not found');
 }
 
 export function ensureHome(): string {
-  const home = sessionscopeHome();
+  const home = agentLensHome();
   fs.mkdirSync(home, { recursive: true });
   return home;
 }

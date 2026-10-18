@@ -12,9 +12,9 @@ import { buildSession, totalTokens, type SessionSummary } from './session.js';
 export const RECORDER_VERSION = 3;
 
 export const SOURCE_CLAUDE_CODE = 'claude-code';
-export const SOURCE_JUDGE = 'sessionscope-judge';
+export const SOURCE_JUDGE = 'agent-lens-judge';
 /** Tag of the same thing before the rename; rows and environments that still carry it count as judge runs. */
-const LEGACY_SOURCE_JUDGE = 'ccmeter-judge';
+const LEGACY_SOURCE_JUDGES = ['sessionscope-judge', 'ccmeter-judge'];
 
 export type RecordStatus = 'recorded' | 'unchanged' | 'empty' | 'missing';
 
@@ -27,7 +27,7 @@ export interface RecordResult {
 export interface RecordOptions {
   /** Recompute even if the transcript is unchanged. */
   force?: boolean;
-  /** Override the source tag (otherwise: sessionscope-judge when SESSIONSCOPE_JUDGE_RUNNING is set, else claude-code). */
+  /** Override the source tag (otherwise: agent-lens-judge when AGENT_LENS_JUDGE_RUNNING is set, else claude-code). */
   source?: string;
 }
 
@@ -90,7 +90,7 @@ export function parseSession(transcriptPath: string, table: PriceTable, opts: { 
 export function resolveSource(existing: string | undefined, explicit?: string): string {
   if (explicit) return explicit;
   // Sticky: once a session is known to be a judge run it stays one, even if a later hook lacks the env var.
-  if (process.env.SESSIONSCOPE_JUDGE_RUNNING || process.env.CCMETER_JUDGE_RUNNING || existing === SOURCE_JUDGE || existing === LEGACY_SOURCE_JUDGE) return SOURCE_JUDGE;
+  if (process.env.AGENT_LENS_JUDGE_RUNNING || process.env.SESSIONSCOPE_JUDGE_RUNNING || process.env.CCMETER_JUDGE_RUNNING || existing === SOURCE_JUDGE || (existing !== undefined && LEGACY_SOURCE_JUDGES.includes(existing))) return SOURCE_JUDGE;
   return existing ?? SOURCE_CLAUDE_CODE;
 }
 

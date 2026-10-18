@@ -3,8 +3,8 @@
 **Updated:** 2026-10-15 · Newest first.
 
 ## 2026-10-15 — Live experiments are contaminated by the installed plugin
-Testing hook output variants with `claude -p --settings …` returned the *installed* sessionscope hook's text for every
-variant. Disable it per run: `--settings '{"enabledPlugins":{"sessionscope@sessionscope":false}, …}'`. Rule: plugin.md.
+Testing hook output variants with `claude -p --settings …` returned the *installed* agent-lens hook's text for every
+variant. Disable it per run: `--settings '{"enabledPlugins":{"agent-lens@agent-lens":false}, …}'`. Rule: plugin.md.
 
 ## 2026-10-14 — An aggregate match rate can hide a whole class of failures
 "517 of 521 sessions match Claude Code" was almost entirely Sonnet sessions; every Opus session mismatched.
@@ -28,7 +28,7 @@ usage. Last copy always had the maximum output in 5,102 groups.
 
 ## 2026-10-14 — Verify prices against Claude Code's numbers, not memory
 Fitting `costUSD` exposed separate 5m/1h cache-write rates; an all-5m session reproduced Opus 5.5 only at the 5m rate.
-`sessionscope doctor --verify-pricing` is the check.
+`agent-lens doctor --verify-pricing` is the check.
 
 ## 2026-10-14 — Measure context cost of plugin components; flags are not free
 A skill with `disable-model-invocation: true` still costs ≈ 39 tokens per session (`claude plugin details`).

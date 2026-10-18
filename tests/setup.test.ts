@@ -21,7 +21,7 @@ describe('setup --statusline', () => {
     fs.writeFileSync(file, original);
     expect(installStatusline()).toBe(false);
     expect(fs.readFileSync(file, 'utf8')).toBe(original);
-    expect(fs.existsSync(`${file}.sessionscope-backup`)).toBe(false);
+    expect(fs.existsSync(`${file}.agent-lens-backup`)).toBe(false);
   });
 
   it('refuses a settings.json that is valid JSON but not an object', () => {
@@ -33,24 +33,24 @@ describe('setup --statusline', () => {
   it('adds the statusLine to a valid file, keeps the rest and leaves a backup', () => {
     fs.writeFileSync(file, JSON.stringify({ model: 'x' }));
     expect(installStatusline()).toBe(true);
-    expect(JSON.parse(fs.readFileSync(file, 'utf8'))).toEqual({ model: 'x', statusLine: { type: 'command', command: 'sessionscope statusline' } });
-    expect(JSON.parse(fs.readFileSync(`${file}.sessionscope-backup`, 'utf8'))).toEqual({ model: 'x' });
+    expect(JSON.parse(fs.readFileSync(file, 'utf8'))).toEqual({ model: 'x', statusLine: { type: 'command', command: 'agent-lens statusline' } });
+    expect(JSON.parse(fs.readFileSync(`${file}.agent-lens-backup`, 'utf8'))).toEqual({ model: 'x' });
   });
 
   it('creates the file when there is none, and leaves an existing statusLine alone', () => {
     expect(installStatusline()).toBe(true);
-    expect(JSON.parse(fs.readFileSync(file, 'utf8')).statusLine.command).toBe('sessionscope statusline');
+    expect(JSON.parse(fs.readFileSync(file, 'utf8')).statusLine.command).toBe('agent-lens statusline');
     fs.writeFileSync(file, JSON.stringify({ statusLine: { type: 'command', command: 'mine' } }));
     expect(installStatusline()).toBe(true);
     expect(JSON.parse(fs.readFileSync(file, 'utf8')).statusLine.command).toBe('mine');
   });
 
-  it('replaces the pre-rename statusLine command and backs the file up', () => {
-    fs.writeFileSync(file, JSON.stringify({ statusLine: { type: 'command', command: 'ccmeter statusline' } }));
+  it.each(['ccmeter statusline', 'sessionscope statusline'])('replaces the status line command %s from an earlier name and backs the file up', (old) => {
+    fs.writeFileSync(file, JSON.stringify({ statusLine: { type: 'command', command: old } }));
     expect(hasLegacyStatusline()).toBe(true);
     expect(installStatusline()).toBe(true);
-    expect(JSON.parse(fs.readFileSync(file, 'utf8')).statusLine.command).toBe('sessionscope statusline');
-    expect(JSON.parse(fs.readFileSync(`${file}.sessionscope-backup`, 'utf8')).statusLine.command).toBe('ccmeter statusline');
+    expect(JSON.parse(fs.readFileSync(file, 'utf8')).statusLine.command).toBe('agent-lens statusline');
+    expect(JSON.parse(fs.readFileSync(`${file}.agent-lens-backup`, 'utf8')).statusLine.command).toBe(old);
     expect(hasLegacyStatusline()).toBe(false);
   });
 });

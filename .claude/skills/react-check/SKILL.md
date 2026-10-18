@@ -1,13 +1,13 @@
 ---
 name: react-check
-description: Verify and review sessionscope's React dashboard (or another React 18/19 single-page app with a client-side router). Serves it on isolated data, clicks through every route looking for crashes and blank pages, greps for React pitfalls (expression-bodied or async effects, missing keys, missing cleanups, stale state across route params), checks dark, light and 375 px layouts, and reviews code quality, organisation, performance and the accuracy of displayed numbers. Use after UI changes, before a release, when a page goes blank or breaks after navigation, or when asked to check, test or review a React frontend. Not for React Native; for SSR frameworks only the browser steps apply.
+description: Verify and review agent-lens's React dashboard (or another React 18/19 single-page app with a client-side router). Serves it on isolated data, clicks through every route looking for crashes and blank pages, greps for React pitfalls (expression-bodied or async effects, missing keys, missing cleanups, stale state across route params), checks dark, light and 375 px layouts, and reviews code quality, organisation, performance and the accuracy of displayed numbers. Use after UI changes, before a release, when a page goes blank or breaks after navigation, or when asked to check, test or review a React frontend. Not for React Native; for SSR frameworks only the browser steps apply.
 ---
 
 # React check
 
 Helpers live next to this file: `static-check.mjs`, `sweep.js`, `instrument-destroy.mjs` (Node ≥ 18, no
-dependencies). In sessionscope, step 1 is `dashboard-check` steps 1–2 (a copy of the DB in a temporary
-`SESSIONSCOPE_HOME`; never `~/.sessionscope`); elsewhere, use the project's own serving steps when it has them. Report every finding as `file:line`, severity, evidence; label anything you
+dependencies). In agent-lens, step 1 is `dashboard-check` steps 1–2 (a copy of the DB in a temporary
+`AGENT_LENS_HOME`; never `~/.agent-lens`); elsewhere, use the project's own serving steps when it has them. Report every finding as `file:line`, severity, evidence; label anything you
 did not reproduce as unverified.
 
 ## 1. Serve on isolated data
@@ -43,7 +43,7 @@ Run `node .claude/skills/react-check/static-check.mjs dashboard/src` (another ap
 `error` findings must be fixed or justified; `warn`/`info` are candidates to read in context. What it looks for, and why:
 - **Expression-bodied effect** `useEffect(() => window.scrollTo(0, 0), [h])`: the expression is returned as
   the cleanup. React 19 calls it on the next re-run/unmount; `scrollTo` returns a Promise in current Chromium,
-  React threw `destroy is not a function` and unmounted the whole app (sessionscope, 2026-10-15). Always use a block
+  React threw `destroy is not a function` and unmounted the whole app (agent-lens, 2026-10-15). Always use a block
   body. Same for `async` effect callbacks (they return a Promise): call an inner async function.
 - **Missing cleanup**: listeners, intervals, timeouts, observers, sockets or subscriptions without a returned
   cleanup leak and fire after unmount (and twice under StrictMode in dev).
@@ -58,7 +58,7 @@ Run `node .claude/skills/react-check/static-check.mjs dashboard/src` (another ap
 Read by hand as well (no reliable grep): effects that only compute derived state (`useEffect(() => setX(f(y)))`
 → compute during render or `useMemo`); state that duplicates props or server data; conditional hooks; refs
 read during render; error boundaries (is there one per route, so one crash does not blank the whole app?).
-sessionscope enforces the effect-body rule in `tests/dashboard.test.ts`; in another project, propose the same guard.
+agent-lens enforces the effect-body rule in `tests/dashboard.test.ts`; in another project, propose the same guard.
 
 ## 4. Debugging a crash or blank page
 
@@ -108,7 +108,7 @@ to name; types shared with the backend are mirrored deliberately, not copy-drift
 **Accuracy** (numbers the user will trust):
 - Headline totals use the **same filter semantics** as the charts and tables beside them (same time field,
   same WHERE clause, same inclusive/exclusive bounds). Check by summing the chart's series or table for the same
-  window and comparing with the headline; sessionscope once showed a 7-day total one third of its chart's sum.
+  window and comparing with the headline; agent-lens once showed a 7-day total one third of its chart's sum.
 - Unknown is not zero: a missing price, rate or value renders as unknown, never `0` or `$0`.
 - Units, rounding and time zones (day buckets local vs UTC); percentages that should sum to 100 do; totals are
   not computed from a paginated or truncated list; sort orders match their labels.
@@ -116,7 +116,7 @@ to name; types shared with the backend are mirrored deliberately, not copy-drift
 
 ## 7. Optional: DOM tests
 
-A static guard catches one failure mode; a DOM smoke test catches the class. sessionscope has one:
+A static guard catches one failure mode; a DOM smoke test catches the class. agent-lens has one:
 `tests/dashboard-dom.test.ts` (happy-dom; real server on fixtures; clicks every route; `scrollTo` returns a Promise
 as in Chromium; it failed with the 82bf4ae bug reintroduced). Extend it when adding a route. In another project,
 **ask the user before adding dependencies** (each is a network install and a new devDependency): `vitest` (if absent), `happy-dom` or

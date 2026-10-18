@@ -70,7 +70,7 @@ describe('golden fixtures (sanitized real transcripts)', () => {
         // and our price table lands inside the range implied by Claude Code's own costUSD
         expect(r.claudeCode!.cost).toBeGreaterThanOrEqual(r.priceRange!.low - 0.005);
         expect(r.claudeCode!.cost).toBeLessThanOrEqual(r.priceRange!.high + 0.005);
-        expect(r.sessionscope.cost).toBeCloseTo(r.claudeCode!.cost, 5);
+        expect(r.ours.cost).toBeCloseTo(r.claudeCode!.cost, 5);
       }
     }
   });

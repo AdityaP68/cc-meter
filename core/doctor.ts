@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { listSessions } from './aggregate.js';
 import { LATEST_SCHEMA, schemaVersion, type Db } from './db.js';
-import { sessionscopeHome, claudeHome, dbPath } from './paths.js';
+import { agentLensHome, claudeHome, dbPath } from './paths.js';
 import { PARSERS, cmpVersion } from './parser/index.js';
 import { lookupPrice, type PriceTable } from './pricing.js';
 import { listTranscripts, parseSession, transcriptSignature } from './record.js';
@@ -107,17 +107,17 @@ export function runDoctor(db: Db, table: PriceTable, opts: DoctorOptions = {}): 
 
   const partial = db.prepare('SELECT COUNT(*) n, COALESCE(SUM(partial_messages),0) m FROM sessions WHERE partial_messages > 0').get() as { n: number; m: number };
   if (partial.n)
-    add('partial-usage', 'info', `${partial.n} sessions contain ${partial.m} messages with unfinalized usage (output tokens are a lower bound, so cost is understated; the session page shows by how much where Claude Code\'s record covers the session)`, 'Seen in subagent transcripts. Claude Code\'s own total, where recorded, is shown by `sessionscope report --session <id>`. See docs/FORMATS.md.');
+    add('partial-usage', 'info', `${partial.n} sessions contain ${partial.m} messages with unfinalized usage (output tokens are a lower bound, so cost is understated; the session page shows by how much where Claude Code\'s record covers the session)`, 'Seen in subagent transcripts. Claude Code\'s own total, where recorded, is shown by `agent-lens report --session <id>`. See docs/FORMATS.md.');
 
   // 5. unpriced models
   const unpriced = db.prepare('SELECT model, COUNT(*) n, SUM(input + output + cache_write + cache_read) tok FROM messages WHERE priced = 0 GROUP BY model ORDER BY tok DESC').all() as { model: string; n: number; tok: number }[];
   if (unpriced.length) {
     const figures = claudeCodeFigures(listSessions(db, { limit: 1_000_000 }).rows, unpriced.map((u) => u.model)).map((f) =>
       f.withFigure
-        ? `Claude Code's figure for ${f.model}: $${f.costUsd.toFixed(2)} (in ${f.withFigure} of ${f.sessions} session(s); not included in sessionscope's totals)`
+        ? `Claude Code's figure for ${f.model}: $${f.costUsd.toFixed(2)} (in ${f.withFigure} of ${f.sessions} session(s); not included in agent-lens's totals)`
         : `Claude Code recorded no cost for ${f.model} in its ${f.sessions} session(s)`,
     );
-    add('unpriced', 'warn', `Unpriced models (shown as "unpriced", never as $0): ${unpriced.map((u) => u.model).join(', ')}`, `${unpriced.map((u) => `${u.model}: ${u.n} messages / ${u.tok} tokens`).join('; ')}. ${figures.join('. ')}. Add a price to ~/.sessionscope/pricing.json (same shape as pricing.json).`);
+    add('unpriced', 'warn', `Unpriced models (shown as "unpriced", never as $0): ${unpriced.map((u) => u.model).join(', ')}`, `${unpriced.map((u) => `${u.model}: ${u.n} messages / ${u.tok} tokens`).join('; ')}. ${figures.join('. ')}. Add a price to ~/.agent-lens/pricing.json (same shape as pricing.json).`);
     for (const u of unpriced) suggestPrice(db, table, u.model, add);
   }
   else add('unpriced', 'ok', 'Every recorded model has a price');
@@ -143,34 +143,35 @@ export function runDoctor(db: Db, table: PriceTable, opts: DoctorOptions = {}): 
         : unchecked.length
           ? `No Claude Code cost to check the price of ${unchecked.join(', ')}`
           : `Unverified prices for ${listOnly.join(', ')} match Claude Code's own costs`,
-      `${lines.join('; ')}. Only sessions where Claude Code wrote a cost-state entry can be compared. Details: \`sessionscope doctor --verify-pricing\`.`,
+      `${lines.join('; ')}. Only sessions where Claude Code wrote a cost-state entry can be compared. Details: \`agent-lens doctor --verify-pricing\`.`,
     );
   }
-  if (table.rejected.length) add('pricing-override', 'warn', `Ignored entries in ~/.sessionscope/pricing.json: ${table.rejected.join(', ')}`, 'Each model needs finite, non-negative numbers for input, output, cacheRead, cacheWrite5m and cacheWrite1h. Those models stay unpriced (never $0) until fixed.');
+  if (table.rejected.length) add('pricing-override', 'warn', `Ignored entries in ~/.agent-lens/pricing.json: ${table.rejected.join(', ')}`, 'Each model needs finite, non-negative numbers for input, output, cacheRead, cacheWrite5m and cacheWrite1h. Those models stay unpriced (never $0) until fixed.');
   add('pricing', 'ok', `Pricing table ${table.version} (${table.hash}) from ${table.sources.join(' + ')}`);
 
   // 6. hook installation
   if (!opts.skipExternal || opts.pluginList !== undefined) {
     const list = opts.pluginList !== undefined ? opts.pluginList : tryExec('claude', ['plugin', 'list']);
-    const inPlugin = !!list && /sessionscope/i.test(list) && !/sessionscope[^\n]*(disabled|✗)/i.test(list);
+    const inPlugin = !!list && /agent-lens/i.test(list) && !/agent-lens[^\n]*(disabled|✗)/i.test(list);
     let inSettings = false;
     try {
-      inSettings = /sessionscope\s+record/.test(fs.readFileSync(path.join(claudeHome(), 'settings.json'), 'utf8'));
+      inSettings = /agent-lens\s+record/.test(fs.readFileSync(path.join(claudeHome(), 'settings.json'), 'utf8'));
     } catch {
       /* no settings file */
     }
-    if (inPlugin || inSettings) add('hooks', 'ok', `Recorder hooks installed (${inPlugin ? 'plugin sessionscope' : '~/.claude/settings.json'})`);
-    else add('hooks', 'warn', 'Recorder hooks not found: new sessions will not be recorded automatically', 'Run ./install.sh, or `sessionscope record --all` to backfill manually.');
+    if (inPlugin || inSettings) add('hooks', 'ok', `Recorder hooks installed (${inPlugin ? 'plugin agent-lens' : '~/.claude/settings.json'})`);
+    else add('hooks', 'warn', 'Recorder hooks not found: new sessions will not be recorded automatically', 'Run ./install.sh, or `agent-lens record --all` to backfill manually.');
   }
   if (opts.pluginList !== undefined || !opts.skipExternal) {
     const list = opts.pluginList !== undefined ? opts.pluginList : tryExec('claude', ['plugin', 'list']);
-    if (list && /ccmeter@ccmeter/.test(list)) add('legacy-plugin', 'warn', 'The plugin ccmeter@ccmeter (this tool before it was renamed sessionscope) is still installed: its hooks would run next to the new ones', 'Run `sessionscope setup`, which replaces it, or `claude plugin uninstall ccmeter@ccmeter`.');
+    const old = ['sessionscope@sessionscope', 'ccmeter@ccmeter'].filter((n) => list?.includes(n));
+    if (old.length) add('legacy-plugin', 'warn', `The plugin ${old.join(', ')} (an earlier name of this tool) is still installed: its hooks would run next to the new ones`, `Run \`agent-lens setup\`, which replaces it, or \`claude plugin uninstall ${old[0]}\`.`);
   }
-  const cliPath = path.join(sessionscopeHome(), 'cli-path');
+  const cliPath = path.join(agentLensHome(), 'cli-path');
   if (fs.existsSync(cliPath)) {
     const target = fs.readFileSync(cliPath, 'utf8').trim();
     add('cli-path', fs.existsSync(target) ? 'ok' : 'error', fs.existsSync(target) ? `Hook launcher target ${target}` : `Hook launcher points at a missing file: ${target}`, fs.existsSync(target) ? undefined : 'Re-run ./install.sh.');
-  } else add('cli-path', 'info', 'No ~/.sessionscope/cli-path (hooks will rely on `sessionscope` being on PATH)');
+  } else add('cli-path', 'info', 'No ~/.agent-lens/cli-path (hooks will rely on `agent-lens` being on PATH)');
 
   // 7. transcripts on disk that are not recorded yet
   try {
@@ -192,7 +193,7 @@ export function runDoctor(db: Db, table: PriceTable, opts: DoctorOptions = {}): 
       stale ? `${stale} transcript${stale === 1 ? ' is' : 's are'} out of date` : '',
     ].filter(Boolean);
     const skipped = noCalls ? `${noCalls} transcript${noCalls === 1 ? ' has' : 's have'} no API calls (nothing to record)` : '';
-    if (parts.length) add('coverage', 'info', [parts.join(' and '), skipped].filter(Boolean).join('; '), 'Run `sessionscope record --all` to backfill.');
+    if (parts.length) add('coverage', 'info', [parts.join(' and '), skipped].filter(Boolean).join('; '), 'Run `agent-lens record --all` to backfill.');
     else add('coverage', 'ok', `All transcripts with API calls are recorded${skipped ? `; ${skipped}` : ''}`);
   } catch {
     /* no projects dir */
@@ -209,25 +210,25 @@ export function runDoctor(db: Db, table: PriceTable, opts: DoctorOptions = {}): 
       if (!r.claudeCode) continue;
       pairs++;
       if (r.tokensMatch) matched++;
-      else if (r.sessionscope.cost !== null) {
-        const gap = Math.abs(r.sessionscope.cost - r.claudeCode.cost);
-        if (!worst || gap > worst.gap) worst = { id: s.sessionId, ours: r.sessionscope.cost, theirs: r.claudeCode.cost, gap };
+      else if (r.ours.cost !== null) {
+        const gap = Math.abs(r.ours.cost - r.claudeCode.cost);
+        if (!worst || gap > worst.gap) worst = { id: s.sessionId, ours: r.ours.cost, theirs: r.claudeCode.cost, gap };
       }
     }
   }
   if (pairs) {
-    const largest = worst ? ` Largest difference: session ${worst.id} (${r2(worst.ours, worst.theirs)}); see \`sessionscope report --session ${worst.id}\`.` : '';
+    const largest = worst ? ` Largest difference: session ${worst.id} (${r2(worst.ours, worst.theirs)}); see \`agent-lens report --session ${worst.id}\`.` : '';
     add(
       'reconcile',
       matched === pairs ? 'ok' : 'info',
       `Token totals equal Claude Code's own cost-state for ${matched} of ${pairs} (session, model) pairs`,
-      matched === pairs ? undefined : `A difference means one side sees calls the other does not: Claude Code can bill calls it never writes as messages, and its cost entry covers only the last process of a session resumed several times (then sessionscope's total, from the whole transcript, is the larger and complete one). See docs/FORMATS.md.${largest}`,
+      matched === pairs ? undefined : `A difference means one side sees calls the other does not: Claude Code can bill calls it never writes as messages, and its cost entry covers only the last process of a session resumed several times (then agent-lens's total, from the whole transcript, is the larger and complete one). See docs/FORMATS.md.${largest}`,
     );
   }
   return checks;
 }
 
-const r2 = (ours: number, theirs: number): string => `sessionscope $${ours.toFixed(2)}, Claude Code $${theirs.toFixed(2)}`;
+const r2 = (ours: number, theirs: number): string => `agent-lens $${ours.toFixed(2)}, Claude Code $${theirs.toFixed(2)}`;
 
 export interface PricingVerifyRow {
   model: string;
@@ -238,7 +239,7 @@ export interface PricingVerifyRow {
   consistent: number;
   /** Largest amount (USD) by which a Claude Code cost fell outside the predicted range. */
   maxOutsideUsd: number;
-  /** Pairs whose token counts equal sessionscope's, and the largest |sessionscope cost - Claude Code cost| among them. */
+  /** Pairs whose token counts equal agent-lens's, and the largest |agent-lens cost - Claude Code cost| among them. */
   exactTokenPairs: number;
   exactMaxAbsErrUsd: number;
 }
@@ -263,9 +264,9 @@ export function verifyPricing(db: Db, table: PriceTable): PricingVerifyRow[] {
       const outside = Math.max(r.priceRange.low - r.claudeCode.cost, r.claudeCode.cost - r.priceRange.high, 0);
       if (outside <= 0.005) cur.consistent++;
       cur.maxOutsideUsd = Math.max(cur.maxOutsideUsd, outside);
-      if (r.tokensMatch && r.sessionscope.cost !== null) {
+      if (r.tokensMatch && r.ours.cost !== null) {
         cur.exactTokenPairs++;
-        cur.exactMaxAbsErrUsd = Math.max(cur.exactMaxAbsErrUsd, Math.abs(r.sessionscope.cost - r.claudeCode.cost));
+        cur.exactMaxAbsErrUsd = Math.max(cur.exactMaxAbsErrUsd, Math.abs(r.ours.cost - r.claudeCode.cost));
       }
       acc.set(r.model, cur);
     }
@@ -283,7 +284,7 @@ function suggestPrice(db: Db, table: PriceTable, model: string, add: (id: string
     .map((u) => ({ input: u!.inputTokens, output: u!.outputTokens, cacheRead: u!.cacheReadInputTokens, cacheWrite: u!.cacheCreationInputTokens, webSearch: u!.webSearchRequests, costUsd: u!.costUSD }));
   const r = deriveRates(samples, table.webSearchPerRequest);
   if (!r.ok) {
-    add(`derived-price:${model}`, 'info', `No price can be derived for ${model} yet`, `${r.reason}. Add its published price to ~/.sessionscope/pricing.json instead.`);
+    add(`derived-price:${model}`, 'info', `No price can be derived for ${model} yet`, `${r.reason}. Add its published price to ~/.agent-lens/pricing.json instead.`);
     return;
   }
   const w = sig4(r.rates.cacheWrite);
@@ -292,7 +293,7 @@ function suggestPrice(db: Db, table: PriceTable, model: string, add: (id: string
     `derived-price:${model}`,
     'info',
     `Suggested price for ${model}, derived from Claude Code's own figures`,
-    `Fitted on ${r.samples} sessions; largest error $${r.maxAbsErrUsd.toFixed(4)} (${(r.maxRelErr * 100).toFixed(2)}%). Claude Code does not split cache writes by TTL, so both write rates get one blended value; prefer the published price when it exists. To use it, add this under "models" in ~/.sessionscope/pricing.json: ${JSON.stringify(snippet)}`,
+    `Fitted on ${r.samples} sessions; largest error $${r.maxAbsErrUsd.toFixed(4)} (${(r.maxRelErr * 100).toFixed(2)}%). Claude Code does not split cache writes by TTL, so both write rates get one blended value; prefer the published price when it exists. To use it, add this under "models" in ~/.agent-lens/pricing.json: ${JSON.stringify(snippet)}`,
   );
 }
 

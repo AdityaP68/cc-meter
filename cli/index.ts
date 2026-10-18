@@ -4,19 +4,19 @@ import path from 'node:path';
 import { packageRoot } from '../core/paths.js';
 import { parseArgs } from './args.js';
 
-const HELP = `sessionscope — local-first usage and cost tracker for Claude Code
+const HELP = `agent-lens — local-first usage and cost tracker for Claude Code
 
-  sessionscope record [--all | --transcript <file> | --session <id>] [--force]
-        Record sessions into ~/.sessionscope. With no flags it reads a Claude Code hook payload on stdin (silent).
-  sessionscope report [--session <id>] [--by day|project|model] [--since 7d] [--project p] [--model m] [--limit n] [--json]
-  sessionscope doctor [--verify-pricing] [--json]
-  sessionscope export [--format json|csv] [--messages] [--out file]
-  sessionscope serve [--port n] [--open] [--ensure] [--stop]     local dashboard on 127.0.0.1
-  sessionscope statusline                                         Claude Code statusLine command (reads JSON on stdin)
-  sessionscope setup [--no-backfill] [--statusline] [--uninstall]   register the plugin, create ~/.sessionscope, backfill history
-  sessionscope review <session-id>                                (milestone 3, not implemented)
+  agent-lens record [--all | --transcript <file> | --session <id>] [--force]
+        Record sessions into ~/.agent-lens. With no flags it reads a Claude Code hook payload on stdin (silent).
+  agent-lens report [--session <id>] [--by day|project|model] [--since 7d] [--project p] [--model m] [--limit n] [--json]
+  agent-lens doctor [--verify-pricing] [--json]
+  agent-lens export [--format json|csv] [--messages] [--out file]
+  agent-lens serve [--port n] [--open] [--ensure] [--stop]     local dashboard on 127.0.0.1
+  agent-lens statusline                                         Claude Code statusLine command (reads JSON on stdin)
+  agent-lens setup [--no-backfill] [--statusline] [--uninstall]   register the plugin, create ~/.agent-lens, backfill history
+  agent-lens review <session-id>                                (milestone 3, not implemented)
 
-Everything is local: reads ~/.claude, writes ~/.sessionscope. No network calls.`;
+Everything is local: reads ~/.claude, writes ~/.agent-lens. No network calls.`;
 
 async function main(): Promise<number> {
   const argv = process.argv.slice(2);
@@ -38,7 +38,7 @@ async function main(): Promise<number> {
     case 'setup':
       return (await import('./commands/setup.js')).cmdSetup(args);
     case 'review':
-      console.error('sessionscope review is milestone 3 and is not implemented yet. See docs/ARCHITECTURE.md.');
+      console.error('agent-lens review is milestone 3 and is not implemented yet. See docs/ARCHITECTURE.md.');
       return 1;
     case '--version':
     case 'version':

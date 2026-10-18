@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { sessionscopeHome, packageRoot } from './paths.js';
+import { agentLensHome, packageRoot } from './paths.js';
 
 export interface ModelPrice {
   input: number;
@@ -76,7 +76,7 @@ export function loadPricing(opts: { overridePath?: string | null } = {}): PriceT
   const t = readTable(base);
   if (!t?.models) throw new Error(`pricing table unreadable: ${base}`);
   const models: Record<string, ModelPrice> = { ...t.models };
-  const overridePath = opts.overridePath === undefined ? path.join(sessionscopeHome(), 'pricing.json') : opts.overridePath;
+  const overridePath = opts.overridePath === undefined ? path.join(agentLensHome(), 'pricing.json') : opts.overridePath;
   let webSearchPerRequest = t.webSearchPerRequest ?? 0.01;
   const rejected: string[] = [];
   if (overridePath && fs.existsSync(overridePath)) {

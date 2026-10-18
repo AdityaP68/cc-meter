@@ -18,7 +18,7 @@ export interface Turn { turn: number; ts: string | null; costUsd: number; sidech
 export interface EventRow { kind: 'model_switch' | 'compaction'; ts: string | null; turn: number | null; fromModel: string | null; toModel: string | null; detail: Record<string, number | string | null> | null }
 export interface Recon {
   model: string;
-  sessionscope: { input: number; output: number; cacheWrite: number; cacheRead: number; cost: number };
+  ours: { input: number; output: number; cacheWrite: number; cacheRead: number; cost: number };
   claudeCode: { input: number; output: number; cacheWrite: number; cacheRead: number; cost: number } | null;
   delta: { input: number; output: number; cacheWrite: number; cacheRead: number } | null;
   tokensMatch: boolean;
@@ -59,7 +59,7 @@ export async function get<T>(path: string): Promise<T> {
 }
 
 export async function post(path: string): Promise<unknown> {
-  const r = await fetch(path, { method: 'POST', headers: { 'x-sessionscope': '1' } });
+  const r = await fetch(path, { method: 'POST', headers: { 'x-agent-lens': '1' } });
   if (!r.ok) throw new Error(`${path}: ${r.status}`);
   return r.json();
 }

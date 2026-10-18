@@ -2,7 +2,7 @@
 
 **Status:** accepted 2026-10-14
 
-**Decision.** A model missing from `pricing.json` (plus the user's `~/.sessionscope/pricing.json`) costs `NULL`, is
+**Decision.** A model missing from `pricing.json` (plus the user's `~/.agent-lens/pricing.json`) costs `NULL`, is
 excluded from dollar totals and shown as "+ unpriced". Each price has `basis: verified` (reproduces Claude
-Code's own `costUSD`, `sessionscope doctor --verify-pricing`) or `list` (published price, unchecked). Cache writes are
+Code's own `costUSD`, `agent-lens doctor --verify-pricing`) or `list` (published price, unchecked). Cache writes are
 priced by TTL (5m 1.25×, 1h 2× input); Claude Code's main thread uses 1h, subagents 5m (observed).

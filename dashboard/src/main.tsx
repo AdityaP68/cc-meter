@@ -35,9 +35,9 @@ function useHash(): string {
 
 function App() {
   const hash = useHash();
-  const [filters, setFilters] = useState<Filters>(() => load('sessionscope.filters', DEFAULT));
+  const [filters, setFilters] = useState<Filters>(() => load('agent-lens.filters', DEFAULT));
   const [reload, setReload] = useState(0);
-  const [theme, setTheme] = useState<string>(() => load<{ t: string }>('sessionscope.theme', { t: '' }).t);
+  const [theme, setTheme] = useState<string>(() => load<{ t: string }>('agent-lens.theme', { t: '' }).t);
   const [busy, setBusy] = useState(false);
   const facets = useApi<Facets>('/api/facets', [reload]);
   const doctor = useApi<{ checks: Check[] }>('/api/doctor', [reload]);
@@ -45,11 +45,11 @@ function App() {
   // Effects use block bodies: an effect's return value is its cleanup, and window.scrollTo returns a Promise in
   // current Chromium, so `() => window.scrollTo(0, 0)` made React call a Promise on the next route and unmount the app.
   useEffect(() => { window.scrollTo(0, 0); }, [hash]);
-  useEffect(() => { save('sessionscope.filters', filters); }, [filters]);
+  useEffect(() => { save('agent-lens.filters', filters); }, [filters]);
   useEffect(() => {
     if (theme) document.documentElement.dataset.theme = theme;
     else delete document.documentElement.dataset.theme;
-    save('sessionscope.theme', { t: theme });
+    save('agent-lens.theme', { t: theme });
   }, [theme]);
 
   const colors = useMemo(() => makeModelColors(facets.data?.models ?? []), [facets.data]);
@@ -74,7 +74,7 @@ function App() {
     <ModelColors.Provider value={colors}>
       <header className="top">
         <div className="top-in">
-          <a className="brand" href="#/">sessionscope</a>
+          <a className="brand" href="#/">agent-lens</a>
           <nav aria-label="Pages">
             <a href="#/" aria-current={page === 'sessions' || page === 'session' ? 'page' : undefined}>Sessions</a>
             <a href="#/rollups" aria-current={page === 'rollups' ? 'page' : undefined}>Rollups</a>
@@ -91,7 +91,7 @@ function App() {
         {unpriced.length > 0 && (
           <div className="banner warn" role="status">
             <b>⚠ No price for {unpriced.join(', ')}.</b> Costs for {unpriced.length === 1 ? 'this model are' : 'these models are'} left out of every total (never counted as $0).
-            {' '}Add a price to <code>~/.sessionscope/pricing.json</code> (same shape as <code>pricing.json</code>), or run <code>sessionscope doctor</code> for details and a suggested price. {page !== 'health' && <a href="#/health">Details</a>}
+            {' '}Add a price to <code>~/.agent-lens/pricing.json</code> (same shape as <code>pricing.json</code>), or run <code>agent-lens doctor</code> for details and a suggested price. {page !== 'health' && <a href="#/health">Details</a>}
           </div>
         )}
         {otherIssues.length > 0 && page !== 'health' && (

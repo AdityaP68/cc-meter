@@ -57,7 +57,7 @@ describe('cost math', () => {
 });
 
 describe('price table overrides', () => {
-  it('merges ~/.sessionscope/pricing.json over the shipped table and changes the hash', () => {
+  it('merges ~/.agent-lens/pricing.json over the shipped table and changes the hash', () => {
     const dir = tmpDir();
     const file = path.join(dir, 'pricing.json');
     fs.writeFileSync(file, JSON.stringify({ models: { 'claude-mystery-9': { input: 1, output: 2, cacheRead: 0.1, cacheWrite5m: 1.25, cacheWrite1h: 2 } } }));

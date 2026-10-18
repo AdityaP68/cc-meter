@@ -1,6 +1,6 @@
 # 0010 — Rename ccmeter to sessionscope
 
-**Status:** accepted 2026-10-19 (owner).
+**Status:** accepted 2026-10-19 (owner); the name was replaced by agent-lens hours later ([0011](0011-rename-to-agent-lens.md)). The fallback mechanism stands.
 
 **Context.** "ccmeter" names one agent (cc = Claude Code) and a cost meter; the owner wants Copilot and other agents
 supported later, and quality/review features beyond cost. Free on npm, PyPI and crates.io on 2026-10-19; trademark not checked.

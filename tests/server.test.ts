@@ -27,7 +27,7 @@ const json = async (p: string) => JSON.parse((await req('GET', p)).body);
 beforeAll(async () => {
   const claude = tmpDir('claude-');
   process.env.CLAUDE_CONFIG_DIR = claude;
-  process.env.SESSIONSCOPE_HOME = tmpDir();
+  process.env.AGENT_LENS_HOME = tmpDir();
   const db = openDb(':memory:');
   const table = loadPricing({ overridePath: null });
   recordTranscript(db, table, installFixture('cc-2.1.28x/multi-model-compaction.jsonl', claude, '-proj-a'));
@@ -40,7 +40,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await srv.close();
   delete process.env.CLAUDE_CONFIG_DIR;
-  delete process.env.SESSIONSCOPE_HOME;
+  delete process.env.AGENT_LENS_HOME;
 });
 
 describe('dashboard server', () => {
@@ -51,14 +51,14 @@ describe('dashboard server', () => {
   });
 
   it('answers health with the app id', async () => {
-    expect(await json('/api/health')).toMatchObject({ app: 'sessionscope', ok: true });
+    expect(await json('/api/health')).toMatchObject({ app: 'agent-lens', ok: true });
   });
 
   it('rejects foreign Host headers (DNS rebinding) and cross-site POSTs', async () => {
     expect((await req('GET', '/api/health', { Host: 'evil.example' })).status).toBe(403);
     expect((await req('GET', '/api/health', { Host: `evil.example:${srv.port}` })).status).toBe(403);
     expect((await req('POST', '/api/refresh')).status).toBe(403);
-    expect((await req('POST', '/api/refresh', { 'x-sessionscope': '1' })).status).toBe(200);
+    expect((await req('POST', '/api/refresh', { 'x-agent-lens': '1' })).status).toBe(200);
     expect((await req('DELETE', '/api/sessions/x')).status).toBe(405);
   });
 
@@ -102,7 +102,7 @@ describe('dashboard server', () => {
 
   it('filters by model, project and source', async () => {
     expect((await json('/api/sessions?project=-nope')).total).toBe(0);
-    expect((await json('/api/sessions?source=sessionscope-judge')).total).toBe(0);
+    expect((await json('/api/sessions?source=agent-lens-judge')).total).toBe(0);
     expect((await json('/api/sessions?model=claude-opus-5-5')).total).toBe(1);
     expect((await req('GET', '/api/rollups?by=bogus')).status).toBe(400);
     expect((await req('GET', '/api/sessions/unknown-id')).status).toBe(404);

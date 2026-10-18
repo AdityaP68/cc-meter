@@ -1,5 +1,6 @@
 import { StrictMode, useCallback, useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { Brand } from './brand';
 import { get, post, type Check, type Facets, type Filters } from './api';
 import { makeModelColors, ModelColors } from './charts';
 import { HealthPage, FilterBar, RollupsPage, SessionPage, SessionsPage, useApi } from './pages';
@@ -74,14 +75,14 @@ function App() {
     <ModelColors.Provider value={colors}>
       <header className="top">
         <div className="top-in">
-          <a className="brand" href="#/">agent-lens</a>
+          <Brand />
           <nav aria-label="Pages">
             <a href="#/" aria-current={page === 'sessions' || page === 'session' ? 'page' : undefined}>Sessions</a>
             <a href="#/rollups" aria-current={page === 'rollups' ? 'page' : undefined}>Rollups</a>
             <a href="#/health" aria-current={page === 'health' ? 'page' : undefined}>Health{issues.length > 0 && <span className="badge warn" title={issues.map((i) => i.title).join('\n')}>⚠ {issues.length}</span>}</a>
           </nav>
           <span className="grow" />
-          <span className="muted small local" title="The dashboard only listens on 127.0.0.1; nothing leaves this machine">local only</span>
+          <span className="local" title="The dashboard only listens on 127.0.0.1; nothing leaves this machine"><i className="pulse" aria-hidden="true" />local only</span>
           <button className="btn small" onClick={refresh} disabled={busy}>{busy ? 'Refreshing…' : 'Refresh'}</button>
           <button className="btn small" onClick={() => setTheme(theme === 'dark' ? 'light' : theme === 'light' ? '' : 'dark')} title="Theme: dark / light / follow system">Theme: {theme || 'system'}</button>
         </div>

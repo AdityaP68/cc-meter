@@ -33,7 +33,7 @@ whose numbers can be trusted, and which costs zero tokens in the sessions it mea
   Command file `/agent-lens:agent-lens` kept (≈16 tokens per session; owner, 2026-10-15).
 - Unverified: interactive `/agent-lens` rendering, async Stop hook in interactive sessions, live statusLine
   payload, `advisorModel` billing, fast mode, web-search billing.
-- M3 reviewer is **built on branch `claude/m3-reviewer-agent-lens` (2026-10-19), not merged**, tested against a stub `claude`; one real review ran 2026-10-19 ($0.0178, as estimated within ~10 %); ADR 0009 is accepted: `docs/ARCHITECTURE.md` (M3). Merging it adds the `convo-review` skill (~20 tokens per session) to the live plugin.
+- M3 reviewer is **merged into `main` and built (2026-10-19; live `dist/` has `agent-lens review`)**, tested against a stub `claude`; one real review ran 2026-10-19 ($0.0178, as estimated within ~10 %); ADR 0009 is accepted: `docs/ARCHITECTURE.md` (M3). The `convo-review` skill (~20 tokens per session) is now in the live plugin.
 
 ## Retrieve on demand
 [Scope v2](SCOPE.md) · [Gap taxonomy](GAPS.md) · [Usage](USAGE.md) · [Formats](FORMATS.md) · [Architecture + M3 design](ARCHITECTURE.md) ·

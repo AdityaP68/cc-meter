@@ -13,9 +13,8 @@ section) still carry the old name in their files: merge main into them before th
 
 ## Next
 
-1. (a) **Prompt reviewer M3 is built on branch `claude/m3-reviewer-agent-lens`** (not merged; stub-tested). ADR 0009 accepted and one real review done
-   (2026-10-19, $0.0178; estimate ran ~10 % low). Owner: merge (adds the `convo-review` skill, ~20 tokens/session) and `npm run build`. Then a dashboard
-   review view. After the merge reviews target the one real DB (no migration was added). Judge runs now run in a folder named
+1. (a) **Prompt reviewer M3 is merged into `main` and built (live, not pushed).** ADR 0009 accepted and one real review done
+   (2026-10-19, $0.0178; estimate ran ~10 % low). Next: a dashboard review view. After the merge reviews target the one real DB (no migration was added). Judge runs now run in a folder named
    `agent-lens-judge` and the recorder tags any transcript from such a cwd (so `record --all` tags them; the first real review's
    transcript ran in an older `judge` folder and stays untagged, $0.018); `facets()` hides judge sessions. Known M3 gaps: a skill's
    `$ARGUMENTS` is user text in a pre-approved shell line;

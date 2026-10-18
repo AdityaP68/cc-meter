@@ -48,7 +48,7 @@ describe('derived prices in doctor and the price table', () => {
   it("doctor suggests a pasteable snippet with basis 'derived' and never writes the user's pricing file", () => {
     const home = tmpDir();
     const claude = tmpDir('claude-');
-    process.env.CCMETER_HOME = home;
+    process.env.SESSIONSCOPE_HOME = home;
     process.env.CLAUDE_CONFIG_DIR = claude;
     const dir = path.join(claude, 'projects', '-p');
     fs.mkdirSync(dir, { recursive: true });
@@ -60,7 +60,7 @@ describe('derived prices in doctor and the price table', () => {
       fs.writeFileSync(f, [asst({ id: `a${i}`, model: 'claude-mystery-9', input: s.input, output: s.output, cr: s.cacheRead, cw: s.cacheWrite }), JSON.stringify(cs)].join('\n'));
       recordTranscript(db, table, f);
     });
-    const d = runDoctor(db, table, { skipExternal: true, claudeVersion: '2.1.287', pluginList: 'ccmeter@ccmeter ✔ enabled' }).find((c) => c.id === 'derived-price:claude-mystery-9')!;
+    const d = runDoctor(db, table, { skipExternal: true, claudeVersion: '2.1.287', pluginList: 'sessionscope@sessionscope ✔ enabled' }).find((c) => c.id === 'derived-price:claude-mystery-9')!;
     expect(d.title).toContain('claude-mystery-9');
     expect(d.detail).toContain('5 sessions');
     const snippet = JSON.parse(d.detail!.slice(d.detail!.indexOf('{')));
@@ -68,7 +68,7 @@ describe('derived prices in doctor and the price table', () => {
     expect(snippet['claude-mystery-9'].output).toBeCloseTo(20, 3);
     expect(fs.existsSync(path.join(home, 'pricing.json'))).toBe(false);
     db.close();
-    delete process.env.CCMETER_HOME;
+    delete process.env.SESSIONSCOPE_HOME;
     delete process.env.CLAUDE_CONFIG_DIR;
   });
 

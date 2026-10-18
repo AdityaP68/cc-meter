@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { openDb } from '../../core/db.js';
-import { claudeHome, ensureHome, ccmeterHome } from '../../core/paths.js';
+import { claudeHome, ensureHome, sessionscopeHome } from '../../core/paths.js';
 import { loadPricing } from '../../core/pricing.js';
 import { listTranscripts, recordAll, recordTranscript } from '../../core/record.js';
 import { flagStr, type Parsed } from '../args.js';
@@ -11,7 +11,7 @@ import { readStdinText } from '../stdin.js';
 function logLine(msg: string): void {
   try {
     ensureHome();
-    const file = path.join(ccmeterHome(), 'record.log');
+    const file = path.join(sessionscopeHome(), 'record.log');
     // keep the log small: truncate when it passes 256 KB
     try {
       if (fs.statSync(file).size > 256 * 1024) fs.writeFileSync(file, '');
@@ -38,7 +38,7 @@ function findBySessionId(id: string): string | null {
 }
 
 /**
- * `ccmeter record`
+ * `sessionscope record`
  *   (no args, stdin JSON)  hook mode: reads a Claude Code hook payload, records that session, prints NOTHING, exits 0.
  *   --transcript <file>    record one transcript
  *   --session <id>         record one session found under ~/.claude/projects

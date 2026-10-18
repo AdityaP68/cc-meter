@@ -4,9 +4,9 @@ import { messageCost, type PriceTable } from './pricing.js';
 export interface ReconRow {
   model: string;
   /** `cost` is null for an unpriced model: unpriced is never $0. */
-  ccmeter: { input: number; output: number; cacheWrite: number; cacheRead: number; cost: number | null };
+  sessionscope: { input: number; output: number; cacheWrite: number; cacheRead: number; cost: number | null };
   claudeCode: { input: number; output: number; cacheWrite: number; cacheRead: number; cost: number } | null;
-  /** ccmeter minus Claude Code (tokens). */
+  /** sessionscope minus Claude Code (tokens). */
   delta: { input: number; output: number; cacheWrite: number; cacheRead: number } | null;
   tokensMatch: boolean;
   /**
@@ -34,7 +34,7 @@ export function reconcile(s: Pick<SessionRow, 'models' | 'costState'>, table: Pr
       cacheRead: ours?.cacheRead ?? 0,
       cost: ours?.unpriced ? null : ours?.cost ?? 0,
     };
-    if (!cc) return { model, ccmeter: o, claudeCode: null, delta: null, tokensMatch: false, priceRange: null };
+    if (!cc) return { model, sessionscope: o, claudeCode: null, delta: null, tokensMatch: false, priceRange: null };
     const c = {
       input: cc.inputTokens,
       output: cc.outputTokens,
@@ -53,7 +53,7 @@ export function reconcile(s: Pick<SessionRow, 'models' | 'costState'>, table: Pr
     const high = messageCost(table, { ...base, cacheWrite1h: c.cacheWrite });
     return {
       model,
-      ccmeter: o,
+      sessionscope: o,
       claudeCode: c,
       delta,
       tokensMatch: !delta.input && !delta.output && !delta.cacheWrite && !delta.cacheRead,
@@ -73,8 +73,8 @@ export interface PartialRecord {
 
 /**
  * Whether Claude Code's `cost-state` provably covers only part of the session (docs/FORMATS.md, Known discrepancies
- * 3): a model ccmeter saw is missing from it, or it counted fewer tokens than the transcript in some class for some
- * model. Then its total is not the session's cost and ccmeter's is the complete one. null when there is no
+ * 3): a model sessionscope saw is missing from it, or it counted fewer tokens than the transcript in some class for some
+ * model. Then its total is not the session's cost and sessionscope's is the complete one. null when there is no
  * cost-state entry or nothing shows it to be partial. Exactly the sessions for which `hiddenCallsEstimate` declines
  * because coverage fails.
  */
@@ -94,13 +94,13 @@ export function claudeCodePartial(s: Pick<SessionRow, 'models' | 'costState'>, t
 }
 
 export interface HiddenCallsEstimate {
-  /** Claude Code's cost minus ccmeter's (USD): calls Claude Code billed but never wrote to the transcript. An estimate. */
+  /** Claude Code's cost minus sessionscope's (USD): calls Claude Code billed but never wrote to the transcript. An estimate. */
   usd: number;
   /** Claude Code's own total for the session (sum of its per-model costUSD). */
   claudeCodeUsd: number;
   /** Output tokens Claude Code counts beyond the transcript, left out because replies were saved mid-stream. */
   outputTokensExcluded: number;
-  /** Those output tokens at list price: what the mid-stream replies leave out of ccmeter's cost, by Claude Code's count. */
+  /** Those output tokens at list price: what the mid-stream replies leave out of sessionscope's cost, by Claude Code's count. */
   outputUsdExcluded: number;
 }
 
@@ -109,11 +109,11 @@ const MIN_ESTIMATE_USD = 0.0005;
 
 /**
  * Estimate the cost of API calls Claude Code billed but never wrote to the transcript (docs/FORMATS.md, Known
- * discrepancies 2). Valid only where Claude Code's `cost-state` covers the whole session: every model ccmeter saw is
+ * discrepancies 2). Valid only where Claude Code's `cost-state` covers the whole session: every model sessionscope saw is
  * in it, with at least as many tokens in every class. If it counted less anywhere, it covers only part of a session
- * resumed across processes (item 3), ccmeter's total is the complete one, and there is nothing to estimate (null).
+ * resumed across processes (item 3), sessionscope's total is the complete one, and there is nothing to estimate (null).
  * With replies saved mid-stream (item 1) the output difference is theirs, so it is left out. A model with a
- * difference that ccmeter cannot price gives null: unpriced is never $0.
+ * difference that sessionscope cannot price gives null: unpriced is never $0.
  */
 export function hiddenCallsEstimate(s: Pick<SessionRow, 'models' | 'costState' | 'partialMessages'>, table: PriceTable): HiddenCallsEstimate | null {
   if (!s.costState) return null;
@@ -127,8 +127,8 @@ export function hiddenCallsEstimate(s: Pick<SessionRow, 'models' | 'costState' |
     if (d.input > 0 || d.output > 0 || d.cacheWrite > 0 || d.cacheRead > 0) return null;
     claudeCodeUsd += r.claudeCode.cost;
     if (r.tokensMatch) continue;
-    if (r.ccmeter.cost === null) return null;
-    let gap = r.claudeCode.cost - r.ccmeter.cost;
+    if (r.sessionscope.cost === null) return null;
+    let gap = r.claudeCode.cost - r.sessionscope.cost;
     const inTranscript = s.models.some((m) => m.model === r.model);
     if (s.partialMessages > 0 && inTranscript && d.output < 0) {
       const out = messageCost(table, { model: r.model, input: 0, output: -d.output, cacheWrite: 0, cacheWrite1h: 0, cacheRead: 0, webSearch: 0, speed: null });
@@ -153,8 +153,8 @@ export interface ClaudeCodeFigure {
 }
 
 /**
- * Claude Code's own recorded cost for each model, a stopgap for models ccmeter cannot price. It is shown next to
- * ccmeter's numbers, labelled as Claude Code's, and never added to ccmeter's totals (unpriced stays NULL, ADR 0005).
+ * Claude Code's own recorded cost for each model, a stopgap for models sessionscope cannot price. It is shown next to
+ * sessionscope's numbers, labelled as Claude Code's, and never added to sessionscope's totals (unpriced stays NULL, ADR 0005).
  */
 export function claudeCodeFigures(rows: Pick<SessionRow, 'models' | 'costState'>[], models: string[]): ClaudeCodeFigure[] {
   return models.map((model) => {

@@ -1,5 +1,5 @@
 {
-  "name": "ccmeter",
+  "name": "sessionscope",
   "version": "0.1.0",
   "description": "Local-first usage, cost and quality tracking for Claude Code. Hooks run out of process; nothing is added to the model's context.",
   "license": "MIT",
@@ -10,6 +10,6 @@
     "observability"
   ],
   "author": {
-    "name": "ccmeter contributors"
+    "name": "sessionscope contributors"
   }
 }

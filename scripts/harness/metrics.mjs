@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Measure how agent sessions on THIS project spend context, from ccmeter's own database (read-only).
+// Measure how agent sessions on THIS project spend context, from sessionscope's own database (read-only).
 // The context-harness method: measure first, then re-measure after changing the setup.
 //   node scripts/harness/metrics.mjs [--project cc-meter] [--since 2026-10-01] [--json]
 // Per main-thread request, context = input + cache_write + cache_read tokens (what the request re-sent).
@@ -27,9 +27,11 @@ function main() {
   const get = (k) => (argv.includes(k) ? argv[argv.indexOf(k) + 1] : undefined);
   const project = get('--project') ?? path.basename(ROOT);
   const since = get('--since') ?? '1970-01-01';
-  const file = path.join(process.env.CCMETER_HOME || path.join(os.homedir(), '.ccmeter'), 'ccmeter.db');
+  const fresh = path.join(os.homedir(), '.sessionscope');
+  const home = process.env.SESSIONSCOPE_HOME || process.env.CCMETER_HOME || (fs.existsSync(fresh) ? fresh : path.join(os.homedir(), '.ccmeter'));
+  const file = [path.join(home, 'sessionscope.db'), path.join(home, 'ccmeter.db')].find((f) => fs.existsSync(f)) ?? path.join(home, 'sessionscope.db');
   if (!fs.existsSync(file)) {
-    console.error(`no ccmeter database at ${file}; install ccmeter or run \`ccmeter record --all\``);
+    console.error(`no sessionscope database at ${file}; install sessionscope or run \`sessionscope record --all\``);
     return 1;
   }
   const db = new DatabaseSync(file, { readOnly: true });

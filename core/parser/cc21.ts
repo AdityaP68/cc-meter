@@ -15,7 +15,7 @@ import type {
 
 /** Entry types we read. */
 const PROCESSED_TYPES = new Set(['user', 'assistant', 'system', 'cost-state']);
-/** Entry types known to exist that carry nothing ccmeter needs. */
+/** Entry types known to exist that carry nothing sessionscope needs. */
 const IGNORED_TYPES = new Set([
   'mode',
   'permission-mode',

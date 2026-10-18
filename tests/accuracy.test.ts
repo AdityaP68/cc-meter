@@ -47,7 +47,7 @@ describe('accuracyReport', () => {
     expect(r.exact + r.hiddenCalls.sessions + r.partialRecord + r.other).toBe(r.withClaudeCodeRecord);
   });
 
-  it('sums the hidden-calls estimate and relates it to the total, never adding it to ccmeter cost', () => {
+  it('sums the hidden-calls estimate and relates it to the total, never adding it to sessionscope cost', () => {
     expect(r.hiddenCalls.usd).toBeCloseTo(price(S, billed) - price(S, seen), 9);
     expect(r.costUsd).toBeCloseTo(sessions.reduce((n, s) => n + s.costUsd, 0), 9);
   });

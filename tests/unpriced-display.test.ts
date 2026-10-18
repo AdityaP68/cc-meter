@@ -9,10 +9,10 @@ const table = loadPricing({ overridePath: null });
 const model = (m: string, cost: number, unpriced: boolean) => ({ model: m, messages: 1, cost, unpriced, input: 100, output: 50, cacheWrite: 0, cacheRead: 0 });
 
 describe('unpriced is never $0', () => {
-  it('reconcile reports a null ccmeter cost for an unpriced model and a number for a priced one', () => {
+  it('reconcile reports a null sessionscope cost for an unpriced model and a number for a priced one', () => {
     const rows = reconcile({ models: [model('claude-mystery-9', 0, true), model('claude-sonnet-5-5', 1.5, false)], costState: null }, table);
-    expect(rows.find((r) => r.model === 'claude-mystery-9')!.ccmeter.cost).toBeNull();
-    expect(rows.find((r) => r.model === 'claude-sonnet-5-5')!.ccmeter.cost).toBe(1.5);
+    expect(rows.find((r) => r.model === 'claude-mystery-9')!.sessionscope.cost).toBeNull();
+    expect(rows.find((r) => r.model === 'claude-sonnet-5-5')!.sessionscope.cost).toBe(1.5);
   });
 
   it('the terminal cell says "unpriced" instead of $0', () => {

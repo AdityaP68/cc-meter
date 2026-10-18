@@ -8,10 +8,10 @@ const CLI = CLI_JS;
 const run = (args: string[], env: Record<string, string>, input?: string) =>
   spawnSync(process.execPath, [CLI, ...args], { encoding: 'utf8', env: { ...process.env, ...env }, input, timeout: 30000 });
 
-describe('ccmeter CLI (built)', () => {
+describe('sessionscope CLI (built)', () => {
   const claude = tmpDir('claude-');
   const home = tmpDir();
-  const env = { CLAUDE_CONFIG_DIR: claude, CCMETER_HOME: home };
+  const env = { CLAUDE_CONFIG_DIR: claude, SESSIONSCOPE_HOME: home };
   const transcript = installFixture('cc-2.1.287/sdk-complete.jsonl', claude);
 
   it('hook mode: reads the real Stop payload shape from stdin, prints nothing, exits 0, records the session', () => {
@@ -34,14 +34,14 @@ describe('ccmeter CLI (built)', () => {
     expect(j.sessions).toHaveLength(1);
     expect(j.sessions[0].sessionId).toBe(path.basename(transcript, '.jsonl'));
     // the reply text from the payload must never be stored
-    const dbBytes = fs.readFileSync(path.join(home, 'ccmeter.db'));
+    const dbBytes = fs.readFileSync(path.join(home, 'sessionscope.db'));
     expect(dbBytes.includes(Buffer.from('SECRET REPLY TEXT'))).toBe(false);
   });
 
   it('hook mode waits for a payload that arrives late on the pipe (EAGAIN on a non-blocking fd 0)', async () => {
     // Under load the hook can start reading before Claude Code has written; that read once came back empty.
     const lateHome = tmpDir();
-    const lateEnv = { CLAUDE_CONFIG_DIR: claude, CCMETER_HOME: lateHome };
+    const lateEnv = { CLAUDE_CONFIG_DIR: claude, SESSIONSCOPE_HOME: lateHome };
     const child = spawn(process.execPath, [CLI, 'record'], { env: { ...process.env, ...lateEnv }, stdio: ['pipe', 'pipe', 'pipe'] });
     let out = '';
     child.stdout.on('data', (d) => (out += d));
@@ -81,6 +81,6 @@ describe('ccmeter CLI (built)', () => {
 
   it('unknown commands fail with usage', () => {
     expect(run(['bogus'], env).status).toBe(1);
-    expect(run([], env).stdout).toContain('ccmeter record');
+    expect(run([], env).stdout).toContain('sessionscope record');
   });
 });

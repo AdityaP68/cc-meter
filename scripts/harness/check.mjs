@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Checks that must hold ("prose advises; checks enforce"). Run by .githooks/pre-commit (staged files) and by
-// `npm run verify` (--all). Each check exists because the rule was broken or nearly broken while building ccmeter;
+// `npm run verify` (--all). Each check exists because the rule was broken or nearly broken while building sessionscope;
 // see docs/memory/lessons.md.
 //   --staged (default)  content checks on staged files     --all  content checks on all tracked files
 //   --lock-migrations   record the current migration hashes (only when a migration ships to users)
@@ -66,7 +66,7 @@ export function structuralChecks() {
   // zero context footprint: no loadable skill in the plugin until it exists for real
   const skills = path.join(ROOT, 'plugin', 'skills');
   if (fs.existsSync(skills)) for (const d of fs.readdirSync(skills)) if (fs.existsSync(path.join(skills, d, 'SKILL.md'))) errors.push(`plugin/skills/${d}/SKILL.md would load into every user's session (~39 tokens); ship it only with its feature`);
-  for (const s of ['plugin/scripts/ccmeter.sh', 'plugin/scripts/prompt-hook.sh']) {
+  for (const s of ['plugin/scripts/sessionscope.sh', 'plugin/scripts/prompt-hook.sh']) {
     try {
       fs.accessSync(path.join(ROOT, s), fs.constants.X_OK);
     } catch {
@@ -106,10 +106,10 @@ function main() {
     }
   }
   if (errors.length) {
-    console.error(`ccmeter checks failed (${errors.length}):\n- ${errors.slice(0, 30).join('\n- ')}${errors.length > 30 ? `\n… ${errors.length - 30} more` : ''}`);
+    console.error(`sessionscope checks failed (${errors.length}):\n- ${errors.slice(0, 30).join('\n- ')}${errors.length > 30 ? `\n… ${errors.length - 30} more` : ''}`);
     return 1;
   }
-  console.log(`ccmeter checks passed (${mode})`);
+  console.log(`sessionscope checks passed (${mode})`);
   return 0;
 }
 

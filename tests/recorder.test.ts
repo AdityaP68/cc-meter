@@ -16,15 +16,15 @@ beforeEach(() => {
   home = tmpDir();
   claude = tmpDir('claude-');
   process.env.CLAUDE_CONFIG_DIR = claude;
-  process.env.CCMETER_HOME = home;
-  delete process.env.CCMETER_JUDGE_RUNNING;
+  process.env.SESSIONSCOPE_HOME = home;
+  delete process.env.SESSIONSCOPE_JUDGE_RUNNING;
   db = openDb(path.join(home, 'test.db'));
 });
 afterEach(() => {
   db.close();
   delete process.env.CLAUDE_CONFIG_DIR;
-  delete process.env.CCMETER_HOME;
-  delete process.env.CCMETER_JUDGE_RUNNING;
+  delete process.env.SESSIONSCOPE_HOME;
+  delete process.env.SESSIONSCOPE_JUDGE_RUNNING;
 });
 
 const writeTranscript = (id: string, lines: string[]) => {
@@ -145,18 +145,30 @@ describe('recorder', () => {
     expect(rows[1].cost_usd).toBeGreaterThan(0);
   });
 
-  it('tags sessions started by the ccmeter judge, and the tag is sticky', () => {
+  it('tags sessions started by the sessionscope judge, and the tag is sticky', () => {
     const f = writeTranscript('judge-1', [asst({ id: 'm1', output: 1 })]);
-    process.env.CCMETER_JUDGE_RUNNING = '1';
+    process.env.SESSIONSCOPE_JUDGE_RUNNING = '1';
     recordTranscript(db, table, f);
-    delete process.env.CCMETER_JUDGE_RUNNING;
+    delete process.env.SESSIONSCOPE_JUDGE_RUNNING;
     fs.appendFileSync(f, asst({ id: 'm2', output: 1 }) + '\n');
     recordTranscript(db, table, f); // later hook without the env var must not reset the source
-    expect(getSession(db, 'judge-1')!.session.source).toBe('ccmeter-judge');
+    expect(getSession(db, 'judge-1')!.session.source).toBe('sessionscope-judge');
     const g = writeTranscript('normal-1', [asst({ id: 'n1', output: 1 })]);
     recordTranscript(db, table, g);
     expect(getSession(db, 'normal-1')!.session.source).toBe('claude-code');
-    expect(listSessions(db, { source: 'ccmeter-judge' }).total).toBe(1);
+    expect(listSessions(db, { source: 'sessionscope-judge' }).total).toBe(1);
+  });
+
+  it('still treats the pre-rename judge environment variable and tag as a judge run', () => {
+    const f = writeTranscript('judge-legacy', [asst({ id: 'm1', output: 1 })]);
+    process.env.CCMETER_JUDGE_RUNNING = '1';
+    recordTranscript(db, table, f);
+    delete process.env.CCMETER_JUDGE_RUNNING;
+    expect(getSession(db, 'judge-legacy')!.session.source).toBe('sessionscope-judge');
+    db.prepare("UPDATE sessions SET source = 'ccmeter-judge' WHERE session_id = ?").run('judge-legacy');
+    fs.appendFileSync(f, asst({ id: 'm2', output: 1 }) + '\n');
+    recordTranscript(db, table, f);
+    expect(getSession(db, 'judge-legacy')!.session.source).toBe('sessionscope-judge');
   });
 
   it('skips transcripts with no assistant messages and reports missing files', () => {

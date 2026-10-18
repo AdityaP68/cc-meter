@@ -10,7 +10,7 @@ import { startServer, type RunningServer } from '../server/index.js';
 import { asst, costStateLine, installFixture, tmpDir } from './helpers/util.js';
 
 // docs/FORMATS.md, Known discrepancies 1-3: Claude Code can bill calls it never writes to the transcript. Where its
-// cost-state covers the whole session (>= ccmeter's tokens in every model and class), the difference is shown as an
+// cost-state covers the whole session (>= sessionscope's tokens in every model and class), the difference is shown as an
 // estimate; where it covers less (a session resumed across processes), nothing is estimated.
 const table = loadPricing({ overridePath: null });
 type T = { input: number; output: number; cacheWrite: number; cacheRead: number };
@@ -26,7 +26,7 @@ const billed: T = { input: 2224, output: 130, cacheWrite: 2000, cacheRead: 210_0
 const haikuOnly: T = { input: 3000, output: 300, cacheWrite: 0, cacheRead: 0 };
 
 describe('hiddenCallsEstimate', () => {
-  it("is Claude Code's total minus ccmeter's when Claude Code counted at least as much in every class", () => {
+  it("is Claude Code's total minus sessionscope's when Claude Code counted at least as much in every class", () => {
     const e = hiddenCallsEstimate({ models: [ours(S, seen)], costState: cs({ [S]: theirs(S, billed), [H]: theirs(H, haikuOnly) }), partialMessages: 0 }, table);
     expect(e).not.toBeNull();
     expect(e!.usd).toBeCloseTo(price(S, billed) - price(S, seen) + price(H, haikuOnly), 9);
@@ -109,7 +109,7 @@ function json(p: string): Promise<any> {
 beforeAll(async () => {
   const claude = tmpDir('claude-');
   process.env.CLAUDE_CONFIG_DIR = claude;
-  process.env.CCMETER_HOME = tmpDir();
+  process.env.SESSIONSCOPE_HOME = tmpDir();
   const db = openDb(':memory:');
   const dir = path.join(claude, 'projects', '-proj-h');
   fs.mkdirSync(dir, { recursive: true });
@@ -127,7 +127,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await srv?.close();
   delete process.env.CLAUDE_CONFIG_DIR;
-  delete process.env.CCMETER_HOME;
+  delete process.env.SESSIONSCOPE_HOME;
 });
 
 describe('server: calls not in the transcript', () => {
@@ -142,7 +142,7 @@ describe('server: calls not in the transcript', () => {
     for (const r of rows.filter((x: any) => !['hidden-calls', 'resumed'].includes(x.sessionId))) expect(r.hiddenCalls).toBeNull();
   });
 
-  it('never adds the estimate to ccmeter cost or totals', async () => {
+  it('never adds the estimate to sessionscope cost or totals', async () => {
     const { rows } = await json('/api/sessions?limit=10');
     const ov = await json('/api/overview');
     expect(rows.find((r: any) => r.sessionId === 'hidden-calls').costUsd).toBeCloseTo(price(S, seen), 9);

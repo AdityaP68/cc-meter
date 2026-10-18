@@ -22,7 +22,7 @@ export function pad(s: string, n: number, right = false): string {
 
 /** One line naming models without a price and what to do about it (report header; the dashboard has its own banner). */
 export const unpricedNotice = (models: string[]): string =>
-  `⚠ No price for ${models.join(', ')}: costs for ${models.length === 1 ? 'it are' : 'them are'} left out (never $0). Add a price to ~/.ccmeter/pricing.json, or run \`ccmeter doctor\` for details and a suggested price.`;
+  `⚠ No price for ${models.join(', ')}: costs for ${models.length === 1 ? 'it are' : 'them are'} left out (never $0). Add a price to ~/.sessionscope/pricing.json, or run \`sessionscope doctor\` for details and a suggested price.`;
 
 /** A price, or "unpriced" for null: an unpriced model is never shown as free. */
 export const usdOrUnpriced = (n: number | null): string => (n === null ? 'unpriced' : usd(n));

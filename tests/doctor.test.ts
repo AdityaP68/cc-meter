@@ -15,7 +15,7 @@ beforeEach(() => {
   const home = tmpDir();
   claude = tmpDir('claude-');
   process.env.CLAUDE_CONFIG_DIR = claude;
-  process.env.CCMETER_HOME = home;
+  process.env.SESSIONSCOPE_HOME = home;
   db = openDb(path.join(home, 't.db'));
 });
 
@@ -27,7 +27,7 @@ const write = (id: string, lines: string[]) => {
   return f;
 };
 const byId = (checks: ReturnType<typeof runDoctor>, id: string) => checks.find((c) => c.id === id)!;
-const opts = { skipExternal: true, claudeVersion: '2.1.287', pluginList: 'ccmeter@ccmeter ✔ enabled' };
+const opts = { skipExternal: true, claudeVersion: '2.1.287', pluginList: 'sessionscope@sessionscope ✔ enabled' };
 
 describe('doctor', () => {
   it('is healthy on verified fixtures', () => {
@@ -77,6 +77,13 @@ describe('doctor', () => {
   it('warns when hooks are not installed', () => {
     const c = runDoctor(db, table, { skipExternal: true, claudeVersion: '2.1.287', pluginList: '' });
     expect(byId(c, 'hooks').level).toBe('warn');
+  });
+
+  it('warns when the pre-rename plugin ccmeter@ccmeter is still installed', () => {
+    const c = runDoctor(db, table, { skipExternal: true, claudeVersion: '2.1.287', pluginList: 'sessionscope@sessionscope ✔ enabled\nccmeter@ccmeter ✔ enabled' });
+    expect(byId(c, 'legacy-plugin').level).toBe('warn');
+    expect(c.find((x) => x.id === 'legacy-plugin')?.detail).toContain('sessionscope setup');
+    expect(runDoctor(db, table, opts).find((x) => x.id === 'legacy-plugin')).toBeUndefined();
   });
 
   it('reports transcripts on disk that are not recorded yet', () => {
@@ -131,7 +138,7 @@ describe('doctor', () => {
     const r = byId(runDoctor(db, table, opts), 'reconcile');
     expect(r.title).toContain('0 of 1');
     expect(r.detail).toContain('Largest difference: session resumed');
-    expect(r.detail).toContain(`ccmeter $${price('claude-sonnet-5-5', ours).toFixed(2)}`);
+    expect(r.detail).toContain(`sessionscope $${price('claude-sonnet-5-5', ours).toFixed(2)}`);
     expect(r.detail).toContain('Claude Code $0.00');
   });
 });

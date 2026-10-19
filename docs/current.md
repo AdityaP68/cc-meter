@@ -9,8 +9,8 @@ whose numbers can be trusted, and which costs zero tokens in the sessions it mea
 
 ## What is done and verified
 - **Named ccmeter** (ADR 0012, 2026-10-19; it was sessionscope, then agent-lens, both read as fallbacks). Dashboard in an
-  Anthropic-style look (ivory, slate, clay, serif headings, system fonts only). **Source only: not built or installed**; the live
-  install still runs the agent-lens build until the owner does the cutover (handoff).
+  Anthropic-style look (ivory, slate, clay, serif headings, system fonts only). **Built and installed 2026-10-19**
+  (plugin `ccmeter@ccmeter`, `~/.ccmeter`; handoff has the record).
 - **M1 (core + recorder)** and **M2 (dashboard + status line)** are built; tags `m1`, `m2`.
   139 tests pass on 2026-10-15 (unit, golden fixtures from 5 Claude Code versions, server, CLI, plugin
   scripts, a happy-dom smoke test that route changes keep the dashboard mounted).

@@ -8,11 +8,13 @@ History of earlier hand-offs: `git log -p -- docs/handoff.md`.
 2026-10-19: the name is **ccmeter** again (ADR 0012; agent-lens and sessionscope are read as fallbacks). The dashboard has the
 Anthropic-style look (ivory/slate/clay, serif headings, system fonts only). `npm run verify` passes (245 tests); dashboard checked
 on fixture data in light, dark and 375 px, no console errors. M3 reviewer and the Docs section are merged.
-**Nothing was built or installed from this rename:** the live `dist/` is still the agent-lens build and the plugin registered is
-`agent-lens@agent-lens`. Until the cutover below, the live hooks fail silently (the old `dist` looks for package name `agent-lens`
-and `package.json` now says `ccmeter`), so new sessions are not recorded; `ccmeter record --all` backfills them later.
+**Cutover done 2026-10-19 (owner approved):** old `~/.ccmeter` moved to `~/.ccmeter.old`, `npm run build`, `ccmeter setup` copied
+`~/.agent-lens` to `~/.ccmeter`, replaced `agent-lens@agent-lens` with `ccmeter@ccmeter` (enabled, read from `plugin/`), backfilled
+4 sessions. Real `doctor`: 0 errors, 2 warnings (Claude Code 2.1.299/2.1.302 unverified -> `format-drift`; 4 unknown entry types).
+No status line is configured in `~/.claude/settings.json` (setup only adds one on `--statusline`). `/ccmeter` appears in a NEW
+Claude Code session; interactive rendering is still unverified.
 
-## Cutover (owner runs this; touches the real ~/.claude and ~/.ccmeter)
+## Cutover (done; kept as the record of what was run)
 1. `mv ~/.ccmeter ~/.ccmeter.old` (a pre-rename copy lives there; setup skips the copy while `~/.ccmeter` exists).
 2. `npm run build`, then `node dist/cli/index.js setup` (copies `~/.agent-lens` to `~/.ccmeter`, replaces the plugin and status line).
 3. `node dist/cli/index.js doctor`; `npm unlink -g agent-lens` / `npm link` if an old global command exists (a stale global
@@ -21,7 +23,7 @@ and `package.json` now says `ccmeter`), so new sessions are not recorded; `ccmet
 ## Next
 Priority order, for the company environment.
 
-1. **Cutover and live check** (above), then one interactive Claude Code session to confirm what is still unverified: `/ccmeter`
+1. **Live check**: open a new Claude Code session and confirm what is still unverified: `/ccmeter`
    rendering, async Stop hook, live statusLine payload.
 2. **Company-environment readiness** (decide before moving code): licence and repo ownership, package name/trademark check
    (npm free on 2026-10-19 only for earlier names; `ccmeter` not checked), where transcripts and `~/.ccmeter` may live on managed

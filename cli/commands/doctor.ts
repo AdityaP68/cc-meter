@@ -1,6 +1,7 @@
 import { openDb } from '../../core/db.js';
 import { runDoctor, verifyPricing } from '../../core/doctor.js';
 import { loadPricing } from '../../core/pricing.js';
+import { colorWanted, wordmark } from '../brand.js';
 import type { Parsed } from '../args.js';
 import { table } from '../format.js';
 
@@ -13,6 +14,7 @@ export async function cmdDoctor(args: Parsed): Promise<number> {
   if (args.flags.json) {
     console.log(JSON.stringify(checks, null, 2));
   } else {
+    if (colorWanted()) console.log(`${wordmark()} doctor\n`);
     for (const c of checks) {
       console.log(`${ICON[c.level]} ${c.title}`);
       if (c.detail && c.level !== 'ok') console.log(`    ${c.detail}`);

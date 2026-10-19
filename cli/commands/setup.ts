@@ -6,6 +6,7 @@ import { claudeHome, ensureHome, migrateLegacyHome, packageRoot, ccmeterHome } f
 import { loadPricing } from '../../core/pricing.js';
 import { recordAll } from '../../core/record.js';
 import type { Parsed } from '../args.js';
+import { colorWanted, wordmark } from '../brand.js';
 
 const MARKETPLACE = 'ccmeter';
 const PLUGIN = 'ccmeter@ccmeter';
@@ -29,6 +30,7 @@ function claude(args: string[]): { ok: boolean; out: string } {
  * as a local plugin marketplace, install the plugin, backfill history. Used by install.sh and by `npx ccmeter setup`.
  */
 export async function cmdSetup(args: Parsed): Promise<number> {
+  if (colorWanted()) console.log(`${wordmark()} setup\n`);
   const root = packageRoot();
   const cli = fs.realpathSync(path.join(root, 'dist', 'cli', 'index.js'));
 

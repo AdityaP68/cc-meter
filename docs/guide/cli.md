@@ -2,6 +2,8 @@
 
 Every command is `ccmeter <command> [flags]`. This page matches `ccmeter --help` for version 0.1.0 and the behaviour of each command. A few working flags are missing from `--help`: `report --sort`, `report --source`, `serve --url-only` and `--json` on `record`. They are marked below. If `ccmeter` is not on your PATH, run `npm link` in the clone, or call `node <clone>/dist/cli/index.js` instead.
 
+On a terminal, `--help`, `doctor` and `setup` show the ccmeter wordmark (italic clay "cc") in colour. Piped output, `--json`, `NO_COLOR`, `FORCE_COLOR=0` and `TERM=dumb` get plain text, and `record`, `report`, hooks and the status line never print colour codes.
+
 | Command | Purpose |
 |---|---|
 | `record` | Record sessions into the database. |

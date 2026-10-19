@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { packageRoot } from '../core/paths.js';
 import { parseArgs } from './args.js';
+import { wordmark } from './brand.js';
 
 const HELP = `ccmeter — local-first usage and cost tracker for Claude Code
 
@@ -49,10 +50,10 @@ async function main(): Promise<number> {
     case 'help':
     case '--help':
     case '-h':
-      console.log(HELP);
+      console.log(HELP.replace(/^ccmeter/, wordmark()));
       return 0;
     default:
-      console.error(`unknown command: ${cmd}\n\n${HELP}`);
+      console.error(`unknown command: ${cmd}\n\n${HELP.replace(/^ccmeter/, wordmark(process.stderr))}`);
       return 1;
   }
 }

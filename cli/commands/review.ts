@@ -34,11 +34,11 @@ const CONSENT_TEXT = (p: Prepared) =>
   masked first; each prompt is cut to its first 500 characters), the names and counts of the tools used, costs, token
   counts and events. It does NOT send tool output, file contents or assistant replies. Claude Code makes the call with
   your existing login, like any other use of Claude Code, so it reaches Anthropic and is billed to your account.
-  agent-lens itself opens no connection and handles no key. Reviews run only when you ask, one session at a time.
+  ccmeter itself opens no connection and handles no key. Reviews run only when you ask, one session at a time.
   Masking is pattern based and partial: it cannot catch a secret with no recognisable shape.
-  What stays here: the judge's summary and per-prompt notes (no quotes of your prompts) in ~/.agent-lens. Claude Code also
+  What stays here: the judge's summary and per-prompt notes (no quotes of your prompts) in ~/.ccmeter. Claude Code also
   keeps the judge run itself, which contains the masked prompts, as an ordinary session under ~/.claude/projects.
-  See exactly what would be sent with: agent-lens review ${p.sessionId} --show-input`;
+  See exactly what would be sent with: ccmeter review ${p.sessionId} --show-input`;
 
 const costText = (p: Prepared) =>
   p.estimate.costUsd === null
@@ -46,11 +46,11 @@ const costText = (p: Prepared) =>
     : `about ${usd(p.estimate.costUsd)}`;
 
 function resolveId(db: Db, prefix: string): { id?: string; error?: string } {
-  if (!/^[0-9A-Za-z-]{1,64}$/.test(prefix)) return { error: 'a session id is letters, digits and dashes only (use the id or its first characters from `agent-lens report`)' };
+  if (!/^[0-9A-Za-z-]{1,64}$/.test(prefix)) return { error: 'a session id is letters, digits and dashes only (use the id or its first characters from `ccmeter report`)' };
   const rows = db.prepare('SELECT session_id, source FROM sessions WHERE session_id LIKE ? LIMIT 2').all(`${prefix}%`) as { session_id: string; source: string }[];
-  if (rows.length === 0) return { error: `no recorded session "${prefix}" (try \`agent-lens record --all\`)` };
+  if (rows.length === 0) return { error: `no recorded session "${prefix}" (try \`ccmeter record --all\`)` };
   if (rows.length > 1) return { error: `ambiguous session prefix "${prefix}"` };
-  if (rows[0]!.source === SOURCE_JUDGE || rows[0]!.source === 'sessionscope-judge' || rows[0]!.source === 'ccmeter-judge') return { error: 'that session is a review run by agent-lens itself; review a normal session' };
+  if (rows[0]!.source === SOURCE_JUDGE || rows[0]!.source === 'agent-lens-judge' || rows[0]!.source === 'sessionscope-judge') return { error: 'that session is a review run by ccmeter itself; review a normal session' };
   return { id: rows[0]!.session_id };
 }
 
@@ -81,7 +81,7 @@ function printReview(s: StoredReview, p: Prepared, note: string): void {
 export async function runReview(args: Parsed, io: ReviewIo): Promise<number> {
   const prefix = args.positionals[0];
   if (!prefix) {
-    console.error('usage: agent-lens review <session-id> [--model m] [--dry-run | --show-input] [--force] [--json] [--yes]');
+    console.error('usage: ccmeter review <session-id> [--model m] [--dry-run | --show-input] [--force] [--json] [--yes]');
     return 1;
   }
   const db = openDb();
@@ -126,7 +126,7 @@ export async function runReview(args: Parsed, io: ReviewIo): Promise<number> {
       if (!args.flags['accept-data-leaves-machine']) {
         console.error(CONSENT_TEXT(p));
         if (!io.interactive) {
-          console.error('\nNo review was run: the first review needs your explicit consent. Run `agent-lens review <id>` in a terminal, or pass --accept-data-leaves-machine.');
+          console.error('\nNo review was run: the first review needs your explicit consent. Run `ccmeter review <id>` in a terminal, or pass --accept-data-leaves-machine.');
           return 2;
         }
         const a = await io.ask('\nType "yes" to allow reviews and run this one: ');
@@ -158,7 +158,7 @@ export async function runReview(args: Parsed, io: ReviewIo): Promise<number> {
       const o = reviewOverhead(db);
       console.log(`\nThis review cost ${done.stored.costUsd === null ? 'an unreported amount' : usd(done.stored.costUsd)} (Claude Code's figure). Review overhead so far: ${o.reviews} review${o.reviews === 1 ? '' : 's'}, ${usd(o.costUsd)}${o.unreportedCost ? ` + ${o.unreportedCost} unreported` : ''}; not included in your usage totals.`);
       if (done.quotesRemoved) console.log(`Note: ${done.quotesRemoved} span(s) copied from your prompts were removed from the stored review.`);
-      if (!done.judgeSessionRecorded) console.log('Note: the review run itself could not be found in ~/.claude/projects to record it; run `agent-lens record --all` to catch up.');
+      if (!done.judgeSessionRecorded) console.log('Note: the review run itself could not be found in ~/.claude/projects to record it; run `ccmeter record --all` to catch up.');
     }
     return 0;
   } catch (e) {

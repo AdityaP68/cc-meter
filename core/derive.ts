@@ -1,8 +1,8 @@
 /**
- * Derive per-token rates for a model agent-lens has no price for, from Claude Code's own cost-state entries.
+ * Derive per-token rates for a model ccmeter has no price for, from Claude Code's own cost-state entries.
  * Each entry gives token totals and Claude Code's costUSD, so cost = Σ tokens × rate is a linear system; with
  * enough entries whose token mixes differ, least squares recovers the rates. The result is a suggestion with
- * basis "derived" (ADR 0008): agent-lens prints it and never writes it into a pricing file.
+ * basis "derived" (ADR 0008): ccmeter prints it and never writes it into a pricing file.
  */
 
 export interface RateSample {

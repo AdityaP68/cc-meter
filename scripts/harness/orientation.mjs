@@ -62,9 +62,9 @@ function hostLine() {
 /** The user's real install runs this checkout's dist/ (hooks) and plugin/ (loaded in place). */
 function liveInstallLines() {
   const out = [];
-  const fresh = path.join(os.homedir(), '.agent-lens');
-  const earlier = ['.sessionscope', '.ccmeter'].map((d) => path.join(os.homedir(), d)).find((d) => fs.existsSync(d));
-  const home = process.env.AGENT_LENS_HOME || process.env.SESSIONSCOPE_HOME || process.env.CCMETER_HOME || (!fs.existsSync(fresh) && earlier) || fresh;
+  const fresh = path.join(os.homedir(), '.ccmeter');
+  const earlier = ['.agent-lens', '.sessionscope'].map((d) => path.join(os.homedir(), d)).find((d) => fs.existsSync(d));
+  const home = process.env.CCMETER_HOME || process.env.AGENT_LENS_HOME || process.env.SESSIONSCOPE_HOME || (!fs.existsSync(fresh) && earlier) || fresh;
   let target = null;
   try {
     target = fs.readFileSync(path.join(home, 'cli-path'), 'utf8').trim();
@@ -72,7 +72,7 @@ function liveInstallLines() {
     /* not installed */
   }
   const live = target && path.resolve(target).startsWith(ROOT + path.sep);
-  out.push(live ? '- LIVE: the user\'s installed agent-lens runs THIS checkout (dist/ for hooks, plugin/ loaded in place). A broken build or plugin edit affects their real Claude Code.' : `- agent-lens install: ${target ? `points elsewhere (${target})` : 'not installed for this user'}`);
+  out.push(live ? '- LIVE: the user\'s installed ccmeter runs THIS checkout (dist/ for hooks, plugin/ loaded in place). A broken build or plugin edit affects their real Claude Code.' : `- ccmeter install: ${target ? `points elsewhere (${target})` : 'not installed for this user'}`);
   const dist = path.join(ROOT, 'dist', 'cli', 'index.js');
   const src = newest(['core', 'cli', 'server'].map((d) => path.join(ROOT, d)), '.ts');
   if (!fs.existsSync(dist)) out.push('- dist/ missing: run `npm run build`');
@@ -89,7 +89,7 @@ function handoffStaleness() {
 }
 
 export function lines() {
-  const out = ['agent-lens session orientation (SessionStart hook). Verify before acting on it.'];
+  const out = ['ccmeter session orientation (SessionStart hook). Verify before acting on it.'];
   const branch = git('branch', '--show-current') || '(detached)';
   const dirty = git('status', '--porcelain').split('\n').filter(Boolean).length;
   out.push(`- Here: ${branch} @ ${git('rev-parse', '--short', 'HEAD')}, ${dirty} uncommitted path(s); last tag ${(() => { try { return git('describe', '--tags', '--abbrev=0'); } catch { return 'none'; } })()}`);
@@ -126,7 +126,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   try {
     console.log(lines().join('\n'));
   } catch (e) {
-    console.log(`agent-lens session orientation unavailable: ${e?.message ?? e}`);
+    console.log(`ccmeter session orientation unavailable: ${e?.message ?? e}`);
   }
   process.exit(0);
 }

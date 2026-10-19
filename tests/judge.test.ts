@@ -53,7 +53,7 @@ describe('judge call (stub claude)', () => {
     expect(c!.args).toContain('--json-schema');
     expect(c!.args[c!.args.indexOf('--tools') + 1]).toBe('');
     expect(c!.args).toContain('--strict-mcp-config');
-    expect(JSON.parse(c!.args[c!.args.indexOf('--settings') + 1]!)).toEqual({ enabledPlugins: { 'agent-lens@agent-lens': false } });
+    expect(JSON.parse(c!.args[c!.args.indexOf('--settings') + 1]!)).toEqual({ enabledPlugins: { 'ccmeter@ccmeter': false } });
     expect(c!.judgeEnv).toBe('1');
     expect(r.costUsd).toBe(0.0123);
     expect(r.inputTokens).toBe(5002);

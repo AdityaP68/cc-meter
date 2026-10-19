@@ -16,7 +16,7 @@ export const WARN = Number(process.env.CONTEXT_GUARD_WARN ?? 180_000);
 export const HANDOFF = Number(process.env.CONTEXT_GUARD_HANDOFF ?? 300_000);
 const BAND = 100_000;
 const TAIL_BYTES = 1_000_000;
-const STATE_DIR = path.join(os.tmpdir(), 'agent-lens-context-guard');
+const STATE_DIR = path.join(os.tmpdir(), 'ccmeter-context-guard');
 
 /** Context tokens of the most recent main-thread request, or null. Split on '\n' only (see docs/FORMATS.md). */
 export function currentContext(transcript) {

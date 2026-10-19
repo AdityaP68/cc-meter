@@ -10,10 +10,10 @@ export interface Filters {
 }
 
 /**
- * "Your usage" never includes the reviewer's own judge runs (source `agent-lens-judge`, or `ccmeter-judge` from before the
+ * "Your usage" never includes the reviewer's own judge runs (source `ccmeter-judge`, or `agent-lens-judge` / `sessionscope-judge` from before the
  * rename); they are shown separately as review overhead (core/review.ts). Asking for that source explicitly still returns them.
  */
-const notJudge = (alias: string) => `${alias}.source NOT IN ('agent-lens-judge', 'sessionscope-judge', 'ccmeter-judge')`;
+const notJudge = (alias: string) => `${alias}.source NOT IN ('ccmeter-judge', 'agent-lens-judge', 'sessionscope-judge')`;
 
 export interface SessionRow {
   sessionId: string;

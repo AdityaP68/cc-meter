@@ -1,12 +1,12 @@
 {
-  "name": "agent-lens",
+  "name": "ccmeter",
   "description": "Local-first usage, cost and quality tracking for Claude Code",
-  "owner": { "name": "agent-lens contributors" },
+  "owner": { "name": "ccmeter contributors" },
   "plugins": [
     {
-      "name": "agent-lens",
+      "name": "ccmeter",
       "source": "./plugin",
-      "description": "Records token usage, cost and model switches for every Claude Code session into ~/.agent-lens; /agent-lens opens the local dashboard."
+      "description": "Records token usage, cost and model switches for every Claude Code session into ~/.ccmeter; /ccmeter opens the local dashboard."
     }
   ]
 }

@@ -67,7 +67,7 @@ export interface Synthetic {
   transcript: string;
 }
 
-/** Write the synthetic transcript into a fake ~/.claude, record it into a fresh DB under a temp AGENT_LENS_HOME. */
+/** Write the synthetic transcript into a fake ~/.claude, record it into a fresh DB under a temp CCMETER_HOME. */
 export function recordSynthetic(lines: string[] = syntheticLines(), sessionId = 'synthetic-0001'): Synthetic {
   const claude = tmpDir('claude-');
   const home = tmpDir('home-');
@@ -75,7 +75,7 @@ export function recordSynthetic(lines: string[] = syntheticLines(), sessionId = 
   fs.mkdirSync(dir, { recursive: true });
   const transcript = path.join(dir, `${sessionId}.jsonl`);
   fs.writeFileSync(transcript, lines.join('\n') + '\n');
-  const db = openDb(path.join(home, 'agent-lens.db'));
+  const db = openDb(path.join(home, 'ccmeter.db'));
   const r = recordTranscript(db, loadPricing(), transcript);
   if (r.status !== 'recorded') throw new Error(`synthetic session not recorded: ${r.status}`);
   return { claude, home, db, sessionId, transcript };

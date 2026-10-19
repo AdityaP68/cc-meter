@@ -163,7 +163,7 @@ Rules that govern this file: `docs/SCOPE.md` (Evidence rules), `docs/decisions/0
 - **Evidence:** the fingerprint entry and the count of sessions checked (no per-prompt text needed).
 - **Not a gap:** capabilities for rare tasks (listed by owner as "occasional"); newly installed ones (< 20 sessions).
 - **Input status:** fingerprint not built; skill/MCP invocation forms unverified. Always-on cost is observable with
-  `claude plugin details` (agent-lens's own cost was measured that way, `FORMATS.md`).
+  `claude plugin details` (ccmeter's own cost was measured that way, `FORMATS.md`).
 - **Playbook (draft, harness owner):** remove or disable what is unused; fix or replace what fails; move rarely used
   capabilities to on-demand loading.
 

@@ -1,6 +1,6 @@
 # Command line
 
-Every command is `sessionscope <command> [flags]`. This page matches `sessionscope --help` for version 0.1.0 and the behaviour of each command. A few working flags are missing from `--help`: `report --sort`, `report --source`, `serve --url-only` and `--json` on `record`. They are marked below. If `sessionscope` is not on your PATH, run `npm link` in the clone, or call `node <clone>/dist/cli/index.js` instead.
+Every command is `ccmeter <command> [flags]`. This page matches `ccmeter --help` for version 0.1.0 and the behaviour of each command. A few working flags are missing from `--help`: `report --sort`, `report --source`, `serve --url-only` and `--json` on `record`. They are marked below. If `ccmeter` is not on your PATH, run `npm link` in the clone, or call `node <clone>/dist/cli/index.js` instead.
 
 | Command | Purpose |
 |---|---|
@@ -16,9 +16,9 @@ Every command is `sessionscope <command> [flags]`. This page matches `sessionsco
 ## Conventions
 
 - Flags are `--flag value` or `--flag=value`. A flag followed by another flag, or by nothing, is a switch. Boolean switches never take a value.
-- Everything is local. Commands read `~/.claude` (or `$CLAUDE_CONFIG_DIR`) and read and write `~/.sessionscope` (or `$SESSIONSCOPE_HOME`). See [Configuration and pricing](config-and-pricing.md).
+- Everything is local. Commands read `~/.claude` (or `$CLAUDE_CONFIG_DIR`) and read and write `~/.ccmeter` (or `$CCMETER_HOME`). See [Configuration and pricing](config-and-pricing.md).
 - `report --session` accepts any unique prefix of a session id (the id column shows the first 8 characters). `record --session` needs the full id.
-- `sessionscope --version` (also `version`) prints the version, `sessionscope help`, `--help`, `-h` or no command prints the usage text and exits 0. An unknown command prints the usage text after "unknown command: x" and exits 1.
+- `ccmeter --version` (also `version`) prints the version, `ccmeter help`, `--help`, `-h` or no command prints the usage text and exits 0. An unknown command prints the usage text after "unknown command: x" and exits 1.
 
 Exit codes:
 
@@ -38,10 +38,10 @@ Exit codes:
 ## record
 
 ```bash
-sessionscope record --all [--force] [--json]
-sessionscope record --session <id> [--force] [--json]
-sessionscope record --transcript <file> [--force] [--json]
-sessionscope record            # hook mode: JSON payload on stdin
+ccmeter record --all [--force] [--json]
+ccmeter record --session <id> [--force] [--json]
+ccmeter record --transcript <file> [--force] [--json]
+ccmeter record            # hook mode: JSON payload on stdin
 ```
 
 | Flag | Meaning |
@@ -54,14 +54,14 @@ sessionscope record            # hook mode: JSON payload on stdin
 
 Recording is idempotent: the whole session is re-read and upserted, so running it twice changes nothing. Transcripts with no real API call are skipped ("empty").
 
-**Hook mode** (no `--all`, `--session` or `--transcript`) is what the plugin runs. It reads one Claude Code hook payload on stdin, records the session named by its `transcript_path`, prints nothing and exits 0 even on errors. It appends one line per call (timestamp, event, session id, status, milliseconds) to `~/.sessionscope/record.log`. The reply text that hook payloads can carry is never read.
+**Hook mode** (no `--all`, `--session` or `--transcript`) is what the plugin runs. It reads one Claude Code hook payload on stdin, records the session named by its `transcript_path`, prints nothing and exits 0 even on errors. It appends one line per call (timestamp, event, session id, status, milliseconds) to `~/.ccmeter/record.log`. The reply text that hook payloads can carry is never read.
 
 ## report
 
 ```bash
-sessionscope report [--sort recent|cost|tokens] [--limit n] [--since 7d] [--project p] [--model m] [--source s] [--json]
-sessionscope report --by day|project|model [filters] [--json]
-sessionscope report --session <id> [--json]
+ccmeter report [--sort recent|cost|tokens] [--limit n] [--since 7d] [--project p] [--model m] [--source s] [--json]
+ccmeter report --by day|project|model [filters] [--json]
+ccmeter report --session <id> [--json]
 ```
 
 | Flag | Meaning |
@@ -80,12 +80,12 @@ sessionscope report --session <id> [--json]
 
 **Rollup.** Rows are sorted by cost, highest first (newest day first for `day`); sessions without a working directory group under `(unknown)`. A table with the grouping key, `sessions`, `tokens` and `cost`. JSON: an array with `key`, `sessions`, `messages`, token counts, `costUsd` and `unpricedTokens`.
 
-**One session.** Id, title (or the generated label), working directory, time span, turn and message counts, Claude Code versions and parser status, token counts, cost, notes about hidden classifier calls or partial messages when they apply, switch and compaction counts, each event, and then a table per model comparing sessionscope with Claude Code's own `cost-state` entry. A `MATCH` row means all four counts are equal; a `delta` row shows sessionscope minus Claude Code. JSON: the session detail plus `reconciliation`. An id that matches nothing prints `no recorded session "x"` and exits 1; one that matches several prints `ambiguous session prefix`.
+**One session.** Id, title (or the generated label), working directory, time span, turn and message counts, Claude Code versions and parser status, token counts, cost, notes about hidden classifier calls or partial messages when they apply, switch and compaction counts, each event, and then a table per model comparing ccmeter with Claude Code's own `cost-state` entry. A `MATCH` row means all four counts are equal; a `delta` row shows ccmeter minus Claude Code. JSON: the session detail plus `reconciliation`. An id that matches nothing prints `no recorded session "x"` and exits 1; one that matches several prints `ambiguous session prefix`.
 
 ## doctor
 
 ```bash
-sessionscope doctor [--verify-pricing] [--json]
+ccmeter doctor [--verify-pricing] [--json]
 ```
 
 Runs the health checks and prints one line per check: `✔` ok, `ℹ` info, `⚠` warning, `✘` error, with detail indented beneath anything that is not ok, then `n ok, n info, n warnings, n errors`. Exit code 2 if any check is an error. The list of checks, and what to do about each, is in [Troubleshooting](troubleshooting.md).
@@ -100,7 +100,7 @@ Runs the health checks and prints one line per check: `✔` ok, `ℹ` info, `⚠
 ## export
 
 ```bash
-sessionscope export [--format json|csv] [--messages] [--out file]
+ccmeter export [--format json|csv] [--messages] [--out file]
 ```
 
 | Flag | Meaning |
@@ -114,50 +114,50 @@ There are no filter flags: export always covers everything recorded. Columns and
 ## serve
 
 ```bash
-sessionscope serve [--port n] [--open]          # foreground
-sessionscope serve --ensure [--url-only] [--open] [--port n]   # background, lazy
-sessionscope serve --stop
+ccmeter serve [--port n] [--open]          # foreground
+ccmeter serve --ensure [--url-only] [--open] [--port n]   # background, lazy
+ccmeter serve --stop
 ```
 
 | Flag | Meaning |
 |---|---|
-| (none) | Run the dashboard in the foreground and print `sessionscope dashboard: <url>  (127.0.0.1 only; Ctrl-C to stop)`. If one is already running it prints its address and exits. |
+| (none) | Run the dashboard in the foreground and print `ccmeter dashboard: <url>  (127.0.0.1 only; Ctrl-C to stop)`. If one is already running it prints its address and exits. |
 | `--port n` | Preferred port. If it is taken, the next free port is used (the port, then up to 20 higher ones). Default from `config.json`, else 7337. |
 | `--open` | Open the dashboard in your browser (`open` on macOS, `xdg-open` on Linux, `start` on Windows; only macOS is verified). |
-| `--ensure` | Reuse a running server (then `--port` is ignored) or start a detached one, wait for it, and print its URL. This is what `/sessionscope` runs. Exits 1 with a message if it cannot start. |
+| `--ensure` | Reuse a running server (then `--port` is ignored) or start a detached one, wait for it, and print its URL. This is what `/ccmeter` runs. Exits 1 with a message if it cannot start. |
 | `--url-only` | Print just the URL when a server is already running (foreground form). With `--ensure` the URL alone is always printed. Not shown in `--help`. Put it last or before another flag: it is not registered as a switch, so a bare word right after it would be read as its value. |
 | `--stop` | Stop the background server recorded in `server.json`. |
 
-The server listens on `127.0.0.1` only and rescans transcripts every 30 seconds. A server started with `--ensure` stops itself after `idleMinutes` (default 30) without a request; a foreground one runs until Ctrl-C. `config.json` can set `port`, `openBrowser` and `idleMinutes`. A running server loads the price table when it starts, so after editing `pricing.json` run `sessionscope serve --stop` and start it again.
+The server listens on `127.0.0.1` only and rescans transcripts every 30 seconds. A server started with `--ensure` stops itself after `idleMinutes` (default 30) without a request; a foreground one runs until Ctrl-C. `config.json` can set `port`, `openBrowser` and `idleMinutes`. A running server loads the price table when it starts, so after editing `pricing.json` run `ccmeter serve --stop` and start it again.
 
 ## statusline
 
 ```bash
-sessionscope statusline
+ccmeter statusline
 ```
 
-Reads Claude Code's status line JSON on stdin and prints one line. It is meant to be run by Claude Code, not by hand; always exits 0. Details in [Status line and /sessionscope](statusline-and-command.md).
+Reads Claude Code's status line JSON on stdin and prints one line. It is meant to be run by Claude Code, not by hand; always exits 0. Details in [Status line and /ccmeter](statusline-and-command.md).
 
 ## setup
 
 ```bash
-sessionscope setup [--no-backfill] [--statusline]
-sessionscope setup --uninstall
+ccmeter setup [--no-backfill] [--statusline]
+ccmeter setup --uninstall
 ```
 
 | Flag | Meaning |
 |---|---|
-| (none) | Create `~/.sessionscope`, write `cli-path` and a default `config.json`, copy a legacy `~/.ccmeter` once, register the local marketplace and install the plugin (if `claude` is on PATH), and backfill. Safe to repeat. |
+| (none) | Create `~/.ccmeter`, write `cli-path` and a default `config.json`, copy the newest older folder (`~/.agent-lens`, `~/.sessionscope`) once, register the local marketplace and install the plugin (if `claude` is on PATH), and backfill. Safe to repeat. |
 | `--no-backfill` | Skip recording existing transcripts. |
 | `--statusline` | Also add the status line to `~/.claude/settings.json` (below). |
 | `--uninstall` | Uninstall the plugin and marketplace, including the pre-rename `ccmeter` ones. Data is left in place. |
 
-`--statusline` backs `settings.json` up to `settings.json.sessionscope-backup` first, and leaves it alone if a `statusLine` is already configured or if the file is not a valid JSON object (then it exits 1). A status line still using the old `ccmeter statusline` command is updated even without the flag.
+`--statusline` backs `settings.json` up to `settings.json.ccmeter-backup` first, and leaves it alone if a `statusLine` is already configured or if the file is not a valid JSON object (then it exits 1). A status line still using the old `ccmeter statusline` command is updated even without the flag.
 
 ## review
 
 ```bash
-sessionscope review <session-id>
+ccmeter review <session-id>
 ```
 
-**Not released.** This is the stub for the planned prompt reviewer. In this version it prints "sessionscope review is milestone 3 and is not implemented yet. See docs/ARCHITECTURE.md." to standard error and exits 1. Nothing is stored or sent.
+**Not released.** This is the stub for the planned prompt reviewer. In this version it prints "ccmeter review is milestone 3 and is not implemented yet. See docs/ARCHITECTURE.md." to standard error and exits 1. Nothing is stored or sent.

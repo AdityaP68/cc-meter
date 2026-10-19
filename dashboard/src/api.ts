@@ -59,7 +59,7 @@ export async function get<T>(path: string): Promise<T> {
 }
 
 export async function post(path: string): Promise<unknown> {
-  const r = await fetch(path, { method: 'POST', headers: { 'x-agent-lens': '1' } });
+  const r = await fetch(path, { method: 'POST', headers: { 'x-ccmeter': '1' } });
   if (!r.ok) throw new Error(`${path}: ${r.status}`);
   return r.json();
 }

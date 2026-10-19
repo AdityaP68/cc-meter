@@ -2,7 +2,7 @@
   "version": "2026-10-14",
   "currency": "USD",
   "unit": "per million tokens",
-  "notes": "Estimates at list price. Claude Code computes its own cost the same way; `agent-lens doctor --verify-pricing` compares the two. basis=verified means the rates reproduce Claude Code's own costUSD on real transcripts; basis=list means taken from published list prices only. Add or override models in ~/.agent-lens/pricing.json (same shape).",
+  "notes": "Estimates at list price. Claude Code computes its own cost the same way; `ccmeter doctor --verify-pricing` compares the two. basis=verified means the rates reproduce Claude Code's own costUSD on real transcripts; basis=list means taken from published list prices only. Add or override models in ~/.ccmeter/pricing.json (same shape).",
   "webSearchPerRequest": 0.01,
   "models": {
     "claude-fable-5-1":  { "input": 10, "output": 50, "cacheRead": 0.25, "cacheWrite5m": 12.5, "cacheWrite1h": 20, "basis": "list" },

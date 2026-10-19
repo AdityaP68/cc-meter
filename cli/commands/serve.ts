@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { openDb } from '../../core/db.js';
-import { agentLensHome, ensureHome } from '../../core/paths.js';
+import { ccmeterHome, ensureHome } from '../../core/paths.js';
 import { loadPricing } from '../../core/pricing.js';
 import { APP_ID, HOST, startServer } from '../../server/index.js';
 import { flagNum, type Parsed } from '../args.js';
@@ -14,14 +14,14 @@ interface ServerInfo {
   url: string;
   startedAt: string;
 }
-const infoFile = () => path.join(agentLensHome(), 'server.json');
+const infoFile = () => path.join(ccmeterHome(), 'server.json');
 
 /** The background server stops after this long without a request (an open dashboard tab does not poll). */
 export const DEFAULT_IDLE_MINUTES = 30;
 
 export function readConfig(): { port: number; openBrowser: boolean; idleMinutes: number } {
   try {
-    const c = JSON.parse(fs.readFileSync(path.join(agentLensHome(), 'config.json'), 'utf8'));
+    const c = JSON.parse(fs.readFileSync(path.join(ccmeterHome(), 'config.json'), 'utf8'));
     const idle = Number(c.idleMinutes);
     return {
       port: Number(c.port) || 7337,
@@ -42,7 +42,7 @@ function readInfo(): ServerInfo | null {
   }
 }
 
-/** True only for a live agent-lens server on loopback. */
+/** True only for a live ccmeter server on loopback. */
 function health(port: number): Promise<boolean> {
   return new Promise((resolve) => {
     const req = http.get({ host: HOST, port, path: '/api/health', timeout: 800 }, (res) => {
@@ -78,12 +78,12 @@ export async function cmdServe(args: Parsed): Promise<number> {
 
   if (args.flags.stop) {
     const info = readInfo();
-    if (!info) return (console.log('agent-lens server is not running'), 0);
+    if (!info) return (console.log('ccmeter server is not running'), 0);
     try {
       process.kill(info.pid, 'SIGTERM');
-      console.log(`stopped agent-lens server (pid ${info.pid})`);
+      console.log(`stopped ccmeter server (pid ${info.pid})`);
     } catch {
-      console.log('agent-lens server was not running');
+      console.log('ccmeter server was not running');
     }
     fs.rmSync(infoFile(), { force: true });
     return 0;
@@ -109,7 +109,7 @@ export async function cmdServe(args: Parsed): Promise<number> {
       }
     }
     if (!info) {
-      console.error('agent-lens: could not start the dashboard server (run `agent-lens serve` to see the error)');
+      console.error('ccmeter: could not start the dashboard server (run `ccmeter serve` to see the error)');
       return 1;
     }
     if (args.flags.open || cfg.openBrowser) openBrowser(info.url);
@@ -121,7 +121,7 @@ export async function cmdServe(args: Parsed): Promise<number> {
   ensureHome();
   const existing = await runningServer();
   if (existing && !args.flags.child) {
-    console.log(urlOnly ? existing.url : `agent-lens dashboard already running at ${existing.url}`);
+    console.log(urlOnly ? existing.url : `ccmeter dashboard already running at ${existing.url}`);
     if (args.flags.open) openBrowser(existing.url);
     return 0;
   }
@@ -148,7 +148,7 @@ export async function cmdServe(args: Parsed): Promise<number> {
   process.on('SIGTERM', shutdown);
   process.on('SIGINT', shutdown);
 
-  if (!args.flags.child) console.log(`agent-lens dashboard: ${running.url}  (127.0.0.1 only; Ctrl-C to stop)`);
+  if (!args.flags.child) console.log(`ccmeter dashboard: ${running.url}  (127.0.0.1 only; Ctrl-C to stop)`);
   if (args.flags.open) openBrowser(running.url);
   // pick up anything the hooks missed (crashes, sessions from before install) without delaying startup
   setImmediate(() => {

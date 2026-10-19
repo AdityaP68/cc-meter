@@ -8,15 +8,15 @@ import { startServer } from '../server/index.js';
 import { tmpDir } from './helpers/util.js';
 
 afterEach(() => {
-  delete process.env.AGENT_LENS_HOME;
+  delete process.env.CCMETER_HOME;
 });
 
 describe('background server idle stop', () => {
   it('defaults to 30 minutes, honours config.json, and falls back on a bad value', () => {
     expect(DEFAULT_IDLE_MINUTES).toBe(30);
-    process.env.AGENT_LENS_HOME = tmpDir();
+    process.env.CCMETER_HOME = tmpDir();
     expect(readConfig().idleMinutes).toBe(30);
-    const write = (c: unknown) => fs.writeFileSync(path.join(process.env.AGENT_LENS_HOME!, 'config.json'), JSON.stringify(c));
+    const write = (c: unknown) => fs.writeFileSync(path.join(process.env.CCMETER_HOME!, 'config.json'), JSON.stringify(c));
     write({ idleMinutes: 5 });
     expect(readConfig().idleMinutes).toBe(5);
     write({ idleMinutes: 0 }); // 0 disables the stop

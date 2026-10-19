@@ -1,4 +1,4 @@
-# agent-lens — Scope (v2, 2026-10-17)
+# ccmeter — Scope (v2, 2026-10-17)
 
 **Status:** v2 is the owner's document of 17 Oct 2026, condensed here. How it meets the standing invariants:
 [ADR 0009](decisions/0009-scope-v2-analyst-and-org-layer.md) (**proposed**: items marked **[O#]** await the owner).
@@ -6,7 +6,7 @@ v1 (M1 core + recorder, M2 dashboard + status line) is built and tagged `m1`, `m
 history (`git log -- docs/SCOPE.md`).
 
 ## What it is
-agent-lens turns Claude Code sessions into evidence: what they cost, where the harness causes friction, which practices
+ccmeter turns Claude Code sessions into evidence: what they cost, where the harness causes friction, which practices
 are missing, and what each ticket consumed. It starts as a local git repo (plugin, CLI, dashboard) and grows into an
 opt-in org layer that sees feature rows only, never transcript text.
 
@@ -32,14 +32,14 @@ Each phase is usable alone and reuses the earlier schema. Milestone order after 
 | Phase | Delivered as | In scope | Explicitly out | State (2026-10-17) |
 |---|---|---|---|---|
 | **A. Personal meter** | plugin, CLI, local dashboard | tokens, cost estimate, model switches, compactions, status line, **harness fingerprint, active time** | any network call | M1 + M2 built, verified. Fingerprint and active time missing |
-| **B. Personal analyst** | same repo | modes and phases, Tier 0 features, heuristic gap detectors, on-demand review, goal stitching, intervention log | automatic LLM review of every session | M3 digest, flags, judge and `agent-lens review` **built 2026-10-19 on a branch against a stub** (no real review yet); the rest not designed |
+| **B. Personal analyst** | same repo | modes and phases, Tier 0 features, heuristic gap detectors, on-demand review, goal stitching, intervention log | automatic LLM review of every session | M3 digest, flags, judge and `ccmeter review` **built 2026-10-19 on a branch against a stub** (no real review yet); the rest not designed |
 | **C. Team pilot** | same repo + opt-in exporter + small central store | feature rows (no text) from 1–2 teams, workspace registry, trend dashboard, gold set and precision numbers, cluster diagnosis | org-wide rollout, Jira write-back | not started; **gated** (ADR 0009 #1) |
 | **D. Org layer** | central service, possibly an npm package | cross-workspace trends, adoption maturity, shared fix-once backlog, Jira cost/time sync, other sources (Copilot org metrics) | individual rankings, any manager view of a person | not started; gated |
 
 Proposed milestones for Phase B (each ends with verification and a tag):
 | Milestone | Content | Tokens spent |
 |---|---|---|
-| **M3 Evidence base** | schema v2; harness fingerprint; active time; Tier 0 counters (tool errors, retries, cache rate, permission stalls, skills/MCP/subagent use) after each input is **observed** in `FORMATS.md`; detectors for `docs/GAPS.md` types as `draft`/`hint`; `agent-lens digest` | none |
+| **M3 Evidence base** | schema v2; harness fingerprint; active time; Tier 0 counters (tool errors, retries, cache rate, permission stalls, skills/MCP/subagent use) after each input is **observed** in `FORMATS.md`; detectors for `docs/GAPS.md` types as `draft`/`hint`; `ccmeter digest` | none |
 | **M4 Modes, phases, goals** | phase segmentation; ticket attribution from branch with manual override; attribution % beside every per-ticket number; goal stitching | none (a small model only for ambiguous mode labels, on demand) |
 | **M5 On-demand analyst** | in-memory digest, redaction, `claude -p` judge, Tier 2 diagnosis on flagged spans, citation verification, "this is wrong", review overhead metered (ADR 0007) | on demand only |
 | **M6 Interventions** | fingerprint-keyed before/after, timeline annotations (upgrades, model changes), "consistent with improvement" wording, ≥ 15–20 sessions a side | none |
@@ -107,13 +107,13 @@ the transcript format · fair individual rankings (**not built, by design**) · 
 negotiated plans.
 
 ## Hard constraints (amended by ADR 0009; unchanged unless stated)
-1. **Local-first.** No agent-lens code reachable from hooks, status line, server or the default CLI makes a network call.
+1. **Local-first.** No ccmeter code reachable from hooks, status line, server or the default CLI makes a network call.
    Org export is a local file first (ADR 0009 #1). Any dependency or feature that would make a call needs the
    owner's approval.
-2. **Zero context footprint.** Hooks, status line and server run out of process; no MCP server; `/agent-lens` prints one
+2. **Zero context footprint.** Hooks, status line and server run out of process; no MCP server; `/ccmeter` prints one
    line; the weekly digest is a CLI command and a dashboard page, never injected into a session; a review skill only
-   wraps `agent-lens review <id>`.
-3. **Install-method independent.** Reads `~/.claude`, writes only under `~/.agent-lens`; no absolute paths in the repo.
+   wraps `ccmeter review <id>`.
+3. **Install-method independent.** Reads `~/.claude`, writes only under `~/.ccmeter`; no absolute paths in the repo.
 4. **Publish-ready, not published.** Never publish or push without the owner's approval.
 5. **Stack.** TypeScript on Node ≥ 22.13, `node:sqlite`, zero runtime dependencies (ADR 0002); Vite + React dashboard
    on `127.0.0.1` only.
@@ -123,9 +123,9 @@ negotiated plans.
 - **Parsers are fault tolerant**, selected by recorded Claude Code version; unknown things are counted, not fatal.
 - **Unpriced is not free**: unknown models cost `NULL` and surface in `doctor` and the UI.
 - **The recorder is idempotent** (full recompute + upsert). Hooks print nothing and exit 0.
-- **Own-judge runs are tagged** (`source=agent-lens-judge`) and shown as overhead, not usage.
+- **Own-judge runs are tagged** (`source=ccmeter-judge`) and shown as overhead, not usage.
 - **No transcript text stored**: counts, ids, models, timestamps, titles, cwd, labels and span *references*. Model-written
-  review text only per **[O1]**, in `~/.agent-lens`, never exported.
+  review text only per **[O1]**, in `~/.ccmeter`, never exported.
 - **No leaderboards or per-developer rankings**; minimum group 5 for any aggregate shown to someone else.
 - **Shipped migrations are immutable**; new tables arrive as v2+.
 

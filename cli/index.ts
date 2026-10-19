@@ -4,21 +4,21 @@ import path from 'node:path';
 import { packageRoot } from '../core/paths.js';
 import { parseArgs } from './args.js';
 
-const HELP = `agent-lens — local-first usage and cost tracker for Claude Code
+const HELP = `ccmeter — local-first usage and cost tracker for Claude Code
 
-  agent-lens record [--all | --transcript <file> | --session <id>] [--force]
-        Record sessions into ~/.agent-lens. With no flags it reads a Claude Code hook payload on stdin (silent).
-  agent-lens report [--session <id>] [--by day|project|model] [--since 7d] [--project p] [--model m] [--limit n] [--json]
-  agent-lens doctor [--verify-pricing] [--json]
-  agent-lens export [--format json|csv] [--messages] [--out file]
-  agent-lens serve [--port n] [--open] [--ensure] [--stop]     local dashboard on 127.0.0.1
-  agent-lens statusline                                         Claude Code statusLine command (reads JSON on stdin)
-  agent-lens setup [--no-backfill] [--statusline] [--uninstall]   register the plugin, create ~/.agent-lens, backfill history
-  agent-lens review <session-id> [--model m] [--dry-run | --show-input] [--force] [--json] [--yes]
+  ccmeter record [--all | --transcript <file> | --session <id>] [--force]
+        Record sessions into ~/.ccmeter. With no flags it reads a Claude Code hook payload on stdin (silent).
+  ccmeter report [--session <id>] [--by day|project|model] [--since 7d] [--project p] [--model m] [--limit n] [--json]
+  ccmeter doctor [--verify-pricing] [--json]
+  ccmeter export [--format json|csv] [--messages] [--out file]
+  ccmeter serve [--port n] [--open] [--ensure] [--stop]     local dashboard on 127.0.0.1
+  ccmeter statusline                                         Claude Code statusLine command (reads JSON on stdin)
+  ccmeter setup [--no-backfill] [--statusline] [--uninstall]   register the plugin, create ~/.ccmeter, backfill history
+  ccmeter review <session-id> [--model m] [--dry-run | --show-input] [--force] [--json] [--yes]
         Prompt and workflow review of one session by a Claude model (via claude -p). On demand only; prints the estimated
         cost first and asks consent before the first review, because prompt text leaves the machine.
 
-Everything is local: reads ~/.claude, writes ~/.agent-lens. No network calls.`;
+Everything is local: reads ~/.claude, writes ~/.ccmeter. No network calls.`;
 
 async function main(): Promise<number> {
   const argv = process.argv.slice(2);

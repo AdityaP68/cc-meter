@@ -1,12 +1,12 @@
-# sessionscope documentation
+# ccmeter documentation
 
-sessionscope is a local-first usage and cost tracker for Claude Code: a plugin records every session into a SQLite database in `~/.sessionscope`, and a CLI and a dashboard on `127.0.0.1` read it. It answers what your sessions cost, which models they used and whether anything unusual happened, without sending anything off your machine.
+ccmeter is a local-first usage and cost tracker for Claude Code: a plugin records every session into a SQLite database in `~/.ccmeter`, and a CLI and a dashboard on `127.0.0.1` read it. It answers what your sessions cost, which models they used and whether anything unusual happened, without sending anything off your machine.
 
 The guide is split into one page per topic in `docs/guide/`. The same files are compiled into the dashboard's Docs section at `#/docs`, so they read the same on GitHub and in the app.
 
 | Page | What it covers |
 |---|---|
-| [Overview](guide/overview.md) | What sessionscope is, how it works, what it does not do |
+| [Overview](guide/overview.md) | What ccmeter is, how it works, what it does not do |
 | [Install](guide/install.md) | Requirements, `./install.sh`, trying it in isolation, upgrading from ccmeter, uninstall |
 | [First steps](guide/first-steps.md) | A five-minute path from install to readable numbers |
 | [Measures](guide/measures.md) | The vocabulary: session, turn, tokens, cost, switch, compaction |
@@ -15,7 +15,7 @@ The guide is split into one page per topic in `docs/guide/`. The same files are 
 | [Accuracy](guide/accuracy.md) | How far the numbers can be trusted, and the known discrepancies |
 | [Dashboard](guide/dashboard.md) | Every page, filter, chart, chip and banner |
 | [Command line](guide/cli.md) | Every command and flag, with exit codes |
-| [Status line and /sessionscope](guide/statusline-and-command.md) | The status line and the zero-token `/sessionscope` command |
+| [Status line and /ccmeter](guide/statusline-and-command.md) | The status line and the zero-token `/ccmeter` command |
 | [Configuration and pricing](guide/config-and-pricing.md) | Files, environment variables, `config.json`, prices, exports |
 | [Troubleshooting](guide/troubleshooting.md) | Symptoms and fixes, and what each doctor check means |
 

@@ -17,13 +17,13 @@ describe('review pipeline (stub claude)', () => {
   beforeEach(() => {
     s = recordSynthetic();
     stub = makeStubClaude();
-    process.env.AGENT_LENS_CLAUDE_BIN = stub.bin;
+    process.env.CCMETER_CLAUDE_BIN = stub.bin;
     process.env.STUB_LOG = stub.log;
     process.env.CLAUDE_CONFIG_DIR = s.claude;
     env();
   });
   afterEach(() => {
-    for (const k of ['AGENT_LENS_CLAUDE_BIN', 'STUB_LOG', 'CLAUDE_CONFIG_DIR', 'STUB_MODE']) delete process.env[k];
+    for (const k of ['CCMETER_CLAUDE_BIN', 'STUB_LOG', 'CLAUDE_CONFIG_DIR', 'STUB_MODE']) delete process.env[k];
   });
 
   it('prepares without spending: digest, flags, exact payload, estimate, no cached review', () => {
@@ -39,7 +39,7 @@ describe('review pipeline (stub claude)', () => {
     const p = prepareReview(s.db, s.sessionId, { table, model: 'claude-haiku-5-5', home: s.home });
     const r = await executeReview(s.db, p, { table, home: s.home });
     expect(stub.calls()).toHaveLength(1);
-    expect(stub.calls()[0]!.cwd).toContain(path.join(s.home, 'agent-lens-judge').replace(/^\/private/, ''));
+    expect(stub.calls()[0]!.cwd).toContain(path.join(s.home, 'ccmeter-judge').replace(/^\/private/, ''));
     expect(r.stored.review.prompt_scores.map((x) => x.turn)).toEqual([1, 2, 3]);
     expect(r.stored.costUsd).toBe(0.0123);
 
@@ -52,22 +52,22 @@ describe('review pipeline (stub claude)', () => {
     expect(s.db.prepare('SELECT COUNT(*) n FROM reviews').get()).toEqual({ n: 1 });
   });
 
-  it('records the judge run as a session tagged agent-lens-judge and keeps it out of usage totals', async () => {
+  it('records the judge run as a session tagged ccmeter-judge and keeps it out of usage totals', async () => {
     const before = overview(s.db);
     const p = prepareReview(s.db, s.sessionId, { table, model: 'claude-haiku-5-5', home: s.home });
     const r = await executeReview(s.db, p, { table, home: s.home });
     expect(r.judgeSessionRecorded).toBe(true);
-    const judge = s.db.prepare("SELECT source, cost_usd FROM sessions WHERE source = 'agent-lens-judge'").all();
+    const judge = s.db.prepare("SELECT source, cost_usd FROM sessions WHERE source = 'ccmeter-judge'").all();
     expect(judge).toHaveLength(1);
     const after = overview(s.db);
     expect(after.sessions).toBe(before.sessions);
     expect(after.costUsd).toBeCloseTo(before.costUsd, 12);
     expect(after.bySource.map((x) => x.source)).toEqual(['claude-code']);
-    expect(overview(s.db, { source: 'agent-lens-judge' }).sessions).toBe(1);
+    expect(overview(s.db, { source: 'ccmeter-judge' }).sessions).toBe(1);
     const fx = facets(s.db);
-    expect(fx.projects).not.toContain('agent-lens-judge');
+    expect(fx.projects).not.toContain('ccmeter-judge');
     expect(fx.models).not.toContain('claude-haiku-5-5');
-    expect(fx.sources).toContain('agent-lens-judge');
+    expect(fx.sources).toContain('ccmeter-judge');
     const o = reviewOverhead(s.db);
     expect(o.reviews).toBe(1);
     expect(o.costUsd).toBeCloseTo(0.0123, 9);
@@ -81,7 +81,7 @@ describe('review pipeline (stub claude)', () => {
     const r = await executeReview(s.db, p, { table, home: s.home });
     expect(r.quotesRemoved).toBeGreaterThan(0);
     s.db.exec('PRAGMA wal_checkpoint(TRUNCATE)');
-    const bytes = fs.readFileSync(path.join(s.home, 'agent-lens.db'));
+    const bytes = fs.readFileSync(path.join(s.home, 'ccmeter.db'));
     for (const bad of [SENTINEL_INPUT, SENTINEL_OUTPUT, SENTINEL_SECRET, 'exponential backoff', 'Add a retry to the fetch client']) expect(bytes.includes(Buffer.from(bad)), bad).toBe(false);
     expect(bytes.includes(Buffer.from('Add retry handling to a client'))).toBe(true); // the judge's own words are stored
   });
@@ -127,10 +127,10 @@ describe('doctor and reviews', () => {
 });
 
 describe('judge runs are tagged by where they ran', () => {
-  it('a transcript whose cwd is the judge folder is recorded as agent-lens-judge by any route, hook-less included', async () => {
+  it('a transcript whose cwd is the judge folder is recorded as ccmeter-judge by any route, hook-less included', async () => {
     const { judgeCwd } = await import('../core/review.js');
     const { SOURCE_JUDGE } = await import('../core/record.js');
-    const lines = syntheticLines().map((l) => l.replaceAll('/work/proj', judgeCwd('/anywhere/.agent-lens')));
+    const lines = syntheticLines().map((l) => l.replaceAll('/work/proj', judgeCwd('/anywhere/.ccmeter')));
     const s = recordSynthetic(lines, 'judge-by-cwd-0001');
     expect(s.db.prepare('SELECT source FROM sessions WHERE session_id = ?').get(s.sessionId)).toEqual({ source: SOURCE_JUDGE });
     expect(overview(s.db).sessions).toBe(0);

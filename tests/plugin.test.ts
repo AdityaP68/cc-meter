@@ -5,6 +5,13 @@ import { describe, expect, it } from 'vitest';
 import { CLI_JS, ROOT, installFixture, tmpDir } from './helpers/util.js';
 
 const PLUGIN = path.join(ROOT, 'plugin');
+/** A PATH holding only `node` (plus system tools), so a `ccmeter` left on the developer's PATH by `npm link` cannot be picked up. */
+const NODE_ONLY_BIN = (() => {
+  const bin = tmpDir('bin-');
+  fs.symlinkSync(process.execPath, path.join(bin, 'node'));
+  return bin;
+})();
+const NODE_PATH = `${NODE_ONLY_BIN}:/usr/bin:/bin`;
 const sh = (script: string, input: string, env: Record<string, string> = {}, args: string[] = []) =>
   spawnSync('sh', [path.join(PLUGIN, 'scripts', script), ...args], { input, encoding: 'utf8', env: { PATH: '/usr/bin:/bin', ...env }, timeout: 20000 });
 
@@ -30,15 +37,15 @@ describe('plugin manifests', () => {
   });
 });
 
-describe('hook launcher (plugin/scripts/agent-lens.sh)', () => {
-  it('runs the CLI recorded in ~/.agent-lens/cli-path, with a payload on stdin, silently', () => {
+describe('hook launcher (plugin/scripts/ccmeter.sh)', () => {
+  it('runs the CLI recorded in ~/.ccmeter/cli-path, with a payload on stdin, silently', () => {
     const home = tmpDir();
     const claude = tmpDir('claude-');
     const tp = installFixture('cc-2.1.287/sdk-complete.jsonl', claude);
     fs.writeFileSync(path.join(home, 'cli-path'), CLI_JS + '\n');
-    const r = sh('agent-lens.sh', JSON.stringify({ transcript_path: tp, hook_event_name: 'SessionEnd', reason: 'other' }), {
-      AGENT_LENS_HOME: home,
-      PATH: `${path.dirname(process.execPath)}:/usr/bin:/bin`,
+    const r = sh('ccmeter.sh', JSON.stringify({ transcript_path: tp, hook_event_name: 'SessionEnd', reason: 'other' }), {
+      CCMETER_HOME: home,
+      PATH: NODE_PATH,
       CLAUDE_CONFIG_DIR: claude,
     }, ['record']);
     expect(r.status).toBe(0);
@@ -46,11 +53,11 @@ describe('hook launcher (plugin/scripts/agent-lens.sh)', () => {
     expect(fs.readFileSync(path.join(home, 'record.log'), 'utf8')).toContain('recorded');
   });
 
-  it('falls back to the folders and env vars of earlier names until ~/.agent-lens exists', () => {
+  it('falls back to the folders and env vars of earlier names until ~/.ccmeter exists', () => {
     const fakeHome = tmpDir('home-');
     const claude = tmpDir('claude-');
     const tp = installFixture('cc-2.1.287/sdk-complete.jsonl', claude);
-    const env = { HOME: fakeHome, PATH: `${path.dirname(process.execPath)}:/usr/bin:/bin`, CLAUDE_CONFIG_DIR: claude };
+    const env = { HOME: fakeHome, PATH: NODE_PATH, CLAUDE_CONFIG_DIR: claude };
     const payload = JSON.stringify({ transcript_path: tp, hook_event_name: 'SessionEnd', reason: 'other' });
     const folder = (dir: string) => {
       const d = path.join(fakeHome, dir);
@@ -59,38 +66,38 @@ describe('hook launcher (plugin/scripts/agent-lens.sh)', () => {
       return d;
     };
     const ran = (dir: string) => fs.existsSync(path.join(dir, 'record.log'));
-    const ccmeter = folder('.ccmeter');
-    expect(sh('agent-lens.sh', payload, env, ['record']).status).toBe(0);
-    expect(ran(ccmeter)).toBe(true);
     const sessionscope = folder('.sessionscope');
-    sh('agent-lens.sh', payload, env, ['record']);
+    expect(sh('ccmeter.sh', payload, env, ['record']).status).toBe(0);
     expect(ran(sessionscope)).toBe(true);
+    const agentLens = folder('.agent-lens');
+    sh('ccmeter.sh', payload, env, ['record']);
+    expect(ran(agentLens)).toBe(true);
     // the env vars of earlier names still select a folder; the newest name wins
-    for (const key of ['CCMETER_HOME', 'SESSIONSCOPE_HOME']) {
+    for (const key of ['AGENT_LENS_HOME', 'SESSIONSCOPE_HOME']) {
       const viaEnv = tmpDir();
       fs.writeFileSync(path.join(viaEnv, 'cli-path'), CLI_JS + '\n');
-      expect(sh('agent-lens.sh', payload, { ...env, [key]: viaEnv }, ['record']).status).toBe(0);
+      expect(sh('ccmeter.sh', payload, { ...env, [key]: viaEnv }, ['record']).status).toBe(0);
       expect(ran(viaEnv), key).toBe(true);
     }
-    const fresh = folder('.agent-lens');
-    sh('agent-lens.sh', payload, env, ['record']);
+    const fresh = folder('.ccmeter');
+    sh('ccmeter.sh', payload, env, ['record']);
     expect(ran(fresh)).toBe(true);
   });
 
   it('exits 0 silently when no CLI can be found (a missing recorder must never break a session)', () => {
-    const r = sh('agent-lens.sh', '{}', { AGENT_LENS_HOME: tmpDir() }, ['record']);
+    const r = sh('ccmeter.sh', '{}', { CCMETER_HOME: tmpDir() }, ['record']);
     expect(r.status).toBe(0);
     expect(r.stdout + r.stderr).toBe('');
   });
 });
 
-describe('/agent-lens prompt hook (plugin/scripts/prompt-hook.sh)', () => {
+describe('/ccmeter prompt hook (plugin/scripts/prompt-hook.sh)', () => {
   const home = tmpDir();
-  const env = { AGENT_LENS_HOME: home, PATH: `${path.dirname(process.execPath)}:/usr/bin:/bin` };
+  const env = { CCMETER_HOME: home, PATH: NODE_PATH };
   fs.writeFileSync(path.join(home, 'cli-path'), CLI_JS + '\n');
 
   it('ignores ordinary prompts without starting anything', () => {
-    for (const prompt of ['fix the bug', 'what does /agent-lens do?', '/agent-lens extra words', '/agent-lensx']) {
+    for (const prompt of ['fix the bug', 'what does /ccmeter do?', '/ccmeter extra words', '/ccmeterx']) {
       const r = sh('prompt-hook.sh', JSON.stringify({ hook_event_name: 'UserPromptSubmit', prompt }), env);
       expect(r.status, prompt).toBe(0);
       expect(r.stdout, prompt).toBe('');
@@ -98,21 +105,21 @@ describe('/agent-lens prompt hook (plugin/scripts/prompt-hook.sh)', () => {
     expect(fs.existsSync(path.join(home, 'server.json'))).toBe(false);
   });
 
-  it('stops "/agent-lens" with one labelled line, the dashboard URL, then the server can be stopped', () => {
+  it('stops "/ccmeter" with one labelled line, the dashboard URL, then the server can be stopped', () => {
     const claude = tmpDir('claude-');
-    const r = sh('prompt-hook.sh', JSON.stringify({ hook_event_name: 'UserPromptSubmit', prompt: '/agent-lens' }), { ...env, CLAUDE_CONFIG_DIR: claude });
+    const r = sh('prompt-hook.sh', JSON.stringify({ hook_event_name: 'UserPromptSubmit', prompt: '/ccmeter' }), { ...env, CLAUDE_CONFIG_DIR: claude });
     try {
       expect(r.status).toBe(0);
       const out = JSON.parse(r.stdout);
       expect(out.continue).toBe(false);
-      expect(out.stopReason).toMatch(/^agent-lens dashboard: http:\/\/127\.0\.0\.1:\d+\/$/);
+      expect(out.stopReason).toMatch(/^ccmeter dashboard: http:\/\/127\.0\.0\.1:\d+\/$/);
     } finally {
-      spawnSync(process.execPath, [CLI_JS, 'serve', '--stop'], { env: { ...process.env, AGENT_LENS_HOME: home } });
+      spawnSync(process.execPath, [CLI_JS, 'serve', '--stop'], { env: { ...process.env, CCMETER_HOME: home } });
     }
   });
 });
 
-describe('agent-lens statusline', () => {
+describe('ccmeter statusline', () => {
   it('prints "model | cost | tokens" from the stdin JSON and the transcript', () => {
     const home = tmpDir();
     const claude = tmpDir('claude-');
@@ -121,7 +128,7 @@ describe('agent-lens statusline', () => {
       spawnSync(process.execPath, [CLI_JS, 'statusline'], {
         input: JSON.stringify({ model: { display_name: 'Sonnet 5.5' }, transcript_path: tp }),
         encoding: 'utf8',
-        env: { ...process.env, AGENT_LENS_HOME: home },
+        env: { ...process.env, CCMETER_HOME: home },
       });
     const a = run();
     expect(a.status).toBe(0);
@@ -132,7 +139,7 @@ describe('agent-lens statusline', () => {
 
   it('never fails or writes to stderr on garbage input', () => {
     for (const input of ['', 'nope', '{}', JSON.stringify({ transcript_path: '/not/there.jsonl', cost: { total_cost_usd: 1.5 } })]) {
-      const r = spawnSync(process.execPath, [CLI_JS, 'statusline'], { input, encoding: 'utf8', env: { ...process.env, AGENT_LENS_HOME: tmpDir() } });
+      const r = spawnSync(process.execPath, [CLI_JS, 'statusline'], { input, encoding: 'utf8', env: { ...process.env, CCMETER_HOME: tmpDir() } });
       expect(r.status).toBe(0);
       expect(r.stderr).toBe('');
       expect(r.stdout.trim().split('\n')).toHaveLength(1);

@@ -4,11 +4,11 @@ The vocabulary used across the dashboard, the CLI and these docs. Everything her
 
 ## Session
 
-One Claude Code conversation, identified by its transcript file name (the session id). The session's totals include its subagents' transcript files. Sessions can come from the terminal CLI, the Claude desktop app (entry point `claude-desktop`) or headless `claude -p` runs; all three write transcripts of the same kind, which is what sessionscope reads. Whether the plugin's hooks fire inside the desktop app is not verified; the transcripts are picked up by a rescan either way. The `entrypoint` recorded for a session is `cli`, `claude-desktop` or `sdk-cli`.
+One Claude Code conversation, identified by its transcript file name (the session id). The session's totals include its subagents' transcript files. Sessions can come from the terminal CLI, the Claude desktop app (entry point `claude-desktop`) or headless `claude -p` runs; all three write transcripts of the same kind, which is what ccmeter reads. Whether the plugin's hooks fire inside the desktop app is not verified; the transcripts are picked up by a rescan either way. The `entrypoint` recorded for a session is `cli`, `claude-desktop` or `sdk-cli`.
 
 ## Message
 
-One API response from the model, as written in the transcript (the dashboard calls them "API messages"). Claude Code (observed on 2.1.236 to 2.1.295) writes one transcript line per content block, all with the same message id, so sessionscope keeps **one message per id** and the last copy wins. See [Costs](costs.md). Error placeholders (`<synthetic>`) are ignored.
+One API response from the model, as written in the transcript (the dashboard calls them "API messages"). Claude Code (observed on 2.1.236 to 2.1.295) writes one transcript line per content block, all with the same message id, so ccmeter keeps **one message per id** and the last copy wins. See [Costs](costs.md). Error placeholders (`<synthetic>`) are ignored.
 
 ## Turn
 
@@ -16,7 +16,7 @@ One real human prompt. Tool results, slash-command echoes, injected reminders, c
 
 ## Token kinds
 
-Each message reports four counts, and sessionscope keeps all of them separately:
+Each message reports four counts, and ccmeter keeps all of them separately:
 
 | Kind | Meaning |
 |---|---|
@@ -33,7 +33,7 @@ The estimated list-price cost of the priced messages. It is an estimate, not a b
 
 ## Unpriced
 
-A model with no entry in the price table. Its messages have cost `NULL`, not $0, and are left out of every total. The cost is shown with a **+ unpriced** chip, the dashboard shows a banner naming the model, and `sessionscope doctor` lists it. Claude Code's own figure for that model, where it recorded one, is shown beside the cost and never added to it.
+A model with no entry in the price table. Its messages have cost `NULL`, not $0, and are left out of every total. The cost is shown with a **+ unpriced** chip, the dashboard shows a banner naming the model, and `ccmeter doctor` lists it. Claude Code's own figure for that model, where it recorded one, is shown beside the cost and never added to it.
 
 ## Models
 

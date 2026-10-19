@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Digest } from './digest.js';
-import { agentLensHome } from './paths.js';
+import { ccmeterHome } from './paths.js';
 
 /**
  * Heuristic flags computed from the digest alone (zero tokens; docs/ARCHITECTURE.md, Milestone 3 §2). A flag is a hint about
@@ -18,7 +18,7 @@ export interface Flag {
 
 export type DetectorParams = Record<string, unknown>;
 
-/** One detector = one module with its own id and parameters (`detectors.<id>` in ~/.agent-lens/config.json). */
+/** One detector = one module with its own id and parameters (`detectors.<id>` in ~/.ccmeter/config.json). */
 export interface Detector {
   id: string;
   defaults?: DetectorParams;
@@ -114,8 +114,8 @@ export function registerDetector(d: Detector): void {
   registered.push(d);
 }
 
-/** `detectors.<id>` objects from ~/.agent-lens/config.json; missing or unreadable config means defaults. */
-export function loadDetectorParams(home = agentLensHome()): Record<string, DetectorParams> {
+/** `detectors.<id>` objects from ~/.ccmeter/config.json; missing or unreadable config means defaults. */
+export function loadDetectorParams(home = ccmeterHome()): Record<string, DetectorParams> {
   try {
     const c = JSON.parse(fs.readFileSync(path.join(home, 'config.json'), 'utf8')) as { detectors?: unknown };
     return c.detectors && typeof c.detectors === 'object' && !Array.isArray(c.detectors) ? (c.detectors as Record<string, DetectorParams>) : {};

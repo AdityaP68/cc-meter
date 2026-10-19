@@ -15,7 +15,7 @@ beforeEach(() => {
   const home = tmpDir();
   claude = tmpDir('claude-');
   process.env.CLAUDE_CONFIG_DIR = claude;
-  process.env.AGENT_LENS_HOME = home;
+  process.env.CCMETER_HOME = home;
   db = openDb(path.join(home, 't.db'));
 });
 
@@ -27,7 +27,7 @@ const write = (id: string, lines: string[]) => {
   return f;
 };
 const byId = (checks: ReturnType<typeof runDoctor>, id: string) => checks.find((c) => c.id === id)!;
-const opts = { skipExternal: true, claudeVersion: '2.1.287', pluginList: 'agent-lens@agent-lens ✔ enabled' };
+const opts = { skipExternal: true, claudeVersion: '2.1.287', pluginList: 'ccmeter@ccmeter ✔ enabled' };
 
 describe('doctor', () => {
   it('is healthy on verified fixtures', () => {
@@ -79,11 +79,11 @@ describe('doctor', () => {
     expect(byId(c, 'hooks').level).toBe('warn');
   });
 
-  it('warns when a plugin under an earlier name (sessionscope, ccmeter) is still installed', () => {
-    const c = runDoctor(db, table, { skipExternal: true, claudeVersion: '2.1.287', pluginList: 'agent-lens@agent-lens ✔ enabled\nsessionscope@sessionscope ✔ enabled\nccmeter@ccmeter ✔ enabled' });
+  it('warns when a plugin under an earlier name (sessionscope, agent-lens) is still installed', () => {
+    const c = runDoctor(db, table, { skipExternal: true, claudeVersion: '2.1.287', pluginList: 'ccmeter@ccmeter ✔ enabled\nsessionscope@sessionscope ✔ enabled\nagent-lens@agent-lens ✔ enabled' });
     expect(byId(c, 'legacy-plugin').level).toBe('warn');
-    expect(c.find((x) => x.id === 'legacy-plugin')?.detail).toContain('agent-lens setup');
-    expect(c.find((x) => x.id === 'legacy-plugin')?.title).toMatch(/sessionscope@sessionscope, ccmeter@ccmeter/);
+    expect(c.find((x) => x.id === 'legacy-plugin')?.detail).toContain('ccmeter setup');
+    expect(c.find((x) => x.id === 'legacy-plugin')?.title).toMatch(/agent-lens@agent-lens, sessionscope@sessionscope/);
     expect(runDoctor(db, table, opts).find((x) => x.id === 'legacy-plugin')).toBeUndefined();
   });
 
@@ -139,7 +139,7 @@ describe('doctor', () => {
     const r = byId(runDoctor(db, table, opts), 'reconcile');
     expect(r.title).toContain('0 of 1');
     expect(r.detail).toContain('Largest difference: session resumed');
-    expect(r.detail).toContain(`agent-lens $${price('claude-sonnet-5-5', ours).toFixed(2)}`);
+    expect(r.detail).toContain(`ccmeter $${price('claude-sonnet-5-5', ours).toFixed(2)}`);
     expect(r.detail).toContain('Claude Code $0.00');
   });
 });

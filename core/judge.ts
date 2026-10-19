@@ -5,7 +5,7 @@ import type { Flag } from './flags.js';
 import { messageCost, type PriceTable } from './pricing.js';
 
 /**
- * The judge: one structured `claude -p` call per review (design choice A, docs/ARCHITECTURE.md, ADR 0007). agent-lens opens
+ * The judge: one structured `claude -p` call per review (design choice A, docs/ARCHITECTURE.md, ADR 0007). ccmeter opens
  * no connection and handles no API key: Claude Code, already logged in, makes the call. The text it receives is the redacted,
  * capped digest from core/digest.ts, which is why the first review needs explicit consent.
  */
@@ -140,8 +140,8 @@ export interface JudgeOptions {
   bin?: string;
 }
 
-/** `claude` on PATH, or AGENT_LENS_CLAUDE_BIN (the tests point it at a stub; nothing in the tests spends money). */
-export const claudeBin = () => process.env.AGENT_LENS_CLAUDE_BIN || 'claude';
+/** `claude` on PATH, or CCMETER_CLAUDE_BIN (the tests point it at a stub; nothing in the tests spends money). */
+export const claudeBin = () => process.env.CCMETER_CLAUDE_BIN || 'claude';
 
 export function judgeArgs(o: Pick<JudgeOptions, 'model' | 'maxBudgetUsd'>): string[] {
   return [
@@ -153,8 +153,8 @@ export function judgeArgs(o: Pick<JudgeOptions, 'model' | 'maxBudgetUsd'>): stri
     '--strict-mcp-config',
     '--system-prompt', RUBRIC,
     '--json-schema', JSON.stringify(REVIEW_SCHEMA),
-    // the judge run must not trigger agent-lens's own hooks; core/review.ts records the run itself, tagged agent-lens-judge
-    '--settings', JSON.stringify({ enabledPlugins: { 'agent-lens@agent-lens': false } }),
+    // the judge run must not trigger ccmeter's own hooks; core/review.ts records the run itself, tagged ccmeter-judge
+    '--settings', JSON.stringify({ enabledPlugins: { 'ccmeter@ccmeter': false } }),
     '--max-budget-usd', String(o.maxBudgetUsd),
   ];
 }
@@ -166,7 +166,7 @@ export function runJudge(o: JudgeOptions): Promise<JudgeRun> {
   return new Promise((resolve, reject) => {
     const child = spawn(o.bin ?? claudeBin(), judgeArgs(o), {
       cwd: o.cwd,
-      env: { ...process.env, AGENT_LENS_JUDGE_RUNNING: '1' },
+      env: { ...process.env, CCMETER_JUDGE_RUNNING: '1' },
       stdio: ['pipe', 'pipe', 'pipe'],
     });
     let out = '';

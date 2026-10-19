@@ -1,11 +1,11 @@
 {
-  "name": "agent-lens",
+  "name": "ccmeter",
   "version": "0.1.0",
   "description": "Local-first usage, cost and quality tracker for Claude Code",
   "license": "MIT",
   "type": "module",
   "bin": {
-    "agent-lens": "dist/cli/index.js"
+    "ccmeter": "dist/cli/index.js"
   },
   "engines": {
     "node": ">=22.13.0"

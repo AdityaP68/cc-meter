@@ -11,7 +11,7 @@ import { recordTranscript } from '../core/record.js';
 import { asst, CLI_JS, tmpDir, user } from './helpers/util.js';
 
 // The user asked for an upfront prompt when a model has no price: in the dashboard (banner), the status line and
-// `agent-lens report`, pointing at ~/.agent-lens/pricing.json and `agent-lens doctor`. Never inside the conversation.
+// `ccmeter report`, pointing at ~/.ccmeter/pricing.json and `ccmeter doctor`. Never inside the conversation.
 const setup = () => {
   const home = tmpDir();
   const claude = tmpDir('claude-');
@@ -19,7 +19,7 @@ const setup = () => {
   fs.mkdirSync(dir, { recursive: true });
   const tp = path.join(dir, 'sess-unpriced.jsonl');
   fs.writeFileSync(tp, [user('go'), asst({ id: 'a', model: 'claude-sonnet-5-5', input: 10, output: 5 }), asst({ id: 'b', model: 'claude-mystery-9', input: 10, output: 5 })].join('\n'));
-  return { home, claude, tp, env: { ...process.env, AGENT_LENS_HOME: home, CLAUDE_CONFIG_DIR: claude } };
+  return { home, claude, tp, env: { ...process.env, CCMETER_HOME: home, CLAUDE_CONFIG_DIR: claude } };
 };
 const cli = (args: string[], env: NodeJS.ProcessEnv, input?: string) => spawnSync(process.execPath, [CLI_JS, ...args], { encoding: 'utf8', env, input, timeout: 30000 });
 
@@ -32,14 +32,14 @@ describe('upfront prompt for unpriced models', () => {
     db.close();
   });
 
-  it('agent-lens report starts with a line naming the model and what to do', () => {
+  it('ccmeter report starts with a line naming the model and what to do', () => {
     const { env } = setup();
     expect(cli(['record', '--all'], env).status).toBe(0);
     for (const args of [['report'], ['report', '--by', 'model'], ['report', '--session', 'sess-unp']]) {
       const first = cli(args, env).stdout.split('\n')[0]!;
       expect(first).toContain('⚠ No price for claude-mystery-9');
-      expect(first).toContain('~/.agent-lens/pricing.json');
-      expect(first).toContain('agent-lens doctor');
+      expect(first).toContain('~/.ccmeter/pricing.json');
+      expect(first).toContain('ccmeter doctor');
     }
     expect(cli(['report', '--json'], env).stdout.trimStart().startsWith('{')).toBe(true); // JSON stays parseable
   });
@@ -54,7 +54,7 @@ describe('upfront prompt for unpriced models', () => {
   });
 });
 
-describe("Claude Code's own figure for an unpriced model (stopgap, never in agent-lens's totals)", () => {
+describe("Claude Code's own figure for an unpriced model (stopgap, never in ccmeter's totals)", () => {
   const cs = (usd: number) => JSON.stringify({ type: 'cost-state', totalCostUSD: usd + 0.25, modelUsage: { 'claude-mystery-9': { inputTokens: 10, outputTokens: 5, cacheReadInputTokens: 0, cacheCreationInputTokens: 0, costUSD: usd, webSearchRequests: 0 }, 'claude-sonnet-5-5': { inputTokens: 10, outputTokens: 5, cacheReadInputTokens: 0, cacheCreationInputTokens: 0, costUSD: 0.25, webSearchRequests: 0 } } });
   const mystery = (m: Record<string, number> | null) => ({ models: [{ model: 'claude-mystery-9' }], costState: m === null ? null : { totalCostUSD: 0, modelUsage: Object.fromEntries(Object.entries(m).map(([k, v]) => [k, { inputTokens: 0, outputTokens: 0, cacheReadInputTokens: 0, cacheCreationInputTokens: 0, costUSD: v, webSearchRequests: 0 }])) } });
 
@@ -63,15 +63,15 @@ describe("Claude Code's own figure for an unpriced model (stopgap, never in agen
     expect(f).toEqual([{ model: 'claude-mystery-9', sessions: 4, withFigure: 2, costUsd: 1.75 }]);
   });
 
-  it('doctor shows it, labelled, and the agent-lens total still leaves the model out', () => {
+  it('doctor shows it, labelled, and the ccmeter total still leaves the model out', () => {
     const { home, tp } = setup();
     fs.appendFileSync(tp, '\n' + cs(0.5));
     const db = openDb(path.join(home, 'x.db'));
     const table = loadPricing({ overridePath: null });
     recordTranscript(db, table, tp);
-    const u = runDoctor(db, table, { skipExternal: true, claudeVersion: '2.1.287', pluginList: 'agent-lens@agent-lens ✔ enabled' }).find((c) => c.id === 'unpriced')!;
+    const u = runDoctor(db, table, { skipExternal: true, claudeVersion: '2.1.287', pluginList: 'ccmeter@ccmeter ✔ enabled' }).find((c) => c.id === 'unpriced')!;
     expect(u.level).toBe('warn');
-    expect(u.detail).toContain("Claude Code's figure for claude-mystery-9: $0.50 (in 1 of 1 session(s); not included in agent-lens's totals)");
+    expect(u.detail).toContain("Claude Code's figure for claude-mystery-9: $0.50 (in 1 of 1 session(s); not included in ccmeter's totals)");
     expect(overview(db, {}).costUsd).toBeLessThan(0.01); // only the priced sonnet message
     db.close();
   });

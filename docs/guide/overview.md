@@ -1,16 +1,16 @@
 # Overview
 
-sessionscope is a local-first usage and cost tracker for Claude Code. It answers three questions without sending anything off your machine: **what did my sessions cost, which models did they use, and did anything unusual happen** (model switches, compactions, subagent fan-out, calls that never reached the transcript).
+ccmeter is a local-first usage and cost tracker for Claude Code. It answers three questions without sending anything off your machine: **what did my sessions cost, which models did they use, and did anything unusual happen** (model switches, compactions, subagent fan-out, calls that never reached the transcript).
 
 ## How it works
 
 ```
-Claude Code plugin hooks  ->  recorder  ->  SQLite in ~/.sessionscope  ->  CLI + dashboard on 127.0.0.1
+Claude Code plugin hooks  ->  recorder  ->  SQLite in ~/.ccmeter  ->  CLI + dashboard on 127.0.0.1
 ```
 
-1. A small Claude Code plugin registers three hooks: `Stop` (a turn ended) and `SessionEnd` (the session ended) record the session, and `UserPromptSubmit` watches for the prompt `/sessionscope`. They run as separate processes. The two recording hooks print nothing; the `/sessionscope` hook prints one line (the dashboard address) only when you type exactly that prompt. Details in [Privacy](privacy.md) and the status line and command page ([Status line and /sessionscope](statusline-and-command.md)).
+1. A small Claude Code plugin registers three hooks: `Stop` (a turn ended) and `SessionEnd` (the session ended) record the session, and `UserPromptSubmit` watches for the prompt `/ccmeter`. They run as separate processes. The two recording hooks print nothing; the `/ccmeter` hook prints one line (the dashboard address) only when you type exactly that prompt. Details in [Privacy](privacy.md) and the status line and command page ([Status line and /ccmeter](statusline-and-command.md)).
 2. The hook hands the path of the session's transcript file to the recorder. The recorder re-reads the whole transcript, prices every API response, and writes the result into a SQLite database. It is idempotent: recording a session twice gives the same rows.
-3. The `sessionscope` command line (`report`, `doctor`, `export`) and a local dashboard read that database. The dashboard server listens on `127.0.0.1` only.
+3. The `ccmeter` command line (`report`, `doctor`, `export`) and a local dashboard read that database. The dashboard server listens on `127.0.0.1` only.
 
 ## Who it is for
 
@@ -22,7 +22,7 @@ Developers who use Claude Code and want to see where their tokens and dollars go
 - Cost per day (stacked by model), per project, per model and per turn. See [Measures](measures.md) for the vocabulary and [Costs](costs.md) for how the dollar figure is computed.
 - Events worth knowing about: model switches, compactions, subagent cost, shown on the session page.
 - A cross-check of every session that has a Claude Code cost record against Claude Code's own accounting, with the differences explained rather than hidden. Sessions without such a record cannot be checked. See [Accuracy](accuracy.md) and the [Health page](#/health).
-- Warnings when a model has no price, when Claude Code's transcript format changes, or when hooks are missing (`sessionscope doctor` and the Health page).
+- Warnings when a model has no price, when Claude Code's transcript format changes, or when hooks are missing (`ccmeter doctor` and the Health page).
 
 ## Sources
 
@@ -31,10 +31,10 @@ Claude Code is the first supported source. The design does not assume it is the 
 ## What it does not do
 
 - **It is not your bill.** Costs are estimates at list price computed from token counts. Subscriptions, discounts and credits are not modelled. See [Costs](costs.md).
-- **No quality scores yet.** Grading prompts or summarising sessions needs a prompt reviewer. That reviewer is planned and not released; `sessionscope review` is a stub that says so.
-- **No leaderboards, by design.** sessionscope never ranks people.
+- **No quality scores yet.** Grading prompts or summarising sessions needs a prompt reviewer. That reviewer is planned and not released; `ccmeter review` is a stub that says so.
+- **No leaderboards, by design.** ccmeter never ranks people.
 - **It does not watch a session live.** Numbers update when a turn ends (the status line recalculates from the transcript each time Claude Code redraws it).
-- **It does not see what Claude Code does not write to the transcript.** Some billed calls never appear there. sessionscope detects and estimates this where it can, and says so where it cannot. See [Accuracy](accuracy.md).
+- **It does not see what Claude Code does not write to the transcript.** Some billed calls never appear there. ccmeter detects and estimates this where it can, and says so where it cannot. See [Accuracy](accuracy.md).
 
 ## Where to go next
 

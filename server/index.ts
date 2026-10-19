@@ -10,7 +10,7 @@ import { loadPricing, type PriceTable } from '../core/pricing.js';
 import { recordAll } from '../core/record.js';
 import { claudeCodePartial, hiddenCallsEstimate, reconcile } from '../core/reconcile.js';
 
-export const APP_ID = 'agent-lens';
+export const APP_ID = 'ccmeter';
 export const HOST = '127.0.0.1';
 
 const MIME: Record<string, string> = {
@@ -115,7 +115,7 @@ export function startServer(opts: ServerOptions): Promise<RunningServer> {
       if (url.pathname.startsWith('/api/')) {
         if (req.method === 'POST') {
           // custom header forces a CORS preflight, which we never grant: blocks cross-site POSTs to localhost
-          if (req.headers['x-agent-lens'] !== '1') return send(res, 403, { error: 'missing x-agent-lens header' });
+          if (req.headers['x-ccmeter'] !== '1') return send(res, 403, { error: 'missing x-ccmeter header' });
           if (url.pathname === '/api/refresh') return send(res, 200, refresh());
           return send(res, 404, { error: 'not found' });
         }

@@ -2,17 +2,17 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { openDb } from '../../core/db.js';
-import { claudeHome, ensureHome, migrateLegacyHome, packageRoot, agentLensHome } from '../../core/paths.js';
+import { claudeHome, ensureHome, migrateLegacyHome, packageRoot, ccmeterHome } from '../../core/paths.js';
 import { loadPricing } from '../../core/pricing.js';
 import { recordAll } from '../../core/record.js';
 import type { Parsed } from '../args.js';
 
-const MARKETPLACE = 'agent-lens';
-const PLUGIN = 'agent-lens@agent-lens';
+const MARKETPLACE = 'ccmeter';
+const PLUGIN = 'ccmeter@ccmeter';
 /** Registered by versions before the rename; replaced by setup so the hooks do not run twice. */
 const LEGACY = [
+  { plugin: 'agent-lens@agent-lens', marketplace: 'agent-lens', statusline: 'agent-lens statusline' },
   { plugin: 'sessionscope@sessionscope', marketplace: 'sessionscope', statusline: 'sessionscope statusline' },
-  { plugin: 'ccmeter@ccmeter', marketplace: 'ccmeter', statusline: 'ccmeter statusline' },
 ];
 
 function claude(args: string[]): { ok: boolean; out: string } {
@@ -25,8 +25,8 @@ function claude(args: string[]): { ok: boolean; out: string } {
 }
 
 /**
- * `agent-lens setup`: create ~/.agent-lens, remember where this CLI lives (for the hook launcher), register this package
- * as a local plugin marketplace, install the plugin, backfill history. Used by install.sh and by `npx agent-lens setup`.
+ * `ccmeter setup`: create ~/.ccmeter, remember where this CLI lives (for the hook launcher), register this package
+ * as a local plugin marketplace, install the plugin, backfill history. Used by install.sh and by `npx ccmeter setup`.
  */
 export async function cmdSetup(args: Parsed): Promise<number> {
   const root = packageRoot();
@@ -42,7 +42,7 @@ export async function cmdSetup(args: Parsed): Promise<number> {
       const mp = claude(['plugin', 'marketplace', 'remove', marketplace]);
       if (mp.ok || marketplace === MARKETPLACE) console.log(mp.out);
     }
-    console.log(`Plugin removed. Your data in ${agentLensHome()} was left in place; delete it yourself if you want it gone.`);
+    console.log(`Plugin removed. Your data in ${ccmeterHome()} was left in place; delete it yourself if you want it gone.`);
     return 0;
   }
 
@@ -55,7 +55,7 @@ export async function cmdSetup(args: Parsed): Promise<number> {
   console.log(`✔ ${home} ready (hook launcher -> ${cli})`);
 
   if (!claude(['--version']).ok) {
-    console.log('⚠ `claude` is not on PATH: skipped plugin install. Install Claude Code, then re-run `agent-lens setup`.');
+    console.log('⚠ `claude` is not on PATH: skipped plugin install. Install Claude Code, then re-run `ccmeter setup`.');
   } else {
     const installed = claude(['plugin', 'list']).out;
     for (const old of LEGACY.filter((l) => installed.includes(l.plugin))) {
@@ -67,7 +67,7 @@ export async function cmdSetup(args: Parsed): Promise<number> {
     if (add.ok || /already/i.test(add.out)) console.log(`✔ marketplace "${MARKETPLACE}" registered (${root})`);
     else console.log(`⚠ could not register marketplace: ${add.out}`);
     const inst = claude(['plugin', 'install', PLUGIN]);
-    if (inst.ok || /already/i.test(inst.out)) console.log(`✔ plugin ${PLUGIN} installed (hooks: Stop, SessionEnd, UserPromptSubmit for /agent-lens)`);
+    if (inst.ok || /already/i.test(inst.out)) console.log(`✔ plugin ${PLUGIN} installed (hooks: Stop, SessionEnd, UserPromptSubmit for /ccmeter)`);
     else console.log(`⚠ could not install plugin: ${inst.out}`);
   }
 
@@ -80,10 +80,10 @@ export async function cmdSetup(args: Parsed): Promise<number> {
 
   console.log(`
 Optional: show live cost in Claude Code's status line by adding this to ~/.claude/settings.json
-  "statusLine": { "type": "command", "command": "agent-lens statusline" }
-(or run \`agent-lens setup --statusline\` and I'll add it if you have none).`);
+  "statusLine": { "type": "command", "command": "ccmeter statusline" }
+(or run \`ccmeter setup --statusline\` and I'll add it if you have none).`);
   const statuslineOk = args.flags.statusline || hasLegacyStatusline() ? installStatusline() : true;
-  console.log(`\n${statuslineOk ? 'Done.' : 'Done, except the status line (see above).'} Run \`agent-lens doctor\` to verify, and \`/agent-lens\` in Claude Code (or \`agent-lens serve --open\`) for the dashboard.`);
+  console.log(`\n${statuslineOk ? 'Done.' : 'Done, except the status line (see above).'} Run \`ccmeter doctor\` to verify, and \`/ccmeter\` in Claude Code (or \`ccmeter serve --open\`) for the dashboard.`);
   return statuslineOk ? 0 : 1;
 }
 
@@ -99,7 +99,7 @@ export function hasLegacyStatusline(): boolean {
 }
 
 /**
- * Add agent-lens's statusLine to ~/.claude/settings.json. Returns false (and writes nothing) when the file exists but
+ * Add ccmeter's statusLine to ~/.claude/settings.json. Returns false (and writes nothing) when the file exists but
  * is not a JSON object: we would otherwise replace the user's settings with just the statusLine.
  */
 export function installStatusline(): boolean {
@@ -113,7 +113,7 @@ export function installStatusline(): boolean {
       parsed = undefined;
     }
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      console.log(`✘ ${file} is not valid JSON (or not an object), so agent-lens left it untouched. Fix it, or add the statusLine yourself (see above).`);
+      console.log(`✘ ${file} is not valid JSON (or not an object), so ccmeter left it untouched. Fix it, or add the statusLine yourself (see above).`);
       return false;
     }
     json = parsed as Record<string, unknown>;
@@ -123,9 +123,9 @@ export function installStatusline(): boolean {
     console.log('ℹ a statusLine is already configured; left unchanged.');
     return true;
   }
-  if (fs.existsSync(file)) fs.copyFileSync(file, `${file}.agent-lens-backup`);
-  json.statusLine = { type: 'command', command: 'agent-lens statusline' };
+  if (fs.existsSync(file)) fs.copyFileSync(file, `${file}.ccmeter-backup`);
+  json.statusLine = { type: 'command', command: 'ccmeter statusline' };
   fs.writeFileSync(file, JSON.stringify(json, null, 2) + '\n');
-  console.log(`✔ statusLine added to ${file} (backup: ${file}.agent-lens-backup)`);
+  console.log(`✔ statusLine added to ${file} (backup: ${file}.ccmeter-backup)`);
   return true;
 }

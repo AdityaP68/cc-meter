@@ -7,7 +7,7 @@ what it costs; the guides say why.
 
 ## Baseline (measure first)
 
-`node scripts/harness/metrics.mjs` reads agent-lens's own database (read-only). Before the harness, 2026-10-15:
+`node scripts/harness/metrics.mjs` reads ccmeter's own database (read-only). Before the harness, 2026-10-15:
 
 | Project sessions | Main-thread requests | Context per request (median / p90 / max) | Main-thread cost paid at > 200k context | Cost |
 |---:|---:|---|---:|---:|
@@ -31,8 +31,8 @@ guard and session continuity below target exactly that. **Re-measure** after a f
 | 4c | Subagents | `transcript-surveyor` (aggregates only), `invariant-reviewer` (diff in, findings out) | description always | ≈ 180 | no |
 | 5 | Checks that must hold | `scripts/harness/check.mjs`, `.githooks/pre-commit`, `core/migrations.lock.json` | on commit and in verify | 0 | **yes** |
 | 6 | In-task verify loop | `npm run verify` (`scripts/harness/verify.mjs`) | when run | output capped at 2.5k chars | feedback |
-| 7 | Permissions | `.claude/settings.json` allow (verify, tests, git reads, agent-lens reads) / deny (publish, reading `dist/`; `git push origin main` is allowed since 2026-10-18) | — | 0 | **yes** |
-| 8 | Measurement | `scripts/harness/metrics.mjs` (dogfoods agent-lens) | when run | 0 | — |
+| 7 | Permissions | `.claude/settings.json` allow (verify, tests, git reads, ccmeter reads) / deny (publish, reading `dist/`; `git push origin main` is allowed since 2026-10-18) | — | 0 | **yes** |
+| 8 | Measurement | `scripts/harness/metrics.mjs` (dogfoods ccmeter) | when run | 0 | — |
 | 9 | Durable knowledge | `docs/decisions/`, `docs/memory/lessons.md`, `docs/references.md` | on demand | 0 | — |
 
 Fixed overhead added by the harness: **≈ 2.3k tokens** per session (instructions + listings), plus ≈ 520 per
@@ -40,13 +40,13 @@ start/compaction for orientation. Verified live (2026-10-15, headless): a sessio
 handoff item 1" from the injected orientation alone, without tool calls. The context guard's Stop block fired
 live in the interactive build session at ~581k tokens (2026-10-15) and was answered with this hand-off.
 
-## What is specific to agent-lens
+## What is specific to ccmeter
 
 - **The live install.** The user's Claude Code runs this checkout (`dist/` for hooks, `plugin/` in place).
   Orientation says so every session and warns when `dist/` is older than the sources. `npm run verify` and
   `npm test` build into `.test-dist/`; only `npm run build` changes what the user runs.
 - **Experiments vs the installed plugin.** Live `claude -p` probes disable it with
-  `--settings '{"enabledPlugins":{"agent-lens@agent-lens":false}}'` (a lesson learned when it contaminated results).
+  `--settings '{"enabledPlugins":{"ccmeter@ccmeter":false}}'` (a lesson learned when it contaminated results).
 - **Format drift is the main external risk.** Orientation compares `claude --version` with the parser's verified
   range; the `format-drift` skill is the procedure; the `transcript-surveyor` subagent keeps raw transcripts (large,
   private) out of the main context.

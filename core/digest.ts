@@ -101,7 +101,7 @@ export function digestHash(d: Digest): string {
 
 export function buildDigest(db: Db, sessionId: string, o: DigestOptions): BuiltDigest {
   const row = db.prepare('SELECT transcript_path FROM sessions WHERE session_id = ?').get(sessionId) as { transcript_path: string } | undefined;
-  if (!row) throw new Error(`no recorded session "${sessionId}" (try \`agent-lens record --all\`)`);
+  if (!row) throw new Error(`no recorded session "${sessionId}" (try \`ccmeter record --all\`)`);
   const summary = parseSession(row.transcript_path, o.table);
   if (!summary) throw new Error(`cannot read the transcript of session "${sessionId}"`);
   const detail = new Map<number, TurnDetail>(extractTurnDetail(readLines(row.transcript_path)).map((t) => [t.turn, t]));

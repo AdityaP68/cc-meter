@@ -16,7 +16,7 @@ process.stdin.on('data', (d) => (stdin += d));
 process.stdin.on('end', () => {
   const mode = process.env.STUB_MODE || 'ok';
   const arg = (n) => args[args.indexOf(n) + 1];
-  fs.appendFileSync(process.env.STUB_LOG, JSON.stringify({ args, stdin, judgeEnv: process.env.AGENT_LENS_JUDGE_RUNNING, cwd: process.cwd() }) + '\\n');
+  fs.appendFileSync(process.env.STUB_LOG, JSON.stringify({ args, stdin, judgeEnv: process.env.CCMETER_JUDGE_RUNNING, cwd: process.cwd() }) + '\\n');
   if (mode === 'slow') return setTimeout(() => {}, 60000);
   if (mode === 'garbage') { process.stdout.write('this is not json'); return process.exit(0); }
   if (mode === 'error') {

@@ -46,7 +46,7 @@ function DocsIndex() {
   return (
     <article className="docs-article">
       <h1 tabIndex={-1}>Documentation</h1>
-      <p className="docs-lead">How sessionscope works, what its numbers mean, and how to use it. These pages are part of the dashboard, need no network, and are also readable as plain markdown in <code>docs/guide/</code> in the repository.</p>
+      <p className="docs-lead">How ccmeter works, what its numbers mean, and how to use it. These pages are part of the dashboard, need no network, and are also readable as plain markdown in <code>docs/guide/</code> in the repository.</p>
       {DOC_GROUPS.map((g) => (
         <section key={g.name} className="docs-index-group" aria-labelledby={`docs-g-${g.name}`}>
           <h2 id={`docs-g-${g.name}`}>{g.name}</h2>

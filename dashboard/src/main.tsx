@@ -39,9 +39,9 @@ function useHash(): string {
 
 function App() {
   const hash = useHash();
-  const [filters, setFilters] = useState<Filters>(() => load('agent-lens.filters', DEFAULT));
+  const [filters, setFilters] = useState<Filters>(() => load('ccmeter.filters', DEFAULT));
   const [reload, setReload] = useState(0);
-  const [theme, setTheme] = useState<string>(() => load<{ t: string }>('agent-lens.theme', { t: '' }).t);
+  const [theme, setTheme] = useState<string>(() => load<{ t: string }>('ccmeter.theme', { t: '' }).t);
   const [busy, setBusy] = useState(false);
   const facets = useApi<Facets>('/api/facets', [reload]);
   const doctor = useApi<{ checks: Check[] }>('/api/doctor', [reload]);
@@ -49,11 +49,11 @@ function App() {
   // Effects use block bodies: an effect's return value is its cleanup, and window.scrollTo returns a Promise in
   // current Chromium, so `() => window.scrollTo(0, 0)` made React call a Promise on the next route and unmount the app.
   useEffect(() => { window.scrollTo(0, 0); }, [hash]);
-  useEffect(() => { save('agent-lens.filters', filters); }, [filters]);
+  useEffect(() => { save('ccmeter.filters', filters); }, [filters]);
   useEffect(() => {
     if (theme) document.documentElement.dataset.theme = theme;
     else delete document.documentElement.dataset.theme;
-    save('agent-lens.theme', { t: theme });
+    save('ccmeter.theme', { t: theme });
   }, [theme]);
 
   const colors = useMemo(() => makeModelColors(facets.data?.models ?? []), [facets.data]);
@@ -96,7 +96,7 @@ function App() {
         {unpriced.length > 0 && (
           <div className="banner warn" role="status">
             <b>⚠ No price for {unpriced.join(', ')}.</b> Costs for {unpriced.length === 1 ? 'this model are' : 'these models are'} left out of every total (never counted as $0).
-            {' '}Add a price to <code>~/.agent-lens/pricing.json</code> (same shape as <code>pricing.json</code>), or run <code>agent-lens doctor</code> for details and a suggested price. {page !== 'health' && <a href="#/health">Details</a>}
+            {' '}Add a price to <code>~/.ccmeter/pricing.json</code> (same shape as <code>pricing.json</code>), or run <code>ccmeter doctor</code> for details and a suggested price. {page !== 'health' && <a href="#/health">Details</a>}
           </div>
         )}
         {otherIssues.length > 0 && page !== 'health' && (

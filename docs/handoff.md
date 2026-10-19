@@ -1,30 +1,45 @@
 # Active task handoff
 
 **Updated:** 2026-10-19
-**Branch:** `main`. Milestones `m1`, `m2` tagged and pushed.
+**Branch:** `main`. Milestones `m1`, `m2` tagged and pushed. Alpha is wrapped up; the owner continues inside a company environment.
 History of earlier hand-offs: `git log -p -- docs/handoff.md`.
 
 ## Where things stand
-2026-10-19: renamed ccmeter -> sessionscope -> **agent-lens** (ADR 0011) with a new dashboard identity; live install migrated and built
-(`~/.agent-lens`, plugin `agent-lens@agent-lens`; backups `~/.claude/settings.json.pre-agent-lens-backup`, `~/.sessionscope`, `~/.ccmeter`
-kept). Real `doctor`: 0 errors, 2 warnings (Claude Code 2.1.302 newer than the verified 2.1.295 -> `format-drift`).
-Two parallel branches are now both merged into `main` locally: **M3 reviewer** (built, live, ADR 0009 accepted, one real review
-2026-10-19, $0.0178, estimate ~10 % low) and the **Docs section** (route `#/docs`, 12 pages in `docs/guide/`, 183 tests green;
-dashboard not rebuilt, so `dist` lacks it until `npm run build`). Not pushed.
+2026-10-19: the name is **ccmeter** again (ADR 0012; agent-lens and sessionscope are read as fallbacks). The dashboard has the
+Anthropic-style look (ivory/slate/clay, serif headings, system fonts only). `npm run verify` passes (245 tests); dashboard checked
+on fixture data in light, dark and 375 px, no console errors. M3 reviewer and the Docs section are merged.
+**Nothing was built or installed from this rename:** the live `dist/` is still the agent-lens build and the plugin registered is
+`agent-lens@agent-lens`. Until the cutover below, the live hooks fail silently (the old `dist` looks for package name `agent-lens`
+and `package.json` now says `ccmeter`), so new sessions are not recorded; `ccmeter record --all` backfills them later.
+
+## Cutover (owner runs this; touches the real ~/.claude and ~/.ccmeter)
+1. `mv ~/.ccmeter ~/.ccmeter.old` (a pre-rename copy lives there; setup skips the copy while `~/.ccmeter` exists).
+2. `npm run build`, then `node dist/cli/index.js setup` (copies `~/.agent-lens` to `~/.ccmeter`, replaces the plugin and status line).
+3. `node dist/cli/index.js doctor`; `npm unlink -g agent-lens` / `npm link` if an old global command exists (a stale global
+   `ccmeter` symlink from 2026-10-14 is on PATH today; the plugin tests no longer depend on it).
 
 ## Next
+Priority order, for the company environment.
 
-1. **Sweep the Docs text** (it predates agent-lens and M3): `docs/guide/*`, `docs/USAGE.md` (now an index; old USAGE incl. "Reviewing a
-   session": `git show 8c1bf77:docs/USAGE.md`). Names (`~/.agent-lens`, `AGENT_LENS_HOME`, `x-agent-lens`, `/agent-lens`, legacy
-   fallbacks documented on purpose, so no blind sed), add a Reviewing page (guide still says "not released"), re-run the fact-check
-   against the code, `react-check`. Guide numbers marked "date not recorded" (17 versions, 62 files, price checks) need a dated survey.
-   Unfixed oddities it documents: all-unpriced session prints `$0.000+unpriced`; `--url-only` not a registered switch; `report --by
-   <bad>` silently lists sessions; `setup --uninstall` prints success if `claude` failed.
-2. M3 follow-ups: a dashboard review view; judge runs use folder `agent-lens-judge` (recorder tags them; the first review's older
-   `judge` folder stays untagged); a skill's `$ARGUMENTS`/`!` expansion is unverified (no test runs the skill).
-3. `format-drift` for Claude Code 2.1.302 so `doctor` is back to 0 warnings. Zero spend.
-4. `agent-lens audit` command (reconcile vs cost-state, optional OTel events file; exit non-zero on unexplained difference). Ask first:
-   placement (new command, recommended) and OTel input.
-5. Open with the owner: ADR 0009 O3 (gate 85 %, gold-set labeller), CSV export with review text, "server only" meaning, interactive
-   OTel run. Owner-only: rename the GitHub repo, delete `~/.ccmeter` and `~/.sessionscope`, `npm link`, trademark check.
-6. Agents may `git push origin main` (since 2026-10-19). Never force-push or publish without asking.
+1. **Cutover and live check** (above), then one interactive Claude Code session to confirm what is still unverified: `/ccmeter`
+   rendering, async Stop hook, live statusLine payload.
+2. **Company-environment readiness** (decide before moving code): licence and repo ownership, package name/trademark check
+   (npm free on 2026-10-19 only for earlier names; `ccmeter` not checked), where transcripts and `~/.ccmeter` may live on managed
+   machines, and whether `claude -p` reviews (M3) are allowed to send prompt text off the machine. Keep the no-network and
+   no-stored-text invariants (docs/SCOPE.md) unless policy changes them in a new ADR.
+3. **Accuracy first**: `format-drift` for Claude Code 2.1.302 (doctor warns 2.1.302 > verified 2.1.295); re-run the 306/310
+   `cost-state` comparison on the company machines' transcripts; the 4 known mismatches are in docs/FORMATS.md.
+4. **Docs sweep**: `docs/guide/*` predates M3 (add a Reviewing page; the guide still says "not released"), re-run the fact-check
+   against the code, date the survey numbers marked "date not recorded". Documented oddities to fix in code: all-unpriced session
+   prints `$0.000+unpriced`; `--url-only` is not a registered switch; `report --by <bad>` silently lists sessions;
+   `setup --uninstall` prints success if `claude` failed.
+5. **M3 follow-ups**: dashboard review view; the first review's older `judge` folder stays untagged; skill `$ARGUMENTS`/`!`
+   expansion is unverified; ADR 0009 O3 (precision gate 85 %, gold-set labeller) is the owner's call.
+6. **Team layer** (Scope v2, ADR 0009, GAPS.md): no code yet; gated. No per-developer leaderboards, ever.
+7. **Design follow-up**: the series colours were picked by eye (no contrast validator run); run one, and check the dark theme
+   on real data. Display fonts are system serif (Georgia fallback), by design (no network).
+8. Deferred by the owner (2026-10-19): **anything OTel** (audit command, OTel receiver, interactive OTel run). Do not start.
+9. Owner-only: rename the GitHub repo and local folder, delete `~/.ccmeter.old`, `~/.agent-lens`, `~/.sessionscope` when satisfied.
+   Agents may `git push origin main` (since 2026-10-19); never force-push or publish without asking.
+
+Verify loop: `npm run verify` (or `-- --changed`). Read docs/current.md before substantial work; retrieve other docs by grep.

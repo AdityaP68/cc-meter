@@ -25,7 +25,7 @@ export async function cmdReport(args: Parsed): Promise<number> {
   if (sid) {
     const full = (db.prepare('SELECT session_id FROM sessions WHERE session_id LIKE ? LIMIT 2').all(`${sid}%`) as { session_id: string }[]);
     if (full.length !== 1) {
-      console.error(full.length ? `ambiguous session prefix "${sid}"` : `no recorded session "${sid}" (try \`agent-lens record --all\`)`);
+      console.error(full.length ? `ambiguous session prefix "${sid}"` : `no recorded session "${sid}" (try \`ccmeter record --all\`)`);
       return 1;
     }
     const d = getSession(db, full[0]!.session_id)!;
@@ -43,7 +43,7 @@ export async function cmdReport(args: Parsed): Promise<number> {
     console.log(`  tokens   in ${s.inputTokens}  out ${s.outputTokens}  cache-write ${s.cacheWriteTokens}  cache-read ${s.cacheReadTokens}  (total ${tok(s.totalTokens)})`);
     console.log(`  cost     ${costCell(s.costUsd, s.unpricedTokens)}${s.unpricedModels.length ? `  unpriced: ${s.unpricedModels.join(', ')}` : ''}`);
     const clf = (JSON.parse(String((db.prepare('SELECT parse_stats p FROM sessions WHERE session_id = ?').get(s.sessionId) as { p: string }).p)).classifierRequests as number) || 0;
-    if (clf) console.log(`  note     ${clf} assistant messages carry a server-side classifier request: Claude Code may bill calls that are not transcript messages, so its total can exceed agent-lens's (the reverse happens in sessions spanning several processes)`);
+    if (clf) console.log(`  note     ${clf} assistant messages carry a server-side classifier request: Claude Code may bill calls that are not transcript messages, so its total can exceed ccmeter's (the reverse happens in sessions spanning several processes)`);
     if (s.partialMessages) console.log(`  note     ${s.partialMessages} messages carry unfinalized usage (stop_reason null); their output tokens are a lower bound`);
     console.log(`  switches ${s.switches}, compactions ${s.compactions}`);
     for (const e of d.events) console.log(`    ${e.ts ?? ''} turn ${e.turn}: ${e.kind === 'model_switch' ? `${e.fromModel} -> ${e.toModel}` : `compaction ${JSON.stringify(e.detail)}`}`);
@@ -51,7 +51,7 @@ export async function cmdReport(args: Parsed): Promise<number> {
     console.log(
       table(
         recon.flatMap((r) => [
-          [r.model, 'agent-lens', String(r.ours.input), String(r.ours.output), String(r.ours.cacheWrite), String(r.ours.cacheRead), usdOrUnpriced(r.ours.cost)],
+          [r.model, 'ccmeter', String(r.ours.input), String(r.ours.output), String(r.ours.cacheWrite), String(r.ours.cacheRead), usdOrUnpriced(r.ours.cost)],
           ...(r.claudeCode
             ? [['', 'claude-code', String(r.claudeCode.input), String(r.claudeCode.output), String(r.claudeCode.cacheWrite), String(r.claudeCode.cacheRead), usd(r.claudeCode.cost)], ['', r.tokensMatch ? 'MATCH' : 'delta', ...(r.delta ? [String(r.delta.input), String(r.delta.output), String(r.delta.cacheWrite), String(r.delta.cacheRead)] : []), '']]
             : [['', 'claude-code', '(no cost-state entry for this model)', '', '', '', '']]),

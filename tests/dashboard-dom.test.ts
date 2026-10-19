@@ -57,7 +57,7 @@ async function go(hash: string, expectText: string): Promise<void> {
 beforeAll(async () => {
   const claude = tmpDir('claude-');
   process.env.CLAUDE_CONFIG_DIR = claude;
-  process.env.AGENT_LENS_HOME = tmpDir();
+  process.env.CCMETER_HOME = tmpDir();
   const db = openDb(':memory:');
   const table = loadPricing({ overridePath: null });
   recordTranscript(db, table, installFixture('cc-2.1.28x/multi-model-compaction.jsonl', claude, '-proj-a'));
@@ -69,7 +69,7 @@ beforeAll(async () => {
   fs.writeFileSync(path.join(dir, 'hidden-calls.jsonl'), [asst({ id: 'h1', input: 100, output: 50, cw: 1000, cw1h: 1000, cr: 5000 }), costStateLine({ 'claude-sonnet-5-5': t })].join('\n'));
   recordTranscript(db, table, path.join(dir, 'hidden-calls.jsonl'));
   // Claude Code's record covers only part of the session (2026-10-15 case): no entry for the first model, about half
-  // of the second's output and cache. Its total is far below agent-lens's and must not read as the session's cost.
+  // of the second's output and cache. Its total is far below ccmeter's and must not read as the session's cost.
   const opus = { id: 'p2', model: 'claude-opus-5-5', input: 400, output: 20_000, cw: 50_000, cw1h: 50_000, cr: 900_000 };
   fs.writeFileSync(path.join(dir, 'cc-partial.jsonl'), [
     asst({ id: 'p1', model: 'claude-sonnet-5-5', input: 300, output: 4000, cw: 20_000, cw1h: 20_000, cr: 100_000 }),
@@ -85,7 +85,7 @@ beforeAll(async () => {
   const origError = console.error;
   console.error = (...a: unknown[]) => { errors.push(a.map(String).join(' ').slice(0, 300)); origError(...a); };
   window.addEventListener('error', (e) => errors.push(`uncaught: ${e.message}`));
-  localStorage.setItem('agent-lens.filters', JSON.stringify({ range: 'all', project: '', model: '', source: '' }));
+  localStorage.setItem('ccmeter.filters', JSON.stringify({ range: 'all', project: '', model: '', source: '' }));
   document.body.innerHTML = '<div id="root"></div>';
   location.hash = '#/';
   await act(async () => { await import('../dashboard/src/main.tsx'); });
@@ -157,7 +157,7 @@ describe('dashboard in a DOM', () => {
     const banner = [...root().querySelectorAll('.banner')].find((b) => b.textContent!.includes('partial'));
     expect(banner?.textContent).toContain("Claude Code's record is partial");
     expect(banner?.textContent).toContain('no entry for');
-    expect(banner?.textContent).toMatch(/agent-lens's total, \$[\d.,]+, is the complete one/);
+    expect(banner?.textContent).toMatch(/ccmeter's total, \$[\d.,]+, is the complete one/);
     expect(root().textContent, 'per-model comparison kept').toContain("Check against Claude Code's own accounting");
     await go('#/', 'Sessions');
     await settle(() => root().querySelectorAll('a[href^="#/session/"]').length >= 4);
@@ -272,7 +272,7 @@ describe('dashboard in a DOM', () => {
     const md = [
       '# Title', '', '## First *section*', 'Some `code` and **bold** text, [a page](costs.md), [a route](#/health), [unknown](nope.md),',
       '[web](https://example.com/x), [js](javascript:alert(1)), ![img](x.png) <script>window.__xss = 1</script> <b>x</b>.', '',
-      '- one', '- two', 'continued', '', '1. a', '```bash', 'sessionscope doctor | grep warn', '```', '2. b', '',
+      '- one', '- two', 'continued', '', '1. a', '```bash', 'ccmeter doctor | grep warn', '```', '2. b', '',
       '> **Unverified:** a claim', '', '| a | b |', '| --- | ---: |', '| `x\\|y` | 2 |', '| only |', '', '### Sub', '#### Deeper', '---', '', '```json', '{ "unterminated": true',
     ].join('\n');
     const r = renderMarkdown(md, { knownSlugs: DOC_SLUGS });
@@ -294,7 +294,7 @@ describe('dashboard in a DOM', () => {
     expect(host.querySelectorAll('li').length).toBe(4);
     expect(host.querySelector('.md-code-h button')?.textContent).toBe('Copy');
     expect(host.querySelectorAll('.md-code-h button').length, 'copy button on bash blocks only').toBe(1);
-    expect(host.querySelector('pre code')?.textContent).toBe('sessionscope doctor | grep warn');
+    expect(host.querySelector('pre code')?.textContent).toBe('ccmeter doctor | grep warn');
     expect(host.querySelector('blockquote.unverified strong')?.textContent).toBe('Unverified:');
     const table = host.querySelector('.md-table')!;
     expect(table.getAttribute('role')).toBe('region');

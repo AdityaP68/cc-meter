@@ -4,8 +4,8 @@ import { hiddenCallsEstimate, reconcile, claudeCodePartial } from './reconcile.j
 import { loadPricing, type PriceTable } from './pricing.js';
 
 /**
- * Aggregate accuracy of what agent-lens shows, for the Health page. Only counts and dollar sums: no titles, paths or text.
- * agent-lens compares two sources it has locally: the transcript (priced by pricing.json) and Claude Code's own
+ * Aggregate accuracy of what ccmeter shows, for the Health page. Only counts and dollar sums: no titles, paths or text.
+ * ccmeter compares two sources it has locally: the transcript (priced by pricing.json) and Claude Code's own
  * `cost-state` entry. No third, independent source is used here (OTel or a gateway export would be one).
  */
 export interface AccuracyReport {
@@ -17,10 +17,10 @@ export interface AccuracyReport {
   hiddenCalls: { sessions: number; usd: number };
   partialRecord: number;
   other: number;
-  /** (session, model) pairs where Claude Code wrote a cost entry, and those whose four token counts equal agent-lens's. */
+  /** (session, model) pairs where Claude Code wrote a cost entry, and those whose four token counts equal ccmeter's. */
   pairs: number;
   pairsMatched: number;
-  /** agent-lens's total for all recorded sessions (priced models only); the hidden-calls estimate is not part of it. */
+  /** ccmeter's total for all recorded sessions (priced models only); the hidden-calls estimate is not part of it. */
   costUsd: number;
   unpricedTokens: number;
   unpricedModels: string[];

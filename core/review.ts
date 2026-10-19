@@ -13,7 +13,7 @@ import {
   type Estimate,
   type ReviewPayload,
 } from './judge.js';
-import { agentLensHome } from './paths.js';
+import { ccmeterHome } from './paths.js';
 import type { PriceTable } from './pricing.js';
 import { JUDGE_DIR_NAME, listTranscripts, recordTranscript, SOURCE_JUDGE } from './record.js';
 
@@ -83,7 +83,7 @@ export interface Overhead {
   costUsd: number;
   unreportedCost: number;
   judgeSessions: number;
-  /** Cost of the judge sessions as agent-lens derived it from their transcripts (null when none is priced). */
+  /** Cost of the judge sessions as ccmeter derived it from their transcripts (null when none is priced). */
   judgeSessionsCostUsd: number | null;
 }
 
@@ -94,7 +94,7 @@ export function reviewOverhead(db: Db, since?: string): Overhead {
   const r = db.prepare(`SELECT COUNT(*) n, COALESCE(SUM(cost_usd),0) c, COALESCE(SUM(CASE WHEN cost_usd IS NULL THEN 1 ELSE 0 END),0) u FROM reviews ${w}`).get(...a) as { n: number; c: number; u: number };
   const sw = since ? "AND started_at >= ?" : '';
   const j = db
-    .prepare(`SELECT COUNT(*) n, SUM(cost_usd) c FROM sessions WHERE source IN ('agent-lens-judge', 'sessionscope-judge', 'ccmeter-judge') ${sw}`)
+    .prepare(`SELECT COUNT(*) n, SUM(cost_usd) c FROM sessions WHERE source IN ('ccmeter-judge', 'agent-lens-judge', 'sessionscope-judge') ${sw}`)
     .get(...a) as { n: number; c: number | null };
   return { reviews: r.n, costUsd: r.c, unreportedCost: r.u, judgeSessions: j.n, judgeSessionsCostUsd: j.n ? j.c : null };
 }
@@ -106,7 +106,7 @@ export interface ReviewConfig {
 
 const CONSENT_VERSION = 1;
 
-function readConfig(home = agentLensHome()): Record<string, unknown> {
+function readConfig(home = ccmeterHome()): Record<string, unknown> {
   try {
     const c = JSON.parse(fs.readFileSync(path.join(home, 'config.json'), 'utf8'));
     return c && typeof c === 'object' && !Array.isArray(c) ? c : {};
@@ -115,7 +115,7 @@ function readConfig(home = agentLensHome()): Record<string, unknown> {
   }
 }
 
-export function loadReviewConfig(home = agentLensHome()): ReviewConfig {
+export function loadReviewConfig(home = ccmeterHome()): ReviewConfig {
   const r = (readConfig(home).review ?? {}) as Record<string, unknown>;
   const c = r.consent as Record<string, unknown> | undefined;
   return {
@@ -125,7 +125,7 @@ export function loadReviewConfig(home = agentLensHome()): ReviewConfig {
 }
 
 /** Remember the first-review consent in config.json, keeping every other key. */
-export function storeConsent(home = agentLensHome()): void {
+export function storeConsent(home = ccmeterHome()): void {
   const cfg = readConfig(home);
   const review = { ...((cfg.review ?? {}) as Record<string, unknown>), consent: { at: new Date().toISOString(), version: CONSENT_VERSION } };
   fs.mkdirSync(home, { recursive: true });
@@ -164,16 +164,16 @@ export function prepareReview(db: Db, sessionId: string, o: { table: PriceTable;
 }
 
 /** Where `claude -p` runs the judge, so its sessions are one recognisable project. */
-export const judgeCwd = (home = agentLensHome()) => path.join(home, JUDGE_DIR_NAME);
+export const judgeCwd = (home = ccmeterHome()) => path.join(home, JUDGE_DIR_NAME);
 
 export interface Executed {
   stored: StoredReview;
   quotesRemoved: number;
-  /** Whether the judge's own run was recorded (tagged agent-lens-judge) into the DB. */
+  /** Whether the judge's own run was recorded (tagged ccmeter-judge) into the DB. */
   judgeSessionRecorded: boolean;
 }
 
-/** Record the judge run's transcript as a session tagged `agent-lens-judge`. Best effort: a failure must not lose the review. */
+/** Record the judge run's transcript as a session tagged `ccmeter-judge`. Best effort: a failure must not lose the review. */
 export function recordJudgeSession(db: Db, table: PriceTable, judgeSessionId: string): boolean {
   const file = listTranscripts().find((f) => path.basename(f, '.jsonl') === judgeSessionId);
   if (!file) return false;
@@ -186,13 +186,13 @@ export function recordJudgeSession(db: Db, table: PriceTable, judgeSessionId: st
 
 /** The one paid step. Callers must have shown the estimate and obtained consent before calling it. */
 export async function executeReview(db: Db, p: Prepared, o: { table: PriceTable; home?: string; timeoutMs?: number }): Promise<Executed> {
-  const home = o.home ?? agentLensHome();
+  const home = o.home ?? ccmeterHome();
   const cwd = judgeCwd(home);
   fs.mkdirSync(cwd, { recursive: true });
   const budget = Math.max(0.25, Math.ceil((p.estimate.costUsd ?? 1) * 4 * 100) / 100);
   const run = await runJudge({ model: p.model, input: p.input, cwd, maxBudgetUsd: budget, ...(o.timeoutMs ? { timeoutMs: o.timeoutMs } : {}) });
   // a run that returned an answer is paid for whether or not the answer validates, so it is recorded first. A run that fails
-  // before answering (error, timeout) is not recorded here; `agent-lens record --all` picks its transcript up later.
+  // before answering (error, timeout) is not recorded here; `ccmeter record --all` picks its transcript up later.
   const judgeSessionRecorded = run.sessionId ? recordJudgeSession(db, o.table, run.sessionId) : false;
   const { review, quotesRemoved } = validateReview(run.payload, p.digest);
   const stored: StoredReview = {

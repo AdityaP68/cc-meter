@@ -10,7 +10,7 @@ import { CLI_JS } from './helpers/util.js';
 
 const BOOLS = ['json', 'dry-run', 'show-input', 'yes', 'force', 'accept-data-leaves-machine'];
 
-describe('agent-lens review (built CLI, stub claude)', () => {
+describe('ccmeter review (built CLI, stub claude)', () => {
   let s: ReturnType<typeof recordSynthetic>;
   let stub: ReturnType<typeof makeStubClaude>;
   let env: Record<string, string>;
@@ -19,7 +19,7 @@ describe('agent-lens review (built CLI, stub claude)', () => {
   beforeEach(() => {
     s = recordSynthetic();
     stub = makeStubClaude();
-    env = { AGENT_LENS_HOME: s.home, CLAUDE_CONFIG_DIR: s.claude, AGENT_LENS_CLAUDE_BIN: stub.bin, STUB_LOG: stub.log };
+    env = { CCMETER_HOME: s.home, CLAUDE_CONFIG_DIR: s.claude, CCMETER_CLAUDE_BIN: stub.bin, STUB_LOG: stub.log };
     s.db.close();
   });
 
@@ -86,8 +86,8 @@ describe('agent-lens review (built CLI, stub claude)', () => {
     expect(cli(['review', 'nope']).stderr).toMatch(/no recorded session/);
     expect(cli(['review']).status).toBe(1);
     cli(['review', s.sessionId, '--accept-data-leaves-machine']);
-    const judgeId = (new (require('node:sqlite').DatabaseSync)(path.join(s.home, 'agent-lens.db')).prepare("SELECT session_id FROM sessions WHERE source = 'agent-lens-judge'").get() as { session_id: string }).session_id;
-    expect(cli(['review', judgeId]).stderr).toMatch(/review run by agent-lens itself/);
+    const judgeId = (new (require('node:sqlite').DatabaseSync)(path.join(s.home, 'ccmeter.db')).prepare("SELECT session_id FROM sessions WHERE source = 'ccmeter-judge'").get() as { session_id: string }).session_id;
+    expect(cli(['review', judgeId]).stderr).toMatch(/review run by ccmeter itself/);
     const bad = cli(['review', s.sessionId, '--force', '--yes'], { STUB_MODE: 'error' });
     expect(bad.status).toBe(1);
     expect(bad.stderr).toContain('Not logged in');
@@ -109,14 +109,14 @@ describe('interactive consent (in-process)', () => {
     s = recordSynthetic();
     stub = makeStubClaude();
     s.db.close();
-    Object.assign(process.env, { AGENT_LENS_HOME: s.home, CLAUDE_CONFIG_DIR: s.claude, AGENT_LENS_CLAUDE_BIN: stub.bin, STUB_LOG: stub.log });
+    Object.assign(process.env, { CCMETER_HOME: s.home, CLAUDE_CONFIG_DIR: s.claude, CCMETER_CLAUDE_BIN: stub.bin, STUB_LOG: stub.log });
     out = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => void out.push(a.join(' ')));
     vi.spyOn(console, 'error').mockImplementation((...a) => void out.push(a.join(' ')));
   });
   afterEach(() => {
     vi.restoreAllMocks();
-    for (const k of ['AGENT_LENS_HOME', 'CLAUDE_CONFIG_DIR', 'AGENT_LENS_CLAUDE_BIN', 'STUB_LOG']) delete process.env[k];
+    for (const k of ['CCMETER_HOME', 'CLAUDE_CONFIG_DIR', 'CCMETER_CLAUDE_BIN', 'STUB_LOG']) delete process.env[k];
   });
   const args = () => parseArgs([s.sessionId], BOOLS);
   const io = (...answers: string[]) => {

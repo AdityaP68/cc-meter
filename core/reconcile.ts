@@ -6,7 +6,7 @@ export interface ReconRow {
   /** `cost` is null for an unpriced model: unpriced is never $0. */
   ours: { input: number; output: number; cacheWrite: number; cacheRead: number; cost: number | null };
   claudeCode: { input: number; output: number; cacheWrite: number; cacheRead: number; cost: number } | null;
-  /** agent-lens minus Claude Code (tokens). */
+  /** ccmeter minus Claude Code (tokens). */
   delta: { input: number; output: number; cacheWrite: number; cacheRead: number } | null;
   tokensMatch: boolean;
   /**
@@ -73,8 +73,8 @@ export interface PartialRecord {
 
 /**
  * Whether Claude Code's `cost-state` provably covers only part of the session (docs/FORMATS.md, Known discrepancies
- * 3): a model agent-lens saw is missing from it, or it counted fewer tokens than the transcript in some class for some
- * model. Then its total is not the session's cost and agent-lens's is the complete one. null when there is no
+ * 3): a model ccmeter saw is missing from it, or it counted fewer tokens than the transcript in some class for some
+ * model. Then its total is not the session's cost and ccmeter's is the complete one. null when there is no
  * cost-state entry or nothing shows it to be partial. Exactly the sessions for which `hiddenCallsEstimate` declines
  * because coverage fails.
  */
@@ -94,13 +94,13 @@ export function claudeCodePartial(s: Pick<SessionRow, 'models' | 'costState'>, t
 }
 
 export interface HiddenCallsEstimate {
-  /** Claude Code's cost minus agent-lens's (USD): calls Claude Code billed but never wrote to the transcript. An estimate. */
+  /** Claude Code's cost minus ccmeter's (USD): calls Claude Code billed but never wrote to the transcript. An estimate. */
   usd: number;
   /** Claude Code's own total for the session (sum of its per-model costUSD). */
   claudeCodeUsd: number;
   /** Output tokens Claude Code counts beyond the transcript, left out because replies were saved mid-stream. */
   outputTokensExcluded: number;
-  /** Those output tokens at list price: what the mid-stream replies leave out of agent-lens's cost, by Claude Code's count. */
+  /** Those output tokens at list price: what the mid-stream replies leave out of ccmeter's cost, by Claude Code's count. */
   outputUsdExcluded: number;
 }
 
@@ -109,11 +109,11 @@ const MIN_ESTIMATE_USD = 0.0005;
 
 /**
  * Estimate the cost of API calls Claude Code billed but never wrote to the transcript (docs/FORMATS.md, Known
- * discrepancies 2). Valid only where Claude Code's `cost-state` covers the whole session: every model agent-lens saw is
+ * discrepancies 2). Valid only where Claude Code's `cost-state` covers the whole session: every model ccmeter saw is
  * in it, with at least as many tokens in every class. If it counted less anywhere, it covers only part of a session
- * resumed across processes (item 3), agent-lens's total is the complete one, and there is nothing to estimate (null).
+ * resumed across processes (item 3), ccmeter's total is the complete one, and there is nothing to estimate (null).
  * With replies saved mid-stream (item 1) the output difference is theirs, so it is left out. A model with a
- * difference that agent-lens cannot price gives null: unpriced is never $0.
+ * difference that ccmeter cannot price gives null: unpriced is never $0.
  */
 export function hiddenCallsEstimate(s: Pick<SessionRow, 'models' | 'costState' | 'partialMessages'>, table: PriceTable): HiddenCallsEstimate | null {
   if (!s.costState) return null;
@@ -153,8 +153,8 @@ export interface ClaudeCodeFigure {
 }
 
 /**
- * Claude Code's own recorded cost for each model, a stopgap for models agent-lens cannot price. It is shown next to
- * agent-lens's numbers, labelled as Claude Code's, and never added to agent-lens's totals (unpriced stays NULL, ADR 0005).
+ * Claude Code's own recorded cost for each model, a stopgap for models ccmeter cannot price. It is shown next to
+ * ccmeter's numbers, labelled as Claude Code's, and never added to ccmeter's totals (unpriced stays NULL, ADR 0005).
  */
 export function claudeCodeFigures(rows: Pick<SessionRow, 'models' | 'costState'>[], models: string[]): ClaudeCodeFigure[] {
   return models.map((model) => {

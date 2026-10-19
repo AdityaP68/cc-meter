@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Checks that must hold ("prose advises; checks enforce"). Run by .githooks/pre-commit (staged files) and by
-// `npm run verify` (--all). Each check exists because the rule was broken or nearly broken while building agent-lens;
+// `npm run verify` (--all). Each check exists because the rule was broken or nearly broken while building ccmeter;
 // see docs/memory/lessons.md.
 //   --staged (default)  content checks on staged files     --all  content checks on all tracked files
 //   --lock-migrations   record the current migration hashes (only when a migration ships to users)
@@ -48,10 +48,10 @@ export function skillErrors(text) {
   const [, front, body] = m;
   const field = (k) => new RegExp(`^${k}:\\s*(.*)$`, 'm').exec(front)?.[1]?.trim();
   if (field('disable-model-invocation') !== 'true') errors.push('must set disable-model-invocation: true (only the user starts a review)');
-  if (field('allowed-tools') !== 'Bash(*/scripts/agent-lens.sh review *)') errors.push('allowed-tools must be exactly Bash(*/scripts/agent-lens.sh review *)');
+  if (field('allowed-tools') !== 'Bash(*/scripts/ccmeter.sh review *)') errors.push('allowed-tools must be exactly Bash(*/scripts/ccmeter.sh review *)');
   if ((field('description') ?? '').length > 100) errors.push('description must stay under 100 characters (it is in every session context)');
   const shell = body.split('\n').filter((l) => l.startsWith('!'));
-  if (shell.length !== 1 || !/^!`"\$\{CLAUDE_PLUGIN_ROOT\}"\/scripts\/agent-lens\.sh review "\$ARGUMENTS"( --yes)?`$/.test(shell[0])) errors.push('must contain exactly one shell line: agent-lens.sh review "$ARGUMENTS" [--yes]');
+  if (shell.length !== 1 || !/^!`"\$\{CLAUDE_PLUGIN_ROOT\}"\/scripts\/ccmeter\.sh review "\$ARGUMENTS"( --yes)?`$/.test(shell[0])) errors.push('must contain exactly one shell line: ccmeter.sh review "$ARGUMENTS" [--yes]');
   if (/digest|--show-input|transcript|\.jsonl/i.test(body)) errors.push('must not mention the digest or transcripts (it may not load them into the session)');
   if (body.split('\n').filter((l) => l.trim()).length > 3) errors.push('body is longer than the one command and one reply instruction');
   return errors;
@@ -83,16 +83,16 @@ export function structuralChecks() {
   else if (next && next[1].trim().length > 2500) errors.push(`docs/handoff.md "## Next" is ${next[1].trim().length} chars; the SessionStart hook injects at most 2500`);
   const instr = (read('CLAUDE.md') ?? '') + (read('AGENTS.md') ?? '');
   if (instr.split('\n').length > 200) errors.push(`CLAUDE.md + AGENTS.md are ${instr.split('\n').length} lines; keep them under 200 (move detail to rules, skills or docs)`);
-  // zero context footprint: the only loadable skill is the thin review wrapper, and it may only run `agent-lens review`
+  // zero context footprint: the only loadable skill is the thin review wrapper, and it may only run `ccmeter review`
   const skills = path.join(ROOT, 'plugin', 'skills');
   if (fs.existsSync(skills))
     for (const d of fs.readdirSync(skills)) {
       const f = path.join(skills, d, 'SKILL.md');
       if (!fs.existsSync(f)) continue;
-      if (d !== 'convo-review') errors.push(`plugin/skills/${d}/SKILL.md would load into every user's session (~39 tokens); only convo-review (a wrapper for \`agent-lens review\`) is allowed`);
+      if (d !== 'convo-review') errors.push(`plugin/skills/${d}/SKILL.md would load into every user's session (~39 tokens); only convo-review (a wrapper for \`ccmeter review\`) is allowed`);
       else for (const e of skillErrors(fs.readFileSync(f, 'utf8'))) errors.push(`plugin/skills/convo-review/SKILL.md: ${e}`);
     }
-  for (const s of ['plugin/scripts/agent-lens.sh', 'plugin/scripts/prompt-hook.sh']) {
+  for (const s of ['plugin/scripts/ccmeter.sh', 'plugin/scripts/prompt-hook.sh']) {
     try {
       fs.accessSync(path.join(ROOT, s), fs.constants.X_OK);
     } catch {
@@ -132,10 +132,10 @@ function main() {
     }
   }
   if (errors.length) {
-    console.error(`agent-lens checks failed (${errors.length}):\n- ${errors.slice(0, 30).join('\n- ')}${errors.length > 30 ? `\n… ${errors.length - 30} more` : ''}`);
+    console.error(`ccmeter checks failed (${errors.length}):\n- ${errors.slice(0, 30).join('\n- ')}${errors.length > 30 ? `\n… ${errors.length - 30} more` : ''}`);
     return 1;
   }
-  console.log(`agent-lens checks passed (${mode})`);
+  console.log(`ccmeter checks passed (${mode})`);
   return 0;
 }
 

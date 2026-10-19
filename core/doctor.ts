@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { listSessions } from './aggregate.js';
 import { LATEST_SCHEMA, schemaVersion, type Db } from './db.js';
-import { agentLensHome, claudeHome, dbPath } from './paths.js';
+import { ccmeterHome, claudeHome, dbPath } from './paths.js';
 import { PARSERS, cmpVersion } from './parser/index.js';
 import { lookupPrice, type PriceTable } from './pricing.js';
 import { listTranscripts, parseSession, transcriptSignature } from './record.js';
@@ -107,17 +107,17 @@ export function runDoctor(db: Db, table: PriceTable, opts: DoctorOptions = {}): 
 
   const partial = db.prepare('SELECT COUNT(*) n, COALESCE(SUM(partial_messages),0) m FROM sessions WHERE partial_messages > 0').get() as { n: number; m: number };
   if (partial.n)
-    add('partial-usage', 'info', `${partial.n} sessions contain ${partial.m} messages with unfinalized usage (output tokens are a lower bound, so cost is understated; the session page shows by how much where Claude Code\'s record covers the session)`, 'Seen in subagent transcripts. Claude Code\'s own total, where recorded, is shown by `agent-lens report --session <id>`. See docs/FORMATS.md.');
+    add('partial-usage', 'info', `${partial.n} sessions contain ${partial.m} messages with unfinalized usage (output tokens are a lower bound, so cost is understated; the session page shows by how much where Claude Code\'s record covers the session)`, 'Seen in subagent transcripts. Claude Code\'s own total, where recorded, is shown by `ccmeter report --session <id>`. See docs/FORMATS.md.');
 
   // 5. unpriced models
   const unpriced = db.prepare('SELECT model, COUNT(*) n, SUM(input + output + cache_write + cache_read) tok FROM messages WHERE priced = 0 GROUP BY model ORDER BY tok DESC').all() as { model: string; n: number; tok: number }[];
   if (unpriced.length) {
     const figures = claudeCodeFigures(listSessions(db, { limit: 1_000_000 }).rows, unpriced.map((u) => u.model)).map((f) =>
       f.withFigure
-        ? `Claude Code's figure for ${f.model}: $${f.costUsd.toFixed(2)} (in ${f.withFigure} of ${f.sessions} session(s); not included in agent-lens's totals)`
+        ? `Claude Code's figure for ${f.model}: $${f.costUsd.toFixed(2)} (in ${f.withFigure} of ${f.sessions} session(s); not included in ccmeter's totals)`
         : `Claude Code recorded no cost for ${f.model} in its ${f.sessions} session(s)`,
     );
-    add('unpriced', 'warn', `Unpriced models (shown as "unpriced", never as $0): ${unpriced.map((u) => u.model).join(', ')}`, `${unpriced.map((u) => `${u.model}: ${u.n} messages / ${u.tok} tokens`).join('; ')}. ${figures.join('. ')}. Add a price to ~/.agent-lens/pricing.json (same shape as pricing.json).`);
+    add('unpriced', 'warn', `Unpriced models (shown as "unpriced", never as $0): ${unpriced.map((u) => u.model).join(', ')}`, `${unpriced.map((u) => `${u.model}: ${u.n} messages / ${u.tok} tokens`).join('; ')}. ${figures.join('. ')}. Add a price to ~/.ccmeter/pricing.json (same shape as pricing.json).`);
     for (const u of unpriced) suggestPrice(db, table, u.model, add);
   }
   else add('unpriced', 'ok', 'Every recorded model has a price');
@@ -143,10 +143,10 @@ export function runDoctor(db: Db, table: PriceTable, opts: DoctorOptions = {}): 
         : unchecked.length
           ? `No Claude Code cost to check the price of ${unchecked.join(', ')}`
           : `Unverified prices for ${listOnly.join(', ')} match Claude Code's own costs`,
-      `${lines.join('; ')}. Only sessions where Claude Code wrote a cost-state entry can be compared. Details: \`agent-lens doctor --verify-pricing\`.`,
+      `${lines.join('; ')}. Only sessions where Claude Code wrote a cost-state entry can be compared. Details: \`ccmeter doctor --verify-pricing\`.`,
     );
   }
-  if (table.rejected.length) add('pricing-override', 'warn', `Ignored entries in ~/.agent-lens/pricing.json: ${table.rejected.join(', ')}`, 'Each model needs finite, non-negative numbers for input, output, cacheRead, cacheWrite5m and cacheWrite1h. Those models stay unpriced (never $0) until fixed.');
+  if (table.rejected.length) add('pricing-override', 'warn', `Ignored entries in ~/.ccmeter/pricing.json: ${table.rejected.join(', ')}`, 'Each model needs finite, non-negative numbers for input, output, cacheRead, cacheWrite5m and cacheWrite1h. Those models stay unpriced (never $0) until fixed.');
   // stored reviews (ADR 0009: growth control; the first real reviews will show whether "a few KB" holds)
   try {
     const rv = db.prepare('SELECT COUNT(*) n, COALESCE(SUM(length(summary_json) + length(prompt_scores_json)),0) b FROM reviews').get() as { n: number; b: number };
@@ -159,26 +159,26 @@ export function runDoctor(db: Db, table: PriceTable, opts: DoctorOptions = {}): 
   // 6. hook installation
   if (!opts.skipExternal || opts.pluginList !== undefined) {
     const list = opts.pluginList !== undefined ? opts.pluginList : tryExec('claude', ['plugin', 'list']);
-    const inPlugin = !!list && /agent-lens/i.test(list) && !/agent-lens[^\n]*(disabled|✗)/i.test(list);
+    const inPlugin = !!list && /ccmeter/i.test(list) && !/ccmeter[^\n]*(disabled|✗)/i.test(list);
     let inSettings = false;
     try {
-      inSettings = /agent-lens\s+record/.test(fs.readFileSync(path.join(claudeHome(), 'settings.json'), 'utf8'));
+      inSettings = /ccmeter\s+record/.test(fs.readFileSync(path.join(claudeHome(), 'settings.json'), 'utf8'));
     } catch {
       /* no settings file */
     }
-    if (inPlugin || inSettings) add('hooks', 'ok', `Recorder hooks installed (${inPlugin ? 'plugin agent-lens' : '~/.claude/settings.json'})`);
-    else add('hooks', 'warn', 'Recorder hooks not found: new sessions will not be recorded automatically', 'Run ./install.sh, or `agent-lens record --all` to backfill manually.');
+    if (inPlugin || inSettings) add('hooks', 'ok', `Recorder hooks installed (${inPlugin ? 'plugin ccmeter' : '~/.claude/settings.json'})`);
+    else add('hooks', 'warn', 'Recorder hooks not found: new sessions will not be recorded automatically', 'Run ./install.sh, or `ccmeter record --all` to backfill manually.');
   }
   if (opts.pluginList !== undefined || !opts.skipExternal) {
     const list = opts.pluginList !== undefined ? opts.pluginList : tryExec('claude', ['plugin', 'list']);
-    const old = ['sessionscope@sessionscope', 'ccmeter@ccmeter'].filter((n) => list?.includes(n));
-    if (old.length) add('legacy-plugin', 'warn', `The plugin ${old.join(', ')} (an earlier name of this tool) is still installed: its hooks would run next to the new ones`, `Run \`agent-lens setup\`, which replaces it, or \`claude plugin uninstall ${old[0]}\`.`);
+    const old = ['agent-lens@agent-lens', 'sessionscope@sessionscope'].filter((n) => list?.includes(n));
+    if (old.length) add('legacy-plugin', 'warn', `The plugin ${old.join(', ')} (an earlier name of this tool) is still installed: its hooks would run next to the new ones`, `Run \`ccmeter setup\`, which replaces it, or \`claude plugin uninstall ${old[0]}\`.`);
   }
-  const cliPath = path.join(agentLensHome(), 'cli-path');
+  const cliPath = path.join(ccmeterHome(), 'cli-path');
   if (fs.existsSync(cliPath)) {
     const target = fs.readFileSync(cliPath, 'utf8').trim();
     add('cli-path', fs.existsSync(target) ? 'ok' : 'error', fs.existsSync(target) ? `Hook launcher target ${target}` : `Hook launcher points at a missing file: ${target}`, fs.existsSync(target) ? undefined : 'Re-run ./install.sh.');
-  } else add('cli-path', 'info', 'No ~/.agent-lens/cli-path (hooks will rely on `agent-lens` being on PATH)');
+  } else add('cli-path', 'info', 'No ~/.ccmeter/cli-path (hooks will rely on `ccmeter` being on PATH)');
 
   // 7. transcripts on disk that are not recorded yet
   try {
@@ -200,7 +200,7 @@ export function runDoctor(db: Db, table: PriceTable, opts: DoctorOptions = {}): 
       stale ? `${stale} transcript${stale === 1 ? ' is' : 's are'} out of date` : '',
     ].filter(Boolean);
     const skipped = noCalls ? `${noCalls} transcript${noCalls === 1 ? ' has' : 's have'} no API calls (nothing to record)` : '';
-    if (parts.length) add('coverage', 'info', [parts.join(' and '), skipped].filter(Boolean).join('; '), 'Run `agent-lens record --all` to backfill.');
+    if (parts.length) add('coverage', 'info', [parts.join(' and '), skipped].filter(Boolean).join('; '), 'Run `ccmeter record --all` to backfill.');
     else add('coverage', 'ok', `All transcripts with API calls are recorded${skipped ? `; ${skipped}` : ''}`);
   } catch {
     /* no projects dir */
@@ -224,18 +224,18 @@ export function runDoctor(db: Db, table: PriceTable, opts: DoctorOptions = {}): 
     }
   }
   if (pairs) {
-    const largest = worst ? ` Largest difference: session ${worst.id} (${r2(worst.ours, worst.theirs)}); see \`agent-lens report --session ${worst.id}\`.` : '';
+    const largest = worst ? ` Largest difference: session ${worst.id} (${r2(worst.ours, worst.theirs)}); see \`ccmeter report --session ${worst.id}\`.` : '';
     add(
       'reconcile',
       matched === pairs ? 'ok' : 'info',
       `Token totals equal Claude Code's own cost-state for ${matched} of ${pairs} (session, model) pairs`,
-      matched === pairs ? undefined : `A difference means one side sees calls the other does not: Claude Code can bill calls it never writes as messages, and its cost entry covers only the last process of a session resumed several times (then agent-lens's total, from the whole transcript, is the larger and complete one). See docs/FORMATS.md.${largest}`,
+      matched === pairs ? undefined : `A difference means one side sees calls the other does not: Claude Code can bill calls it never writes as messages, and its cost entry covers only the last process of a session resumed several times (then ccmeter's total, from the whole transcript, is the larger and complete one). See docs/FORMATS.md.${largest}`,
     );
   }
   return checks;
 }
 
-const r2 = (ours: number, theirs: number): string => `agent-lens $${ours.toFixed(2)}, Claude Code $${theirs.toFixed(2)}`;
+const r2 = (ours: number, theirs: number): string => `ccmeter $${ours.toFixed(2)}, Claude Code $${theirs.toFixed(2)}`;
 
 export interface PricingVerifyRow {
   model: string;
@@ -246,7 +246,7 @@ export interface PricingVerifyRow {
   consistent: number;
   /** Largest amount (USD) by which a Claude Code cost fell outside the predicted range. */
   maxOutsideUsd: number;
-  /** Pairs whose token counts equal agent-lens's, and the largest |agent-lens cost - Claude Code cost| among them. */
+  /** Pairs whose token counts equal ccmeter's, and the largest |ccmeter cost - Claude Code cost| among them. */
   exactTokenPairs: number;
   exactMaxAbsErrUsd: number;
 }
@@ -291,7 +291,7 @@ function suggestPrice(db: Db, table: PriceTable, model: string, add: (id: string
     .map((u) => ({ input: u!.inputTokens, output: u!.outputTokens, cacheRead: u!.cacheReadInputTokens, cacheWrite: u!.cacheCreationInputTokens, webSearch: u!.webSearchRequests, costUsd: u!.costUSD }));
   const r = deriveRates(samples, table.webSearchPerRequest);
   if (!r.ok) {
-    add(`derived-price:${model}`, 'info', `No price can be derived for ${model} yet`, `${r.reason}. Add its published price to ~/.agent-lens/pricing.json instead.`);
+    add(`derived-price:${model}`, 'info', `No price can be derived for ${model} yet`, `${r.reason}. Add its published price to ~/.ccmeter/pricing.json instead.`);
     return;
   }
   const w = sig4(r.rates.cacheWrite);
@@ -300,7 +300,7 @@ function suggestPrice(db: Db, table: PriceTable, model: string, add: (id: string
     `derived-price:${model}`,
     'info',
     `Suggested price for ${model}, derived from Claude Code's own figures`,
-    `Fitted on ${r.samples} sessions; largest error $${r.maxAbsErrUsd.toFixed(4)} (${(r.maxRelErr * 100).toFixed(2)}%). Claude Code does not split cache writes by TTL, so both write rates get one blended value; prefer the published price when it exists. To use it, add this under "models" in ~/.agent-lens/pricing.json: ${JSON.stringify(snippet)}`,
+    `Fitted on ${r.samples} sessions; largest error $${r.maxAbsErrUsd.toFixed(4)} (${(r.maxRelErr * 100).toFixed(2)}%). Claude Code does not split cache writes by TTL, so both write rates get one blended value; prefer the published price when it exists. To use it, add this under "models" in ~/.ccmeter/pricing.json: ${JSON.stringify(snippet)}`,
   );
 }
 

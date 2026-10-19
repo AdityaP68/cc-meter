@@ -57,8 +57,9 @@ p { margin: 4px 0; }
 
 .top { position: sticky; top: 0; z-index: 5; background: var(--surface-1); border-bottom: 1px solid var(--border); }
 .top-in { max-width: 1180px; margin: 0 auto; padding: 10px 16px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
-.brand { font-weight: 500; font-size: 19px; color: var(--text-primary); letter-spacing: -0.01em; }
-.brand { display: inline-flex; align-items: center; gap: 8px; } .brand:hover { text-decoration: none; } .brand-mark { flex: none; }
+.brand { display: inline-flex; align-items: baseline; color: var(--text-primary); } .brand:hover { text-decoration: none; }
+.brand-name { font-size: 24px; font-weight: 500; letter-spacing: -0.03em; line-height: 1; }
+.brand-cc { color: var(--series-1); font-style: italic; letter-spacing: -0.06em; margin-right: 1px; }
 nav { display: flex; gap: 4px; }
 nav a { color: var(--text-secondary); padding: 5px 11px; border-radius: 8px; }
 nav a:hover { background: var(--grid); text-decoration: none; }
